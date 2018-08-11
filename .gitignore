@@ -1,0 +1,7 @@
+/packages/
+/paket-files/
+/.paket/*.targets
+/.vs/
+bin/
+obj/
+*.ncrunchsolution.user
