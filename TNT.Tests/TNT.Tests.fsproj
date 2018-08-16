@@ -1,16 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <OutputType>Library</OutputType>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Prelude.fs" />
-    <Compile Include="Model.fs" />
-    <Compile Include="Semantic.fs" />
-    <Compile Include="StringExtractor.fs" />
-    <Compile Include="LanguageDiff.fs" />
-    <Compile Include="Library.fs" />
+    <Compile Include="Extraction.fs" />
     <None Include="paket.references" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TNT.FSharp\TNT.FSharp.fsproj" />
+    <ProjectReference Include="..\TNT.Library\TNT.Library.fsproj" />
+    <ProjectReference Include="..\TNT.Tests.CSharp\TNT.Tests.CSharp.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <!-- Disable Paket restore under NCrunch build -->

@@ -12,7 +12,13 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TNT.Library", "TNT.Library\
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TNT.FSharp", "TNT.FSharp\TNT.FSharp.fsproj", "{E4670F0E-2C90-4FCC-91FD-9A930BFFB681}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TNT.CSharp", "TNT.CSharp\TNT.CSharp.csproj", "{B39225D4-2DDC-42B8-B71F-0E7ADF743AE4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TNT.CSharp", "TNT.CSharp\TNT.CSharp.csproj", "{B39225D4-2DDC-42B8-B71F-0E7ADF743AE4}"
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "tnt", "tnt\tnt.fsproj", "{0094AF22-5071-4246-9FEF-04A2E6DB95C2}"
+EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TNT.Tests", "TNT.Tests\TNT.Tests.fsproj", "{A3D75179-2760-486E-B1CB-D012048DF8A1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TNT.Tests.CSharp", "TNT.Tests.CSharp\TNT.Tests.CSharp.csproj", "{471D2B8E-8328-49B4-B657-7926FA24E4EA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,6 +38,18 @@ Global
 		{B39225D4-2DDC-42B8-B71F-0E7ADF743AE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B39225D4-2DDC-42B8-B71F-0E7ADF743AE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B39225D4-2DDC-42B8-B71F-0E7ADF743AE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0094AF22-5071-4246-9FEF-04A2E6DB95C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0094AF22-5071-4246-9FEF-04A2E6DB95C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0094AF22-5071-4246-9FEF-04A2E6DB95C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0094AF22-5071-4246-9FEF-04A2E6DB95C2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A3D75179-2760-486E-B1CB-D012048DF8A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A3D75179-2760-486E-B1CB-D012048DF8A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A3D75179-2760-486E-B1CB-D012048DF8A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A3D75179-2760-486E-B1CB-D012048DF8A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{471D2B8E-8328-49B4-B657-7926FA24E4EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{471D2B8E-8328-49B4-B657-7926FA24E4EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{471D2B8E-8328-49B4-B657-7926FA24E4EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{471D2B8E-8328-49B4-B657-7926FA24E4EA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

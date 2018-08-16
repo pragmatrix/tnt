@@ -1,0 +1,4 @@
+﻿[<AutoOpen>]
+module Prelude
+
+let (^) = (<|)

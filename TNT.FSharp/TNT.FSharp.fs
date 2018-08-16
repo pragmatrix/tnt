@@ -7,11 +7,7 @@ module Extensions =
     type System.String with
 
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        member this.t = 
-            this
-
-
-    type [<Measure>] tx
+        member this.t = this
 
 [<assembly:AutoOpen("TNT.FSharp.Extensions")>]
 do ()

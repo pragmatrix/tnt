@@ -1,12 +1,18 @@
 ﻿module TNT.Model
 
-/// The filename of an assembly.
+/// The Filename of an assembly.
 type AssemblyFilename = 
     | AssemblyFilename of string
     override this.ToString() = 
         this |> function AssemblyFilename str -> str
 
-/// Just the name of an assembly without extension.
+/// The Filename of a translation file.
+type TranslationFilename = 
+    | TranslationFilename of string
+    override this.ToString() = 
+        this |> function TranslationFilename str -> str
+
+/// A relative path to the assembly.
 type AssemblyPath = 
     | AssemblyPath of string
     override this.ToString() = 
@@ -36,9 +42,12 @@ type TranslatedStringState =
 type TranslatedString = 
     | TranslatedString of state: TranslatedStringState * original: string * translated: string
 
+type TranslationId = 
+    | TranslationId of code: LanguageCode * assembly: AssemblyPath
+
 /// A translation of an assembly.
 type Translation = 
-    | Translation of assembly: AssemblyPath * code: LanguageCode * TranslatedString list
+    | Translation of TranslationId * TranslatedString list
 
 type MachineTranslationService = 
     | Google
@@ -56,24 +65,24 @@ type MachineTranslationCredentials = Undefined
 /// Extract string from an assembly.
 type ExtractStrings = AssemblyPath -> byte[] -> ExtractedStrings
 
-/// Synchronizes an existing translation.
-type Synchronize = ExtractedStrings -> Translation -> Translation
+/// Updates an existing translation file.
+type UpdateTranslation = ExtractedStrings -> Translation -> Translation
 
 /// Machine translates new texts.
-type MachineTranslate = MachineTranslator -> Translation -> Translation
+type AutoTranslate = MachineTranslator -> Translation -> Translation
 
 /// Garbage collect a translation.
 type CollectGarbage = Translation -> Translation
 
-type Commands = 
+type Command = 
     /// Initialize by given an relative assembly path, like bin/Release.
     /// Extracts the strings and creates the first language file.
     /// If no assembly path is given, it looks for all assemblies
     /// with an existing language code in the current directory and 
     /// tries to generate the new language. 
     /// Languages are removed by just deleting the files.
-    | Add of AssemblyPath option * language: LanguageCode
-    /// Updates all machine translations in the current directory.
+    | Add of language: LanguageCode * AssemblyPath option
+    /// Extracts all strings and updates all machine translations in the current directory.
     | Update
     /// Garbage collects all translations in the current directory.
     | GC
@@ -83,6 +92,3 @@ type Commands =
     | Export
     /// Import xliff files and apply the translations
     | Import
-
-let formatFilename (assemblyFilename: AssemblyFilename) (code: LanguageCode) = 
-    sprintf "%s-%s.tnt" (string assemblyFilename) (string code)

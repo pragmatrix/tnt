@@ -3,18 +3,12 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Include="Prelude.fs" />
-    <Compile Include="Model.fs" />
-    <Compile Include="Semantic.fs" />
-    <Compile Include="StringExtractor.fs" />
-    <Compile Include="LanguageDiff.fs" />
-    <Compile Include="Library.fs" />
-    <None Include="paket.references" />
-  </ItemGroup>
   <PropertyGroup>
     <!-- Disable Paket restore under NCrunch build -->
     <PaketRestoreDisabled Condition="'$(NCrunch)' == '1'">True</PaketRestoreDisabled>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TNT.CSharp\TNT.CSharp.csproj" />
+  </ItemGroup>
   <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>
