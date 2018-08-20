@@ -1,11 +1,14 @@
 version 5.176.4
 
 source https://www.nuget.org/api/v2/
+source https://www.myget.org/F/pragmatrix/api/v3/index.json
 
 framework: netstandard2.0
 
-nuget Argu
+nuget CommandLineParser.FSharp
 nuget FSharp.Core
 nuget FsUnit.xUnit
 nuget Mono.Cecil
 nuget System.ValueTuple
+nuget FunToolbox
+nuget Newtonsoft.Json

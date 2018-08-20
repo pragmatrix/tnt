@@ -1,3 +1,5 @@
 FSharp.Core
 System.ValueTuple
 Mono.Cecil
+FunToolbox
+Newtonsoft.Json

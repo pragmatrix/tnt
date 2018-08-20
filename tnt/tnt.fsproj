@@ -11,6 +11,9 @@
     <Compile Include="Program.fs" />
     <None Include="paket.references" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TNT.Library\TNT.Library.fsproj" />
+  </ItemGroup>
   <PropertyGroup>
     <!-- Disable Paket restore under NCrunch build -->
     <PaketRestoreDisabled Condition="'$(NCrunch)' == '1'">True</PaketRestoreDisabled>

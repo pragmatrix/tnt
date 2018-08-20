@@ -36,32 +36,29 @@ module private Private =
             | _ -> None
         |> Seq.choose id
 
-let extract (name: AssemblyPath) :  string list = 
+let extract (name: AssemblyPath) : OriginalString list = 
 
     let assemblyDefinition = AssemblyDefinition.ReadAssembly(string name)
 
     let rec extractFromType (typeDefinition: TypeDefinition) : string seq = seq {
         yield!
             typeDefinition.NestedTypes
-            |> Seq.map ^ fun nestedTypeDefinition ->
+            |> Seq.collect ^ fun nestedTypeDefinition ->
                 extractFromType nestedTypeDefinition
-            |> Seq.collect id
         yield!
             typeDefinition.Methods
-            |> Seq.map ^ fun methodDefinition ->
+            |> Seq.collect ^ fun methodDefinition ->
                 methodDefinition.Body.Instructions
                 |> extractFromInstructions
-            |> Seq.collect id
     }
 
     assemblyDefinition.Modules
-    |> Seq.map ^ fun moduleDefinition ->
+    |> Seq.collect ^ fun moduleDefinition ->
         moduleDefinition.Types
-        |> Seq.map ^ extractFromType
-        |> Seq.collect id
-    |> Seq.collect id
+        |> Seq.collect extractFromType
     // ensure reproducibility and remove duplicates
     |> Seq.sort |> Seq.distinct
+    |> Seq.map OriginalString
     |> Seq.toList
 
     
