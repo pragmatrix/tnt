@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
+    <PackageId>tnt-cli</PackageId>
     <Title>The .NET Translation Tool</Title>
     <Description>Command line tool to extract strings from assemblies and manage translations.</Description>
     <Copyright>2018 Armin Sander</Copyright>
