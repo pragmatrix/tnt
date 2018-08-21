@@ -1,4 +1,5 @@
-RESTRICTION: == netstandard2.0
+STORAGE: NONE
+RESTRICTION: || (== netcoreapp2.0) (== netcoreapp2.1) (== netstandard2.0)
 NUGET
   remote: https://www.nuget.org/api/v2
     CommandLineParser.FSharp (2.2.1)
@@ -21,7 +22,7 @@ NUGET
       NETStandard.Library (>= 2.0.3)
       NHamcrest (>= 2.0.1 < 2.1)
       xunit (>= 2.4 < 3.0)
-    Microsoft.NETCore.Platforms (2.1)
+    Microsoft.NETCore.Platforms (2.1.1)
     Microsoft.NETCore.Targets (2.1)
     Mono.Cecil (0.10)
       System.Collections (>= 4.0.11)
@@ -181,7 +182,7 @@ NUGET
       Microsoft.NETCore.Platforms (>= 1.1)
       Microsoft.NETCore.Targets (>= 1.1)
       System.Runtime (>= 4.3)
-    System.Reflection.TypeExtensions (4.5)
+    System.Reflection.TypeExtensions (4.5.1)
     System.Resources.ResourceManager (4.3)
       Microsoft.NETCore.Platforms (>= 1.1)
       Microsoft.NETCore.Targets (>= 1.1)
@@ -288,5 +289,5 @@ NUGET
     xunit.extensibility.execution (2.4)
       xunit.extensibility.core (2.4)
   remote: https://www.myget.org/F/pragmatrix/api/v3/index.json
-    FunToolbox (1.2.0)
+    FunToolbox (1.2.1)
       FSharp.Core

@@ -1,8 +1,7 @@
 #!/bin/bash
 set -e
-echo Clearn
 MSBuild.exe -nologo -verbosity:quiet TNT.sln -t:Clean -p:Configuration=Release
-echo Build
+MSBuild.exe -nologo -verbosity:quiet TNT.sln -t:Restore -p:Configuration=Release
 MSBuild.exe -nologo -verbosity:quiet TNT.sln -t:Build -p:Configuration=Release
 mkdir -p tmp
 rm -f tmp/*.nupkg
