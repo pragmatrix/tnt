@@ -1,5 +1,5 @@
 STORAGE: NONE
-RESTRICTION: || (== netcoreapp2.0) (== netcoreapp2.1) (== netstandard2.0)
+RESTRICTION: || (== netcoreapp2.1) (== netstandard2.0)
 NUGET
   remote: https://www.nuget.org/api/v2
     CommandLineParser.FSharp (2.2.1)
