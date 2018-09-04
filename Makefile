@@ -6,6 +6,10 @@ setup:
 
 push=.paket/paket push --url https://www.myget.org/F/pragmatrix/api/v2/package --api-key ${MYGETAPIKEY} 
 
+.PHONY: tool-update
+tool-update:
+	dotnet tool update -g --add-source https://www.myget.org/F/pragmatrix/api/v3/index.json tnt-cli 
+
 .PHONY: publish
 publish:
 	mkdir -p tmp
