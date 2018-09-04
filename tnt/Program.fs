@@ -58,5 +58,5 @@ let main args =
         | x -> failwithf "internal error: %A" x
 
     with e ->
-        printfn "%s" e.Message
+        printfn "%s" (string e)
         failed
