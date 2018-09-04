@@ -50,9 +50,9 @@ module Translation =
                 LanguageIdentifier(file.language))
             , translations)
     
-    let serialize (Translation(TranslationId(language, assembly), strings)) : string = 
+    let serialize (Translation(TranslationId(assembly, language), strings)) : string = 
 
-        JsonConvert.SerializeObject {
+        let json = {
             assembly = string assembly
             language = string language
             strings = 
@@ -61,6 +61,8 @@ module Translation =
                 |> Seq.toArray
         }
 
+        JsonConvert.SerializeObject(json, Formatting.Indented)
+        
     let id (Translation(id, _)) = id
     let language = id >> function TranslationId(identifier = identifier) -> identifier
     let assemblyPath = id >> function TranslationId(path = path) -> path
