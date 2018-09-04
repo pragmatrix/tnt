@@ -11,6 +11,10 @@ module X =
     let a = "duplicate".t
     let b = "duplicate".t
 
+/// This implicitly tests if empty function bodies are supported.
+type Interface = 
+    abstract EmptyFunction : unit -> unit
+
 [<Fact>]
 let ``extract from FSharp``() = 
     let strings = extract (AssemblyPath("TNT.Tests.dll"))

@@ -48,8 +48,12 @@ let extract (name: AssemblyPath) : OriginalString list =
         yield!
             typeDefinition.Methods
             |> Seq.collect ^ fun methodDefinition ->
-                methodDefinition.Body.Instructions
-                |> extractFromInstructions
+                let body = methodDefinition.Body
+                // body may be null for abstract / interface methods.
+                if body <> null then
+                    body.Instructions |> extractFromInstructions
+                else
+                    Seq.empty
     }
 
     assemblyDefinition.Modules
