@@ -33,3 +33,13 @@ module TranslationFilename =
         let assemblyFilename = AssemblyFilename.ofPath assemblyPath
         sprintf "%s-%s.tnt" (string assemblyFilename) (string language)
         |> TranslationFilename
+
+module XLIFFBaseName = 
+    
+    let [<Literal>] FileExtension = ".xlf"
+    // VisualStudio uses the dot extension to separate the identifier from the base name.
+    let [<Literal>] IdentifierSeparator = "."
+
+    let filePathForLanguage (LanguageIdentifier(langIdentifier)) (directory: Path) (XLIFFBaseName(baseName)) =
+        directory
+        |> Path.extend (baseName + IdentifierSeparator + langIdentifier + FileExtension)

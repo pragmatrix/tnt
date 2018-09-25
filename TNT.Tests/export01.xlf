@@ -1,0 +1,20 @@
+﻿<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+  <file original="test.dll" source-language="en-US" target-language="de-DE" datatype="x-net-assembly">
+    <body>
+      <group id="b7a3e44b9590a567cdb6232a706a279e178e649b9c04ab8eb6c5f61f425a0">
+        <trans-unit id="18fdd549b2ed367ac0c74cbec1214644728515b3edbcb78e7d322757a7c8359" translate="yes" xml:space="preserve">
+          <source>New</source>
+          <target state="new"></target>
+        </trans-unit>
+        <trans-unit id="286249762f7c94349cdc0ba3bb2255baf9a8036e2193ead1d77696f888582f" translate="yes" xml:space="preserve">
+          <source>Auto</source>
+          <target state="needs-review-translation">Automatically Translated</target>
+        </trans-unit>
+        <trans-unit id="fad657bb5403e59709e79e0679965bd362af5fc841b06c8f48efa21fc588b" translate="yes" xml:space="preserve">
+          <source>Reviewed</source>
+          <target state="final">Reviewed</target>
+        </trans-unit>
+      </group>
+    </body>
+  </file>
+</xliff>

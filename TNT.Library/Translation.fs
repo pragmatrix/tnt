@@ -97,7 +97,17 @@ module TranslationIds =
 
 module TranslationSet = 
 
+    let map f (TranslationSet(assembly, set)) = 
+        TranslationSet(f (assembly, set))
+
     let assemblyPath (TranslationSet(path, _)) = path
+
+    let translations (TranslationSet(_, set)) = 
+        set 
+        |> Map.toSeq
+        |> Seq.map snd
+        |> Seq.toList
+
     let translation (language: LanguageIdentifier) (TranslationSet(_, set)) = 
         set 
         |> Map.tryFind language
@@ -144,6 +154,9 @@ module TranslationSet =
 
 module TranslationGroup = 
     
+    let map f (TranslationGroup value) =
+        TranslationGroup(f value)
+
     type TranslationGroupError = 
         | AssemblyPathsWithTheSameFilename of (AssemblyFilename * AssemblyPath list) list
         | TranslationsWithTheSameLanguage of ((AssemblyFilename * LanguageIdentifier) * Translation list) list
@@ -189,6 +202,19 @@ module TranslationGroup =
 
         Ok ^ TranslationGroup(grouped)
 
+    /// Try get the TranslationSet with the given AssemblyFilename
     let tryGetSet (filename: AssemblyFilename) (TranslationGroup(map)) : TranslationSet option = 
         map.TryFind filename
+
+    /// Get all sets.
+    let sets (TranslationGroup(map)) = 
+        map
+        |> Map.toSeq 
+        |> Seq.map snd 
+        |> Seq.toList
+
+    let translations group =
+        group
+        |> sets
+        |> List.collect TranslationSet.translations
     

@@ -2,7 +2,6 @@ module TNT.Tests.Extraction
 
 open FsUnit.Xunit
 open Xunit
-
 open TNT.Model
 open TNT.Library.StringExtractor
 

@@ -1,5 +1,6 @@
 ﻿module TNT.Library.API
 
+open System.Text
 open System.Runtime.CompilerServices
 open FunToolbox.FileSystem
 open TNT.Model
@@ -77,6 +78,51 @@ let add (language: LanguageIdentifier) (assembly: AssemblyPath option) : ResultC
 let update (assembly: AssemblyPath option) = output {
     yield E "not supported"
     return Failed
+}
+
+let export 
+    (sourceLanguage: LanguageIdentifier) 
+    (baseName: XLIFFBaseName)
+    (outputDirectory: Path) 
+    : ResultCode output = output {
+    let currentDirectory = Directory.current()
+    let translations = Translations.loadAll (TranslationDirectory.ofPath currentDirectory)
+    let group = TranslationGroup.fromTranslations translations
+    match group with
+    | Error(error) ->
+        yield! TranslationGroup.errorString error
+        return Failed
+    | Ok(group) ->
+
+        let allExports = 
+            group
+            |> TranslationGroup.translations
+            |> List.groupBy Translation.language
+            |> Seq.map ^ fun (language, translations) -> 
+                let path = 
+                    baseName
+                    |> XLIFFBaseName.filePathForLanguage language outputDirectory 
+                let files = XLIFF.Files.fromTranslations translations
+                path, XLIFF.generateV12 sourceLanguage files
+
+        let existingOnes = 
+            allExports
+            |> Seq.map fst
+            |> Seq.filter File.exists
+            |> Seq.toList
+
+        if existingOnes <> [] then
+            yield E ^ sprintf "one or more exported files already exists, please remove them or use the -f option"
+            for existingFile in existingOnes do
+                yield E ^ sprintf "  %s" (string existingFile)
+            return Failed
+        else
+
+        for (file, content) in allExports do
+            yield I ^ sprintf "exporting language '%s' to '%s'" (string sourceLanguage) (string file)
+            File.saveText Encoding.UTF8 (string content) file
+
+        return Succeeded
 }
 
 [<assembly:InternalsVisibleTo("TNT.Tests")>]

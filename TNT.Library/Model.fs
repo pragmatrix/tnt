@@ -1,16 +1,22 @@
 ﻿namespace TNT.Model
 
-/// The Filename of an assembly.
+/// The filename of an assembly.
 type AssemblyFilename = 
     | AssemblyFilename of string
     override this.ToString() = 
         this |> function AssemblyFilename str -> str
 
-/// The Filename of a translation file.
+/// The filename of a translation file.
 type TranslationFilename = 
     | TranslationFilename of string
     override this.ToString() = 
         this |> function TranslationFilename str -> str
+
+/// The base name of an XLIFF file.
+type XLIFFBaseName =
+    | XLIFFBaseName of string
+    override this.ToString() = 
+        this |> function XLIFFBaseName str -> str
 
 /// A relative path to the assembly.
 type AssemblyPath = 
@@ -31,13 +37,13 @@ type ExtractedStrings =
 type TranslatedStringState = 
     | New /// A newly detected string of which the translation is empty.
     | Auto /// A machine translated version.
-    | Verified /// The translation has been verified.
+    | Reviewed /// The translation has been reviewed and is good to go.
     | Unused /// This translation is unused right now and should be garbage collected.
     override this.ToString() = 
         match this with
         | New -> "new"
         | Auto -> "auto"
-        | Verified -> "verified"
+        | Reviewed -> "reviewed"
         | Unused -> "unused"
 
 [<Struct>]
@@ -61,7 +67,7 @@ type TranslationId =
 
 /// A translation of an assembly.
 type Translation = 
-    | Translation of id: TranslationId * strings: TranslationRecord list
+    | Translation of id: TranslationId * records: TranslationRecord list
 
 /// A translation set is a set of translations that 
 /// all have different language identifiers and point to the same assembly path.

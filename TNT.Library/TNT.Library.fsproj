@@ -10,6 +10,7 @@
     <Compile Include="LanguageDiff.fs" />
     <Compile Include="Paths.fs" />
     <Compile Include="Translation.fs" />
+    <Compile Include="XLIFF.fs" />
     <Compile Include="FileSystem.fs" />
     <Compile Include="Output.fs" />
     <Compile Include="API.fs" />

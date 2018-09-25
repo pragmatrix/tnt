@@ -9,7 +9,7 @@ module TranslatedStringState =
         match str with
         | "new" -> TranslatedStringState.New
         | "auto" -> TranslatedStringState.Auto
-        | "verified" -> TranslatedStringState.Verified
+        | "verified" -> TranslatedStringState.Reviewed
         | "unused" -> TranslatedStringState.Unused
         | str -> failwithf "'%s': invalid translated string state" str
 
