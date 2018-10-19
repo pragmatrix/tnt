@@ -41,3 +41,10 @@ module Translations =
             |> TranslationDirectory.extend fn
         |> Seq.map Translation.load
         |> Seq.toList
+
+module TranslationGroup = 
+    
+    let load (directory: Path) = 
+        let translations = Translations.loadAll (TranslationDirectory.ofPath directory)
+        TranslationGroup.fromTranslations translations
+

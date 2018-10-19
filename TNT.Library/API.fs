@@ -80,20 +80,19 @@ let update (assembly: AssemblyPath option) = output {
     return Failed
 }
 
+
 let export 
     (sourceLanguage: LanguageIdentifier) 
     (baseName: XLIFFBaseName)
     (outputDirectory: Path) 
     : ResultCode output = output {
     let currentDirectory = Directory.current()
-    let translations = Translations.loadAll (TranslationDirectory.ofPath currentDirectory)
-    let group = TranslationGroup.fromTranslations translations
+    let group = TranslationGroup.load currentDirectory
     match group with
     | Error(error) ->
         yield! TranslationGroup.errorString error
         return Failed
     | Ok(group) ->
-
         let allExports = 
             group
             |> TranslationGroup.translations
@@ -123,6 +122,21 @@ let export
             File.saveText Encoding.UTF8 (string content) file
 
         return Succeeded
+}
+
+let import (files: Path list) : ResultCode output = output {
+    let currentDirectory = Directory.current()
+    let group = TranslationGroup.load currentDirectory
+    match group with
+    | Error(error) ->
+        yield! TranslationGroup.errorString error
+        return Failed
+    | Ok(group) ->
+
+
+
+
+    return Succeeded
 }
 
 [<assembly:InternalsVisibleTo("TNT.Tests")>]

@@ -34,6 +34,12 @@ type ExportOptions = {
     OutputDirectory: string
 }
 
+[<Verb("import", HelpText = "Import XLIFF translation files and apply the changes to the translations in the current directory")>]
+type ImportOptions = {
+    [<Value(0, Min=1, HelpText = "The XLIFF files to import")>]
+    Files: string[]
+}
+
 [<EntryPoint>]
 let main args =
 
@@ -75,6 +81,14 @@ let main args =
                     let outputDirectory = Path.parse opts.OutputDirectory
 
                     API.export sourceLanguage baseName outputDirectory
+
+                | :? ImportOptions as opts ->
+                    let currentDirectory = Directory.current()
+                    let xlfFilePaths =
+                        opts.Files
+                        |> Seq.map (fun file -> currentDirectory |> Path.extend file)
+                        |> Seq.toList
+                    API.import xlfFilePaths
 
                 | x -> failwithf "internal error: %A" x
 
