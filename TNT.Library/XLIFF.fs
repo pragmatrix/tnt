@@ -194,10 +194,10 @@ let parseV12 (XLIFFV12 xliff) : File list =
     let root = document.Root
     do
         if (root.Name <> nsName "xliff") then
-            failwithf "root element not found, expected 'xliff', seen '%s'" root.Name.LocalName
+            failwithf "unexpected root element <%s>, expected <xliff>" root.Name.LocalName
         let version = root.getValue "version"
         if version <> Version then
-            failwithf "unexpected XLIFF version, expected '%s', seen '%s'" Version version
+            failwithf "XLIFF version '%s', expected '%s'" version Version
 
     let files = 
         nsName "file"
