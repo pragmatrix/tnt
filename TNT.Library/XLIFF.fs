@@ -153,80 +153,86 @@ let generateV12
     
     XLIFFV12 ^ XDocument(root).ToString()
 
-let parseV12 (XLIFFV12 xliff) : File list = 
-    let document = XDocument.Parse(xliff, LoadOptions.SetLineInfo)
-    let root = document.Root
-    if (root.Name.LocalName <> "xliff") then
-        failwithf "root element not found, expected 'xliff', seen '%s'" root.Name.LocalName
-    let version = root.Attribute(X.name "version").Value
-    if version <> Version then
-        failwithf "unexpected XLIFF version, expected '%s', seen '%s'" Version version
-    
-    let x = root.Elements()
+let private nsName name = X.ns Namespace + name
 
-    let nsName name = X.ns Namespace + name
+type XElement with
 
-    let files = root.Elements(nsName "file")
-
-    let posInfo (e: XElement) : string = 
+    member e.PosInfo : string = 
         let li = e :> IXmlLineInfo
         if li.HasLineInfo() 
         then sprintf "line %d, column %d" li.LineNumber li.LinePosition
         else "(no position info)"
 
-    let tryGetValue (element: XElement) (attributeName: string) : string option =
+    member element.tryGetValue (attributeName: string) : string option =
         let attr = element.Attribute(X.name attributeName)
         match attr with
         | null -> None
         | attr -> Some attr.Value
 
-    let getValue (element: XElement) (attributeName: string) : string = 
-        let v = tryGetValue element attributeName
+    member element.getValue (attributeName: string) : string = 
+        let v = element.tryGetValue attributeName
         match v with
         | Some value -> value
         | None ->
             failwithf "required attribute '%s' not available in element '%s' at %s" 
-                attributeName element.Name.LocalName (posInfo element)
+                attributeName element.Name.LocalName (element.PosInfo)
 
-    let oneNested (element: XElement) (name: string) : XElement =
+    member element.oneNested (name: string) : XElement =
         let nested = element.Elements(nsName name) |> Seq.toArray
         if nested.Length <> 1 then   
-            failwithf "%s: expect exactly one element '%s' under '%s'" (posInfo element) name element.Name.LocalName
+            failwithf "%s: expect exactly one element '%s' under '%s'" element.PosInfo name element.Name.LocalName
         nested.[0]
 
-    let getText (element: XElement) : string = 
+    member element.Text : string = 
         element.Nodes()
         |> Seq.choose ^ function :? XText as xt -> Some xt | _ -> None
         |> Seq.map ^ fun tn -> tn.Value
         |> String.concat ""
 
-    files
-    |> Seq.map ^ fun file ->
-        let name = getValue file "original" |> AssemblyFilename
-        let targetLanguage = getValue file "target-language" |> LanguageIdentifier
+let parseV12 (XLIFFV12 xliff) : File list = 
+    let document = XDocument.Parse(xliff, LoadOptions.SetLineInfo)
+    let root = document.Root
+    do
+        if (root.Name <> nsName "xliff") then
+            failwithf "root element not found, expected 'xliff', seen '%s'" root.Name.LocalName
+        let version = root.getValue "version"
+        if version <> Version then
+            failwithf "unexpected XLIFF version, expected '%s', seen '%s'" Version version
+
+    let files = 
+        nsName "file"
+        |> root.Elements
+
+    let parseFile (file: XElement) =
+        let name = 
+            file.getValue "original"
+            |> AssemblyFilename
+        
+        let targetLanguage = 
+            file.getValue "target-language" 
+            |> LanguageIdentifier
 
         let units = 
             let shouldTranslate (element: XElement) = 
-                tryGetValue element "translate"
+                element.tryGetValue "translate"
                 |> Option.defaultValue "yes"
                 |> (=) "yes"
 
-            file.Descendants(nsName "trans-unit")
+            nsName "trans-unit"
+            |> file.Descendants
             |> Seq.filter ^ shouldTranslate
-            |> Seq.map ^ fun file ->
-                let source = oneNested file "source"
-                let target = oneNested file "target"
-                let targetState = 
-                    getValue target "state"
-                    |> TargetState.tryParse
-                match targetState with
-                | Error str ->
-                    failwithf "%s: unsupported target state '%s'" (posInfo target) str 
-                | Ok state -> {
-                    Source = getText source
-                    Target = getText target
-                    TargetState = state
-                }
+            |> Seq.map ^ fun tu ->
+                let source, target = tu.oneNested "source", tu.oneNested "target"
+                target.getValue "state"
+                |> TargetState.tryParse
+                |> function
+                    | Error str ->
+                        failwithf "%s: unsupported target state '%s'" target.PosInfo str 
+                    | Ok state -> {
+                        Source = source.Text
+                        Target = target.Text
+                        TargetState = state
+                    }
             |> Seq.toList
 
         {
@@ -234,6 +240,8 @@ let parseV12 (XLIFFV12 xliff) : File list =
             TargetLanguage = targetLanguage
             TranslationUnits = units
         }
-            
+
+    files
+    |> Seq.map parseFile
     |> Seq.toList
     
