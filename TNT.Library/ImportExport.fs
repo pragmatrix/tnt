@@ -56,9 +56,9 @@ type ImportWarning =
             -> sprintf "%O: original string not found: '%s'" key tu.Source
         | UnusedTranslationChanged(key, (before, _)) 
             -> sprintf "%O: unused translation changed: '%s'" key before.Original
-        | IgnoredNewWithTranslation(key, (record, tu)) 
+        | IgnoredNewWithTranslation(key, (record, _)) 
             -> sprintf "%O: ignored translation of a record marked new :'%s'" key record.Original
-        | IgnoredNewReset(key, (record, tu)) 
+        | IgnoredNewReset(key, (record, _)) 
             -> sprintf "%O: ignored translation to state new, even though it wasn't new anymore: '%s'" key record.Original
 
 let import (translations: Translation list) (files: File list) 
