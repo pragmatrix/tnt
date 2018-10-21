@@ -36,7 +36,7 @@ module private Private =
             | _ -> None
         |> Seq.choose id
 
-let extract (name: AssemblyPath) : OriginalString list = 
+let extract (name: AssemblyPath) : string list = 
 
     let assemblyDefinition = AssemblyDefinition.ReadAssembly(string name)
 
@@ -62,7 +62,6 @@ let extract (name: AssemblyPath) : OriginalString list =
         |> Seq.collect extractFromType
     // ensure reproducibility and remove duplicates
     |> Seq.sort |> Seq.distinct
-    |> Seq.map OriginalString
     |> Seq.toList
 
     

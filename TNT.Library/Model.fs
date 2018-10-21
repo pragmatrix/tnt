@@ -1,81 +1,88 @@
 ﻿namespace TNT.Model
 
 /// The filename of an assembly.
+[<Struct>]
 type AssemblyFilename = 
     | AssemblyFilename of string
     override this.ToString() = 
         this |> function AssemblyFilename str -> str
 
 /// The filename of a translation file.
+[<Struct>]
 type TranslationFilename = 
     | TranslationFilename of string
     override this.ToString() = 
         this |> function TranslationFilename str -> str
 
 /// The base name of an XLIFF file.
-type XLIFFBaseName =
+type [<Struct>] XLIFFBaseName =
     | XLIFFBaseName of string
     override this.ToString() = 
         this |> function XLIFFBaseName str -> str
 
 /// A relative path to the assembly.
+[<Struct>] 
 type AssemblyPath = 
     | AssemblyPath of string
     override this.ToString() = 
         this |> function AssemblyPath str -> str
 
+[<Struct>]
 type LanguageIdentifier = 
     | LanguageIdentifier of string
     override this.ToString() = 
         this |> function LanguageIdentifier identifier -> identifier
 
 /// Strings extracted from a given assembly. The original strings that are used as keys for the translations.
+[<Struct>]
 type ExtractedStrings = 
     | ExtractedStrings of assembly: AssemblyPath * strings: string list
 
-[<RQA; Struct>]
-type TranslatedStringState = 
-    | New /// A newly detected string of which the translation is empty.
-    | Auto /// A machine translated version.
-    | Reviewed /// The translation has been reviewed and is good to go.
-    | Unused /// This translation is unused right now and should be garbage collected.
-    override this.ToString() = 
-        match this with
-        | New -> "new"
-        | Auto -> "auto"
-        | Reviewed -> "reviewed"
-        | Unused -> "unused"
-
-[<Struct>]
-type OriginalString = 
-    | OriginalString of string
-    override this.ToString() = 
-        this |> function OriginalString str -> str
-
-[<Struct>]
+[<RQA>]
 type TranslatedString = 
-    | TranslatedString of state: TranslatedStringState * string
+    /// A newly detected string of which the translation is empty.
+    | New 
+    /// For example, a machine translated version.
+    | NeedsReview of string 
+    /// The translation has been reviewed and is good to go.
+    | Final of string 
+    /// This translation is unused right now and should be garbage collected. We store
+    /// the previous string for cases in which the source string will reappear.
+    | Unused of string 
+    override this.ToString() =
+        match this with
+        | New -> ""
+        | NeedsReview str
+        | Final str
+        | Unused str -> str
 
 [<Struct>]
-type TranslationRecord = 
-    | TranslationRecord of 
-        original: OriginalString
-        * translated: TranslatedString
+type TranslationRecord = {
+    Original: string
+    Translated: TranslatedString
+}
 
+module TranslationRecord = 
+    let createNew original = { Original = original; Translated = TranslatedString.New }
+
+[<Struct>]
 type TranslationId = 
     | TranslationId of path: AssemblyPath * identifier: LanguageIdentifier
 
 /// A translation of an assembly.
+[<Struct>]
 type Translation = 
     | Translation of id: TranslationId * records: TranslationRecord list
 
 /// A translation set is a set of translations that 
 /// all have different language identifiers and point to the same assembly path.
 
+[<Struct>]
 type TranslationSet = 
     | TranslationSet of assembly: AssemblyPath * set: Map<LanguageIdentifier, Translation>
 
 /// An absolute path to the directory where translations are in.
+[<Struct>]
 type TranslationDirectory = 
     | TranslationDirectory of string
     override this.ToString() = 
@@ -84,9 +91,11 @@ type TranslationDirectory =
 /// A translation group is a group of translations that can be stored inside
 /// _one_ directory. This means that only one translation for a langauge identifier
 /// can exist for one AssemblyFileName.
+[<Struct>]
 type TranslationGroup = 
     | TranslationGroup of Map<AssemblyFilename, TranslationSet>
-    
+
+[<Struct>]    
 type MachineTranslationService = 
     | Google
     | Microsoft

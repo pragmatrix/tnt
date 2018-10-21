@@ -22,15 +22,32 @@ module Translation =
                 failwithf 
                     "expect a translation string to be an array of at least three strings, the state, the original, the translated. (length: %d)" 
                     strings.Length
-            let state = TranslatedStringState.fromString strings.[0]
             let original = strings.[1]
-            let translated = strings.[2]
-            TranslationRecord(OriginalString(original), TranslatedString(state, translated))
+            let translatedString = 
+                let translated = strings.[2]
+                match strings.[0] with
+                | "new" -> TranslatedString.New
+                | "needs-review" -> TranslatedString.NeedsReview translated
+                | "final" -> TranslatedString.Final translated
+                | "unused" -> TranslatedString.Unused translated
+                | unknown -> failwithf "'%s': invalid translated string state" unknown
+            
+            {
+                Original = original
+                Translated = translatedString
+            }
 
-        let serializeTranslatedString (TranslationRecord(OriginalString(original), TranslatedString(state, translated))) = [| 
-            string state 
-            original
-            translated 
+        let stateString (translated: TranslatedString) = 
+            match translated with
+            | TranslatedString.New -> "new"
+            | TranslatedString.NeedsReview _ -> "needs-review"
+            | TranslatedString.Final _ -> "final"
+            | TranslatedString.Unused _ -> "unused"
+
+        let serializeTranslatedString (record: TranslationRecord) = [| 
+            stateString record.Translated
+            record.Original
+            string record.Translated
         |]
 
     let deserialize (json: string) : Translation =
@@ -64,12 +81,13 @@ module Translation =
         JsonConvert.SerializeObject(json, Formatting.Indented)
         
     let id (Translation(id, _)) = id
+    let records (Translation(_, records)) = records
     let language = id >> function TranslationId(identifier = identifier) -> identifier
     let assemblyPath = id >> function TranslationId(path = path) -> path
     let assemblyFilename = assemblyPath >> AssemblyFilename.ofPath
     let createNew id strings = 
         let translatedStrings = strings |> List.map TranslationRecord.createNew
-        Translation(id, strings |> List.map TranslationRecord.createNew)
+        Translation(id, translatedStrings)
 
 module Translations = 
 
@@ -203,8 +221,16 @@ module TranslationGroup =
         Ok ^ TranslationGroup(grouped)
 
     /// Try get the TranslationSet with the given AssemblyFilename
-    let tryGetSet (filename: AssemblyFilename) (TranslationGroup(map)) : TranslationSet option = 
+    let set (filename: AssemblyFilename) (TranslationGroup(map)) : TranslationSet option = 
         map.TryFind filename
+
+    /// Return a translation if one is found for the given filename / language combination.
+    let translation 
+        (filename: AssemblyFilename, language: LanguageIdentifier) 
+        (group: TranslationGroup) = 
+        group 
+        |> set filename
+        |> Option.bind ^ TranslationSet.translation language
 
     /// Get all sets.
     let sets (TranslationGroup(map)) = 

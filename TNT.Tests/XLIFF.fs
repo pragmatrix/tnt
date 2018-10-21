@@ -1,20 +1,21 @@
 ﻿module TNT.Tests.XLIFF
 
-open FsUnit.Xunit
-open Xunit
+open System.Text
+open FunToolbox.FileSystem
+open TNT.Library
 open TNT.Library.XLIFF
 open TNT.Model
-open FunToolbox.FileSystem
-open System.Text
+open FsUnit.Xunit
+open Xunit
 
-let record original translated state = TranslationRecord(OriginalString(original), TranslatedString(state, translated))
+let record original translated = { Original = original; Translated = translated }
 
 let translations = [
     Translation (TranslationId(AssemblyPath("/tmp/test.dll"), LanguageIdentifier("de-DE")), [
-        record "New" "" TranslatedStringState.New
-        record "Auto" "Automatically Translated" TranslatedStringState.Auto
-        record "Reviewed" "Reviewed" TranslatedStringState.Reviewed
-        record "Unused" "Unused" TranslatedStringState.Unused
+        record "New" TranslatedString.New
+        record "Auto" ^ TranslatedString.NeedsReview "Automatically Translated"
+        record "Reviewed" ^ TranslatedString.Final "Reviewed"
+        record "Unused" ^ TranslatedString.Unused "Unused"
     ])
 ]
 
@@ -26,7 +27,7 @@ let linesOf (str: string) =
 [<Fact>]
 let ``generates XLIFF``() = 
     let generated = 
-        Files.fromTranslations translations
+        ImportExport.export translations
         |> generateV12 (LanguageIdentifier "en-US") 
         |> string
         |> fun str -> str.Trim()
@@ -49,14 +50,14 @@ let ``imports XLIFF``() =
         TranslationUnits = [ {
             Source = "New"
             Target = "Neu"
-            TargetState = Translated 
+            State = Translated 
         } ; {
             Source = "Auto";
             Target = "Automatische Uebersetzung";
-            TargetState = Final
+            State = Final
         } ; {
             Source = "Reviewed"
             Target = "Reviewed"
-            TargetState = Final
+            State = Final
         } ]
     } ]

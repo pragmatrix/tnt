@@ -16,7 +16,7 @@ module TranslationGroup =
             l |> Seq.map ^ fun ((fn, language), _) ->
                 E ^ sprintf "multiple translations of the same language: '%s' of '%s'" (string language)  (string fn)
 
-let extract (assemblyPath: AssemblyPath) : OriginalString list output = output {
+let extract (assemblyPath: AssemblyPath) : string list output = output {
     let strings = StringExtractor.extract assemblyPath
     yield I ^ sprintf "extracted %d strings from '%s'" (strings.Length) (string assemblyPath)
     return strings
@@ -52,7 +52,7 @@ let add (language: LanguageIdentifier) (assembly: AssemblyPath option) : ResultC
     match assembly with
     | Some assemblyPath -> 
         let assemblyFilename = assemblyPath |> AssemblyFilename.ofPath
-        let set = group |> TranslationGroup.tryGetSet assemblyFilename
+        let set = group |> TranslationGroup.set assemblyFilename
         match set with
         | None -> 
             do! createNewLanguage language assemblyPath
@@ -101,7 +101,7 @@ let export
                 let path = 
                     baseName
                     |> XLIFFBaseName.filePathForLanguage language outputDirectory 
-                let files = XLIFF.Files.fromTranslations translations
+                let files = ImportExport.export translations
                 path, XLIFF.generateV12 sourceLanguage files
 
         let existingOnes = 
@@ -132,10 +132,7 @@ let import (files: Path list) : ResultCode output = output {
         yield! TranslationGroup.errorString error
         return Failed
     | Ok(group) ->
-
-
-
-
+    
     return Succeeded
 }
 

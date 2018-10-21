@@ -1,7 +1,6 @@
 ﻿/// XLIFF export and import
 module TNT.Library.XLIFF
 
-open System
 open TNT.Model
 open System.Xml.Linq
 open System.Security.Cryptography
@@ -34,7 +33,7 @@ module TargetState =
 type TranslationUnit = {
     Source: string
     Target: string
-    TargetState: TargetState
+    State: TargetState
 }
 
 type File = {
@@ -47,36 +46,6 @@ type XLIFFV12 =
     | XLIFFV12 of string
     override this.ToString() = 
         this |> function XLIFFV12 str -> str
-
-module Files = 
-
-    /// Convert a translation group to a list of files.
-    let fromTranslations translations = 
-
-        let toUnit (TranslationRecord(OriginalString(original), TranslatedString(state, translated))) =
-
-            // note that not all records can be exported into XIFF files.
-            state
-            |> function
-            | TranslatedStringState.New -> Some New
-            | TranslatedStringState.Auto -> Some NeedsReview
-            | TranslatedStringState.Reviewed -> Some Final
-            | TranslatedStringState.Unused -> None
-            |> Option.map ^ fun state ->
-            {
-                Source = original
-                Target = translated
-                TargetState = state
-            }
-
-        let toFile (Translation(TranslationId(path, language), records)) = {
-            Name = AssemblyFilename.ofPath path
-            TargetLanguage = language
-            TranslationUnits = records |> List.choose toUnit
-        }
-
-        translations
-        |> List.map toFile
 
 let [<Literal>] Version = "1.2"
 let [<Literal>] Namespace = "urn:oasis:names:tc:xliff:document:1.2"
@@ -141,14 +110,13 @@ let generateV12
                                     preserveSpace
                                     e "source" [ XText(unit.Source) ]
                                     e "target" [
-                                        a "state" (string unit.TargetState) 
+                                        a "state" (string unit.State) 
                                         XText(unit.Target) 
                                     ]
                                 ]
                         ]
                     ]
                 ]
-
         ]
     
     XLIFFV12 ^ XDocument(root).ToString()
@@ -231,7 +199,7 @@ let parseV12 (XLIFFV12 xliff) : File list =
                     | Ok state -> {
                         Source = source.Text
                         Target = target.Text
-                        TargetState = state
+                        State = state
                     }
             |> Seq.toList
 
