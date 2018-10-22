@@ -47,6 +47,8 @@ let main args =
     let ok = 0
 
     try
+        let currentDirectory = Directory.current()
+
         let result = 
             args 
             |> Parser.Default.ParseArguments<AddOptions, UpdateOptions>
@@ -75,7 +77,7 @@ let main args =
                         opts.BaseName
                         |> Option.ofObj
                         |> Option.defaultWith 
-                            ^ fun () -> Directory.current() |> Path.name
+                            ^ fun () -> Path.name currentDirectory
                         |> XLIFFBaseName
 
                     let outputDirectory = Path.parse opts.OutputDirectory
@@ -83,10 +85,9 @@ let main args =
                     API.export sourceLanguage baseName outputDirectory
 
                 | :? ImportOptions as opts ->
-                    let currentDirectory = Directory.current()
                     let xlfFilePaths =
                         opts.Files
-                        |> Seq.map (fun file -> currentDirectory |> Path.extend file)
+                        |> Seq.map ^ fun file -> currentDirectory |> Path.extend file
                         |> Seq.toList
                     API.import xlfFilePaths
 
@@ -98,7 +99,7 @@ let main args =
             | API.Succeeded -> ok
 
         | :? CommandLine.NotParsed<obj> as np 
-            -> failwithf "command line error: %A" (np.Errors |> Seq.toList)
+            -> failwithf "command line error: %A" (Seq.toList np.Errors)
         | x -> failwithf "internal error: %A" x
 
     with e ->
