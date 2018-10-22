@@ -40,68 +40,71 @@ type ImportOptions = {
     Files: string[]
 }
 
+let dispatch (command: obj) = 
+
+    let currentDirectory = Directory.current()
+
+    match command with
+    | :? AddOptions as opts -> 
+        API.add 
+            (LanguageIdentifier(opts.Language)) 
+            (opts.Assembly |> Option.ofObj |> Option.map AssemblyPath)
+    | :? UpdateOptions as opts ->
+        API.update
+            (opts.Assembly |> Option.ofObj |> Option.map AssemblyPath)
+    | :? ExportOptions as opts ->
+
+        let sourceLanguage =
+            opts.SourceLanguage
+            |> Option.ofObj
+            |> Option.defaultValue "en-US"
+            |> LanguageIdentifier
+
+        let baseName = 
+            opts.BaseName
+            |> Option.ofObj
+            |> Option.defaultWith 
+                ^ fun () -> Path.name currentDirectory
+            |> XLIFFBaseName
+
+        let outputDirectory = Path.parse opts.OutputDirectory
+
+        API.export sourceLanguage baseName outputDirectory
+
+    | :? ImportOptions as opts ->
+        let xlfFilePaths =
+            opts.Files
+            |> Seq.map ^ fun file -> currentDirectory |> Path.extend file
+            |> Seq.toList
+        API.import xlfFilePaths
+
+    | x -> failwithf "internal error: %A" x
+
+let failed = 5
+let ok = 0
+
+let protectedMain args =
+
+    let result = 
+        args 
+        |> Parser.Default.ParseArguments<AddOptions, UpdateOptions>
+
+    match result with
+    | :? CommandLine.Parsed<obj> as command ->
+        dispatch command.Value
+        |> Output.run Console.WriteLine
+        |> function
+        | API.Failed -> failed
+        | API.Succeeded -> ok
+
+    | :? CommandLine.NotParsed<obj> as np 
+        -> failwithf "command line error: %A" (Seq.toList np.Errors)
+    | x -> failwithf "internal error: %A" x
+
 [<EntryPoint>]
 let main args =
-
-    let failed = 5
-    let ok = 0
-
     try
-        let currentDirectory = Directory.current()
-
-        let result = 
-            args 
-            |> Parser.Default.ParseArguments<AddOptions, UpdateOptions>
-
-        match result with
-        | :? CommandLine.Parsed<obj> as command ->
-
-            let output =
-                match command.Value with
-                | :? AddOptions as opts -> 
-                    API.add 
-                        (LanguageIdentifier(opts.Language)) 
-                        (opts.Assembly |> Option.ofObj |> Option.map AssemblyPath)
-                | :? UpdateOptions as opts ->
-                    API.update
-                        (opts.Assembly |> Option.ofObj |> Option.map AssemblyPath)
-                | :? ExportOptions as opts ->
-
-                    let sourceLanguage =
-                        opts.SourceLanguage
-                        |> Option.ofObj
-                        |> Option.defaultValue "en-US"
-                        |> LanguageIdentifier
-
-                    let baseName = 
-                        opts.BaseName
-                        |> Option.ofObj
-                        |> Option.defaultWith 
-                            ^ fun () -> Path.name currentDirectory
-                        |> XLIFFBaseName
-
-                    let outputDirectory = Path.parse opts.OutputDirectory
-
-                    API.export sourceLanguage baseName outputDirectory
-
-                | :? ImportOptions as opts ->
-                    let xlfFilePaths =
-                        opts.Files
-                        |> Seq.map ^ fun file -> currentDirectory |> Path.extend file
-                        |> Seq.toList
-                    API.import xlfFilePaths
-
-                | x -> failwithf "internal error: %A" x
-
-            let result = Output.run Console.WriteLine output
-            match result with
-            | API.Failed -> failed
-            | API.Succeeded -> ok
-
-        | :? CommandLine.NotParsed<obj> as np 
-            -> failwithf "command line error: %A" (Seq.toList np.Errors)
-        | x -> failwithf "internal error: %A" x
-
+        protectedMain args
     with e ->
         printfn "%s" (string e)
         failed
