@@ -31,17 +31,16 @@ let createNewLanguage (language: LanguageIdentifier) (assemblyPath: AssemblyPath
     yield I ^ sprintf "found no language '%s' for '%s', adding one" (string language) (string assemblyFilename)
     let! strings = extract assemblyPath
     let id = TranslationId(assemblyPath, language)
-    let filename = TranslationFilename.ofId id
+    let translation = Translation.createNew id strings
     let translationPath = 
-        Directory.current() |> Path.extend (string filename)
-    Translation.createNew id strings
-    |> Translation.save translationPath
-    yield I ^ sprintf "new translation saved to '%s'" (string filename)
+        translation |> Translation.path (Directory.current())
+    translation |> Translation.save translationPath
+    yield I ^ sprintf "new translation saved to '%s'" (string (Path.name translationPath))
 }
 
 let add (language: LanguageIdentifier) (assembly: AssemblyPath option) : ResultCode output = output {
     let currentDirectory = Directory.current()
-    let translations = Translations.loadAll (TranslationDirectory.ofPath currentDirectory)
+    let translations = Translations.loadAll currentDirectory
     let group = TranslationGroup.fromTranslations translations
     match group with
     | Error(error) ->
@@ -80,7 +79,6 @@ let update (assembly: AssemblyPath option) = output {
     return Failed
 }
 
-
 let export 
     (sourceLanguage: LanguageIdentifier) 
     (baseName: XLIFFBaseName)
@@ -93,35 +91,35 @@ let export
         yield! TranslationGroup.errorString error
         return Failed
     | Ok(group) ->
-        let allExports = 
-            group
-            |> TranslationGroup.translations
-            |> List.groupBy Translation.language
-            |> Seq.map ^ fun (language, translations) -> 
-                let path = 
-                    baseName
-                    |> XLIFFBaseName.filePathForLanguage language outputDirectory 
-                let files = ImportExport.export translations
-                path, XLIFF.generateV12 sourceLanguage files
+    let allExports = 
+        group
+        |> TranslationGroup.translations
+        |> List.groupBy Translation.language
+        |> Seq.map ^ fun (language, translations) -> 
+            let path = 
+                baseName
+                |> XLIFFBaseName.filePathForLanguage language outputDirectory 
+            let files = ImportExport.export translations
+            path, XLIFF.generateV12 sourceLanguage files
 
-        let existingOnes = 
-            allExports
-            |> Seq.map fst
-            |> Seq.filter File.exists
-            |> Seq.toList
+    let existingOnes = 
+        allExports
+        |> Seq.map fst
+        |> Seq.filter File.exists
+        |> Seq.toList
 
-        if existingOnes <> [] then
-            yield E ^ sprintf "one or more exported files already exists, please remove them or use the -f option"
-            for existingFile in existingOnes do
-                yield E ^ sprintf "  %s" (string existingFile)
-            return Failed
-        else
+    if existingOnes <> [] then
+        yield E ^ sprintf "one or more exported files already exists, please remove them"
+        for existingFile in existingOnes do
+            yield E ^ sprintf "  %s" (string existingFile)
+        return Failed
+    else
 
-        for (file, content) in allExports do
-            yield I ^ sprintf "exporting language '%s' to '%s'" (string sourceLanguage) (string file)
-            File.saveText Encoding.UTF8 (string content) file
+    for (file, content) in allExports do
+        yield I ^ sprintf "exporting language '%s' to '%s'" (string sourceLanguage) (string file)
+        File.saveText Encoding.UTF8 (string content) file
 
-        return Succeeded
+    return Succeeded
 }
 
 let import (files: Path list) : ResultCode output = output {
@@ -132,7 +130,32 @@ let import (files: Path list) : ResultCode output = output {
         yield! TranslationGroup.errorString error
         return Failed
     | Ok(group) ->
-    
+    let files = 
+        files 
+        |> Seq.map ^ File.loadText Encoding.UTF8
+        |> Seq.map XLIFF.XLIFFV12
+        |> Seq.collect XLIFF.parseV12
+        |> Seq.toList
+
+    let translations, warnings = 
+        let translations = TranslationGroup.translations group
+        files 
+        |> ImportExport.import translations
+
+    if warnings <> [] then
+        yield I ^ "import warnings:"
+        for warning in warnings do
+            yield W ^ sprintf "  %s" (string warning)
+
+    if translations <> [] then
+        yield I ^ sprintf "translations changed and will be updated"
+        for translation in translations do
+            yield I ^ sprintf "  updating '%s'" (string ^ Translation.filename translation)
+            let path = Translation.path currentDirectory translation
+            translation |> Translation.save path 
+    else
+        yield I ^ sprintf "no translations changed"
+
     return Succeeded
 }
 

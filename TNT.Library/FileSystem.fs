@@ -7,11 +7,12 @@ open System.Text
 open FunToolbox.FileSystem
 open TNT.Model
 open TNT.Library.Paths
+open TNT.Library.Translation
         
 module TranslationFilenames =
     
     /// Get all translation filenames in the given directory.
-    let inDirectory (directory: TranslationDirectory) : TranslationFilename list = 
+    let inDirectory (directory: Path) : TranslationFilename list = 
         Directory.EnumerateFiles (string directory, "*.tnt")
         |> Seq.map (Path.parse >> Path.name >> TranslationFilename)
         |> Seq.toList
@@ -24,6 +25,15 @@ module Translation =
         |> File.loadText Encoding.UTF8
         |> Translation.deserialize
 
+    /// The filename of the translation
+    let filename (translation: Translation) : TranslationFilename =
+        TranslationFilename.ofId (Translation.id translation)
+
+    /// The full path of the translation
+    let path (directory: Path) (translation: Translation) : Path =
+        let filename = filename translation
+        directory |> Path.extend (string filename)
+
     /// Save a translation to the given path, overwrites if a file exists there.
     let save (path: Path) (translation: Translation) =
         translation
@@ -32,19 +42,34 @@ module Translation =
 
 module Translations = 
 
-    /// Load all the translations in the given directory.    
-    let loadAll (directory: TranslationDirectory) : Translation list = 
+    /// Load all the translations in the given directory.
+    let loadAll (directory: Path) : Translation list = 
+
+        // Note that we can't support filenames to diverge from the translation id's
+        // to maintain the export / import integrity.
+        let checkFilename filename translation = 
+            let expected = string ^ Translation.filename translation
+            if filename <> expected then
+                failwithf "can't load translation with filename '%s', it must be '%s', did you rename it?" filename expected
 
         TranslationFilenames.inDirectory directory
         |> Seq.map ^ fun fn -> 
             directory
             |> TranslationDirectory.extend fn
-        |> Seq.map Translation.load
+        |> Seq.map ^ fun path ->
+            let translation = Translation.load path
+            checkFilename (Path.name path) translation
+            translation
         |> Seq.toList
+
+    let saveAll (directory: Path) (translations: Translation list) =
+        translations
+        |> Seq.map ^ fun t -> Translation.path directory t, t
+        |> Seq.iter ^ uncurry Translation.save
 
 module TranslationGroup = 
     
     let load (directory: Path) = 
-        let translations = Translations.loadAll (TranslationDirectory.ofPath directory)
+        let translations = Translations.loadAll directory
         TranslationGroup.fromTranslations translations
 

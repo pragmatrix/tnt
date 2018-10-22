@@ -8,15 +8,8 @@ open FunToolbox.FileSystem
 
 module TranslationDirectory = 
 
-    let ofPath (path: Path) = 
-        TranslationDirectory(string path)
-
-    let toPath (dir: TranslationDirectory) = 
-        Path.parse (string dir)
-
-    let extend (file: TranslationFilename) (dir: TranslationDirectory) =
+    let extend (file: TranslationFilename) (dir: Path) =
         dir 
-        |> toPath
         |> Path.extend (string file)
 
 module AssemblyFilename = 

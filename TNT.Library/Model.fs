@@ -81,13 +81,6 @@ type Translation =
 type TranslationSet = 
     | TranslationSet of assembly: AssemblyPath * set: Map<LanguageIdentifier, Translation>
 
-/// An absolute path to the directory where translations are in.
-[<Struct>]
-type TranslationDirectory = 
-    | TranslationDirectory of string
-    override this.ToString() = 
-        this |> function TranslationDirectory dir -> dir
-
 /// A translation group is a group of translations that can be stored inside
 /// _one_ directory. This means that only one translation for a langauge identifier
 /// can exist for one AssemblyFileName.
