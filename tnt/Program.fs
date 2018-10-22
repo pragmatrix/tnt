@@ -1,9 +1,9 @@
 ﻿open System
-open CommandLine
 open TNT.Model
 open TNT.Library
 open TNT.Library.Output
 open FunToolbox.FileSystem
+open CommandLine
 
 [<Verb("add", HelpText = "Add a new language to all existing translations or to one specific assembly.")>]
 type AddOptions = {
