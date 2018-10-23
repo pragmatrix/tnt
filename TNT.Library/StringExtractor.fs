@@ -14,7 +14,7 @@ module private Private =
         "System.String TNT.FSharp.Extensions::String.get_t(System.String)"
     |]
 
-    let extractFromInstructions (instructions : Instruction seq) = 
+    let extractFromInstructions (instructions : Instruction seq) : string seq = 
 
         let isTranslationCall (instruction: Instruction) = 
             match instruction.OpCode with
@@ -24,17 +24,15 @@ module private Private =
                     TFunctions |> Array.contains md.FullName
                 | _ -> false
             | _ -> false
-            
 
         instructions
-        |> Seq.map ^ fun instruction -> 
+        |> Seq.choose ^ fun instruction -> 
             match instruction.OpCode with
             | op when op = OpCodes.Ldstr 
                 && instruction.Next <> null 
                 && isTranslationCall instruction.Next
                 -> Some ^ string instruction.Operand
             | _ -> None
-        |> Seq.choose id
 
 let extract (name: AssemblyPath) : string list = 
 
