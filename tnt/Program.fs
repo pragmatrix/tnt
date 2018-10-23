@@ -7,7 +7,6 @@ open CommandLine
 
 [<Verb("add", HelpText = "Add a new language to all existing translations or to one specific assembly.")>]
 type AddOptions = {
-
     // http://www.i18nguy.com/unicode/language-identifiers.html
     // https://www.ietf.org/rfc/rfc3066.txt
     [<Option('l', "lang", Required = true, HelpText = "Language identifier (code ['-' region]) of the language to be translated to.")>]
@@ -19,10 +18,13 @@ type AddOptions = {
 
 [<Verb("update", HelpText = "Extract all strings from all assemblies or one specific assembly and update the translation files.")>]
 type UpdateOptions = {
-
     [<Value(0, HelpText = "Relative path of the asseembly file.")>]
     Assembly: string
 }
+
+[<Verb("info", HelpText = "Show all the translations in the current directory")>]
+type InfoOptions() = 
+    class end
 
 [<Verb("export", HelpText = "Export all strings from all translation to an XLIFF file")>]
 type ExportOptions = {
@@ -43,6 +45,7 @@ type ImportOptions = {
 let private argumentTypes = [|
     typeof<AddOptions>
     typeof<UpdateOptions>
+    typeof<InfoOptions>
     typeof<ImportOptions>
     typeof<ExportOptions>
 |]
@@ -56,9 +59,14 @@ let dispatch (command: obj) =
         API.add 
             (LanguageIdentifier(opts.Language)) 
             (opts.Assembly |> Option.ofObj |> Option.map AssemblyPath)
+
     | :? UpdateOptions as opts ->
         API.update
             (opts.Assembly |> Option.ofObj |> Option.map AssemblyPath)
+
+    | :? InfoOptions ->
+        API.info()
+
     | :? ExportOptions as opts ->
 
         let sourceLanguage =

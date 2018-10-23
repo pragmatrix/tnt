@@ -1,5 +1,6 @@
 ﻿module TNT.Library.API
 
+open System
 open System.Text
 open System.Runtime.CompilerServices
 open FunToolbox.FileSystem
@@ -36,6 +37,53 @@ let createNewLanguage (language: LanguageIdentifier) (assemblyPath: AssemblyPath
         translation |> Translation.path (Directory.current())
     translation |> Translation.save translationPath
     yield I ^ sprintf "new translation saved to '%s'" (string (Path.name translationPath))
+}
+
+let private loadGroups() : Result<TranslationGroup, ResultCode> output = output {
+    let currentDirectory = Directory.current()
+    let translations = Translations.loadAll currentDirectory
+    let group = TranslationGroup.fromTranslations translations
+    match group with
+    | Error(error) ->
+        yield! TranslationGroup.errorString error
+        return Error(Failed)
+    | Ok(group) ->
+        return Ok(group)
+}
+
+/// tbd: funtoolbox candidate. (also Seq & list)
+module Array = 
+    let (|IsEmpty|IsNotEmpty|) (array: 'e array) =
+        match array with
+        | [||] -> IsEmpty
+        | _ -> IsNotEmpty array
+
+let info() : ResultCode output = output {
+    let! groups = loadGroups()
+    match groups with
+    | Error(code) ->
+        return code
+    | Ok(group) ->
+
+    let translations = TranslationGroup.translations group
+    let keys = 
+        translations 
+        |> Seq.map ^ 
+            fun translation ->
+                let (TranslationId(path, lang)) = Translation.id translation
+                let filename = AssemblyFilename.ofPath path
+                (lang, filename), path
+        |> Seq.sort
+        |> Seq.toArray
+
+    match keys with
+    | Array.IsEmpty when not Console.IsOutputRedirected -> 
+        yield I ^ "No translations found"
+    | keys ->
+        for (lang, filename), path in keys do
+            yield I ^ sprintf "[%s:%s] %s" (string lang) (string filename) (string path)
+
+    return Succeeded
 }
 
 let add (language: LanguageIdentifier) (assembly: AssemblyPath option) : ResultCode output = output {

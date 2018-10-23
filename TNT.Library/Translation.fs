@@ -80,7 +80,7 @@ module Translation =
 
         JsonConvert.SerializeObject(json, Formatting.Indented)
         
-    let id (Translation(id, _)) = id
+    let id (Translation(id, _)) : TranslationId = id
     let records (Translation(_, records)) = records
     let language = id >> function TranslationId(identifier = identifier) -> identifier
     let assemblyPath = id >> function TranslationId(path = path) -> path
