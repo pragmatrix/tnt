@@ -98,7 +98,7 @@ let generateV12 (files: File list) : XLIFFV12 =
                     ]
                     yield e "body" [
                         // Although optional, Multilingual App Toolkit for Windows requires <group> for loading
-                        // _and_ the id attribute for saving the xliff propertly.
+                        // _and_ the id attribute for saving the xliff properly.
                         yield e "group" [
                             yield a "id" (Hash.ofString ^ string file.Name)
                             for unit in file.TranslationUnits do
