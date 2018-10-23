@@ -7,3 +7,4 @@ obj/
 /*.ncrunchsolution.user
 /tmp/
 /tnt/Properties/launchSettings.json
+*.user
