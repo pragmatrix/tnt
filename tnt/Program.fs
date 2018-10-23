@@ -22,7 +22,7 @@ type AddOptions = {
 
 [<Verb("update", HelpText = "Extract all strings from all assemblies or one specific assembly and update the translation files.")>]
 type UpdateOptions = {
-    [<Value(0, HelpText = "Relative path of the asseembly file.")>]
+    [<Value(0, HelpText = "Relative path of the assembly file.")>]
     Assembly: string
 }
 
