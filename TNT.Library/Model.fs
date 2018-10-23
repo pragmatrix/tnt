@@ -88,6 +88,24 @@ type TranslationSet =
 type TranslationGroup = 
     | TranslationGroup of Map<AssemblyFilename, TranslationSet>
 
+[<Struct>]
+type TranslationStatus = {
+    New: int
+    NeedsReview: int
+    Final: int
+    Unused: int
+} with
+    override this.ToString() = 
+        [
+            "n", this.New
+            "r", this.NeedsReview
+            "f", this.Final
+            "u", this.Unused 
+        ]
+        |> Seq.filter ^ fun (_, v) -> v <> 0
+        |> Seq.map ^ fun (indicator, v) -> (string v) + indicator
+        |> String.concat ","
+
 [<Struct>]    
 type MachineTranslationService = 
     | Google

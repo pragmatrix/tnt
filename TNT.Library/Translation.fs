@@ -89,6 +89,34 @@ module Translation =
         let translatedStrings = strings |> List.map TranslationRecord.createNew
         Translation(id, translatedStrings)
 
+module TranslationStatus =
+
+    let combine (l: TranslationStatus) (r: TranslationStatus) = {
+        New = l.New + r.New
+        NeedsReview = l.NeedsReview + r.NeedsReview
+        Final = l.Final + r.Final
+        Unused = l.Unused + r.Unused
+    }
+
+    let ofTranslation (translation: Translation) : TranslationStatus = 
+    
+        let ``new``, needsReview, final, unused = 
+            { New = 1; NeedsReview = 0; Final = 0; Unused = 0 },
+            { New = 0; NeedsReview = 1; Final = 0; Unused = 0 },
+            { New = 0; NeedsReview = 0; Final = 1; Unused = 0 },
+            { New = 0; NeedsReview = 0; Final = 0; Unused = 1 }
+
+        let statusOf = function
+            | TranslatedString.New -> ``new``
+            | TranslatedString.NeedsReview _ -> needsReview
+            | TranslatedString.Final _ -> final
+            | TranslatedString.Unused _ -> unused
+
+        translation
+        |> Translation.records
+        |> Seq.map ^ fun r -> statusOf r.Translated
+        |> Seq.reduce combine
+
 module Translations = 
 
     /// All the ids (sorted and duplicates removed) from a list of translations.

@@ -72,16 +72,17 @@ let status() : ResultCode output = output {
             fun translation ->
                 let (TranslationId(path, lang)) = Translation.id translation
                 let filename = AssemblyFilename.ofPath path
-                (lang, filename), path
-        |> Seq.sort
+                let status = TranslationStatus.ofTranslation translation
+                (lang, filename), (status, path)
+        |> Seq.sortBy fst
         |> Seq.toArray
 
     match keys with
     | Array.IsEmpty when not Console.IsOutputRedirected -> 
         yield I ^ "No translations found"
     | keys ->
-        for (lang, filename), path in keys do
-            yield I ^ sprintf "[%s:%s] %s" (string lang) (string filename) (string path)
+        for (lang, filename), (status, path) in keys do
+            yield I ^ sprintf "[%s:%s][%s] %s" (string lang) (string filename) (string status) (string path)
 
     return Succeeded
 }
