@@ -16,8 +16,11 @@ let file name lang units = {
     TranslationUnits = units 
 }
 
-let translation path language records = 
-    Translation (TranslationId(AssemblyPath(path), LanguageIdentifier(language)), records)
+let translation path language records = {
+    Assembly = { Language = LanguageIdentifier ""; Path = AssemblyPath path }
+    Language = LanguageIdentifier language
+    Records = records
+}
 
 let tu original translated state = {
     Source = original
@@ -30,7 +33,7 @@ let record original translated = {
     Translated = translated
 }
 
-let key name lang = ImportKey(AssemblyFilename name, LanguageIdentifier lang)
+let key name lang = TranslationId(AssemblyFilename name, LanguageIdentifier lang)
 
 let emptyTranslations : Translation list = []
 let emptyWarnings : ImportWarning list = []

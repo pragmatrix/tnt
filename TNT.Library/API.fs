@@ -27,12 +27,11 @@ type ResultCode =
     | Failed
     | Succeeded
 
-let createNewLanguage (language: LanguageIdentifier) (assemblyPath: AssemblyPath) : unit output = output {
-    let assemblyFilename = assemblyPath |> AssemblyFilename.ofPath
+let createNewLanguage (assembly: AssemblyInfo) (language: LanguageIdentifier) : unit output = output {
+    let assemblyFilename = assembly.Path |> AssemblyFilename.ofPath
     yield I ^ sprintf "found no language '%s' for '%s', adding one" (string language) (string assemblyFilename)
-    let! strings = extract assemblyPath
-    let id = TranslationId(assemblyPath, language)
-    let translation = Translation.createNew id strings
+    let! strings = extract assembly.Path
+    let translation = Translation.createNew assembly language strings
     let translationPath = 
         translation |> Translation.path (Directory.current())
     translation |> Translation.save translationPath
@@ -70,10 +69,9 @@ let status() : ResultCode output = output {
         translations 
         |> Seq.map ^ 
             fun translation ->
-                let (TranslationId(path, lang)) = Translation.id translation
-                let filename = AssemblyFilename.ofPath path
+                let (TranslationId(filename, lang)) = Translation.id translation
                 let status = TranslationStatus.ofTranslation translation
-                (lang, filename), (status, path)
+                (lang, filename), (status, translation.Assembly.Path)
         |> Seq.sortBy fst
         |> Seq.toArray
 
@@ -87,7 +85,7 @@ let status() : ResultCode output = output {
     return Succeeded
 }
 
-let add (language: LanguageIdentifier) (assembly: AssemblyPath option) : ResultCode output = output {
+let add (language: LanguageIdentifier) (assemblyLanguage: LanguageIdentifier option, assemblyPath: AssemblyPath option) : ResultCode output = output {
     let currentDirectory = Directory.current()
     let translations = Translations.loadAll currentDirectory
     let group = TranslationGroup.fromTranslations translations
@@ -97,18 +95,22 @@ let add (language: LanguageIdentifier) (assembly: AssemblyPath option) : ResultC
         return Failed
     | Ok(group) ->
 
-    match assembly with
+    match assemblyPath with
     | Some assemblyPath -> 
         let assemblyFilename = assemblyPath |> AssemblyFilename.ofPath
         let set = group |> TranslationGroup.set assemblyFilename
         match set with
         | None -> 
-            do! createNewLanguage language assemblyPath
+            let assembly = { 
+                Language = defaultArg assemblyLanguage (LanguageIdentifier "en-US")
+                Path = assemblyPath 
+            }
+            do! createNewLanguage assembly language
             return Succeeded
         | Some set ->
-            let setPath = TranslationSet.assemblyPath set
-            if setPath <> assemblyPath then
-                yield E ^ sprintf "assembly path '%s' in the translations files does not match '%s'" (string setPath) (string assemblyPath)
+            let setAssembly = TranslationSet.assembly set
+            if setAssembly.Path <> assemblyPath then
+                yield E ^ sprintf "assembly path '%s' in the translations files does not match '%s'" (string setAssembly.Path) (string assemblyPath)
                 return Succeeded
             else
             match set |> TranslationSet.translation language with
@@ -116,7 +118,7 @@ let add (language: LanguageIdentifier) (assembly: AssemblyPath option) : ResultC
                 yield W ^ sprintf "language '%s' already exists for '%s', doing nothing" (string language) (string assemblyFilename)
                 return Failed
             | None ->
-                do! createNewLanguage language assemblyPath
+                do! createNewLanguage setAssembly language
                 return Succeeded
     | None ->
         yield E "Adding a language to all available assemblies is unsupported yet"
@@ -143,7 +145,7 @@ let export
     let allExports = 
         group
         |> TranslationGroup.translations
-        |> List.groupBy Translation.language
+        |> List.groupBy ^ fun t -> t.Language
         |> Seq.map ^ fun (language, translations) -> 
             let path = 
                 baseName

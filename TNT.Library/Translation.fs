@@ -11,13 +11,18 @@ module Translation =
     [<AutoOpen>]
     module public SerializationTypes =
 
-        type TranslationFile = {
-            assembly: string
+        type Assembly = {
+            path: string
             language: string
-            strings: string[][]
         }
 
-        let deserializeTranslatedString (strings: string[]) = 
+        type TranslationFile = {
+            assembly: Assembly
+            language: string
+            records: string[][]
+        }
+
+        let deserializeTranslationRecord (strings: string[]) = 
             if strings.Length < 3 then 
                 failwithf 
                     "expect a translation string to be an array of at least three strings, the state, the original, the translated. (length: %d)" 
@@ -56,38 +61,49 @@ module Translation =
             json
             |> JsonConvert.DeserializeObject<TranslationFile>
 
-        let translations = 
-            file.strings 
-            |> Seq.map deserializeTranslatedString
+        let records = 
+            file.records 
+            |> Seq.map deserializeTranslationRecord
             |> Seq.toList
 
-        Translation(
-            TranslationId(
-                AssemblyPath(file.assembly), 
-                LanguageIdentifier(file.language))
-            , translations)
+        let assembly = file.assembly
+
+        {
+            Assembly = { 
+                Path = AssemblyPath(assembly.path)
+                Language = LanguageIdentifier(assembly.language) 
+            }
+            Language = LanguageIdentifier(file.language)
+            Records = records
+        }
     
-    let serialize (Translation(TranslationId(assembly, language), strings)) : string = 
+    let serialize (translation: Translation) : string = 
+
+        let assembly = translation.Assembly
 
         let json = {
-            assembly = string assembly
-            language = string language
-            strings = 
-                strings
+            assembly = { 
+                path = string assembly
+                language = string assembly.Language
+            }
+            language = string translation.Language
+            records = 
+                translation.Records
                 |> Seq.map serializeTranslatedString
                 |> Seq.toArray
         }
 
         JsonConvert.SerializeObject(json, Formatting.Indented)
         
-    let id (Translation(id, _)) : TranslationId = id
-    let records (Translation(_, records)) = records
-    let language = id >> function TranslationId(identifier = identifier) -> identifier
-    let assemblyPath = id >> function TranslationId(path = path) -> path
-    let assemblyFilename = assemblyPath >> AssemblyFilename.ofPath
-    let createNew id strings = 
-        let translatedStrings = strings |> List.map TranslationRecord.createNew
-        Translation(id, translatedStrings)
+    let id (translation: Translation) = 
+        TranslationId(translation.Assembly.Path |> AssemblyFilename.ofPath, translation.Language)
+    let assemblyFilename (translation: Translation) = 
+        id translation |> function TranslationId(filename, _) -> filename
+    let createNew assembly language originalStrings = {
+        Assembly = assembly
+        Language = language
+        Records = originalStrings |> List.map TranslationRecord.createNew
+    }
 
 module TranslationStatus =
 
@@ -112,31 +128,16 @@ module TranslationStatus =
             | TranslatedString.Final _ -> final
             | TranslatedString.Unused _ -> unused
 
-        translation
-        |> Translation.records
+        translation.Records
         |> Seq.map ^ fun r -> statusOf r.Translated
         |> Seq.reduce combine
 
 module Translations = 
 
     /// All the ids (sorted and duplicates removed) from a list of translations.
-    let ids (translations: Translation list) =
-        let id (Translation(id = id)) = id
-
+    let ids (translations: Translation list) : TranslationId list =
         translations
-        |> Seq.map id
-        |> Seq.sort
-        |> Seq.distinct
-        |> Seq.toList
-
-module TranslationIds =
-    
-    /// All the assemblies (sorted and duplicates removed) from the list of ids.
-    let assemblyPaths (translations: TranslationId list) =
-        let path (TranslationId(path = path)) = path
-
-        translations
-        |> Seq.map path
+        |> Seq.map Translation.id
         |> Seq.sort
         |> Seq.distinct
         |> Seq.toList
@@ -146,7 +147,7 @@ module TranslationSet =
     let map f (TranslationSet(assembly, set)) = 
         TranslationSet(f (assembly, set))
 
-    let assemblyPath (TranslationSet(path, _)) = path
+    let assembly (TranslationSet(assembly, _)) = assembly
 
     let translations (TranslationSet(_, set)) = 
         set 
@@ -159,18 +160,18 @@ module TranslationSet =
         |> Map.tryFind language
 
     /// Add or update a translation in a translation set.
-    let addOrUpdate (translation: Translation) (TranslationSet(path, set)) = 
-        let language = Translation.language translation
-        let translationPath = Translation.assemblyPath translation
-        if translationPath <> path then
+    let addOrUpdate (translation: Translation) (TranslationSet(assembly, set)) = 
+        let language = translation.Language
+        let translationAssembly = translation.Assembly
+        if translationAssembly <> assembly then
             failwithf 
-                "unexpected assembly path for '%s' translation '%s', should be '%s'" 
+                "unexpected assembly for language '%s' translation '%s', should be '%s'" 
                 (string language)
-                (string translationPath)
-                (string path)
+                (string translationAssembly)
+                (string assembly)
         else
         let newSet = set |> Map.add language translation
-        TranslationSet(path, newSet)
+        TranslationSet(assembly, newSet)
 
     type TSError = 
         | DifferentAssemblyPaths of AssemblyPath list
@@ -181,7 +182,7 @@ module TranslationSet =
 
         let byPath =
             translations
-            |> List.groupBy ^ Translation.assemblyPath
+            |> List.groupBy ^ fun t -> t.Assembly
 
         if byPath.Length <> 1 then
             failwithf "internal error, unexpected assembly path differences: %A" (byPath |> List.map fst)
@@ -193,7 +194,7 @@ module TranslationSet =
 
         let map = 
             translations
-            |> Seq.map ^ fun t -> Translation.language t, t
+            |> Seq.map ^ fun t -> t.Language, t
             |> Map.ofSeq 
 
         TranslationSet(path, map)
@@ -215,8 +216,7 @@ module TranslationGroup =
         // find different AssemblyPaths that point to the same filename.
         let overlappingAssemblies =
             translations
-            |> Translations.ids
-            |> TranslationIds.assemblyPaths
+            |> List.map ^ fun t -> t.Assembly.Path
             |> List.groupBy ^ AssemblyFilename.ofPath
             |> Seq.filter (snd >> function _::_::_ -> true | _ -> false)
             |> Seq.toList
@@ -227,9 +227,9 @@ module TranslationGroup =
 
         // check for duplicated languages
 
-        let duplicatedList = 
+        let duplicatedList =
             translations
-            |> List.groupBy (fun t -> Translation.assemblyFilename t, Translation.language t)
+            |> List.groupBy ^ fun t -> Translation.assemblyFilename t, t.Language
             |> Seq.filter (snd >> function _::_::_ -> true | _ -> false)
             |> Seq.toList
 

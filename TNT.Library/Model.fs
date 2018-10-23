@@ -65,21 +65,36 @@ type TranslationRecord = {
 module TranslationRecord = 
     let createNew original = { Original = original; Translated = TranslatedString.New }
 
+/// Information about an assembly.
 [<Struct>]
-type TranslationId = 
-    | TranslationId of path: AssemblyPath * identifier: LanguageIdentifier
+type AssemblyInfo = {
+    Language: LanguageIdentifier
+    Path: AssemblyPath
+} with
+    override this.ToString() = 
+        sprintf "[%s]%s" (string this.Language) (string this.Path)
 
 /// A translation of an assembly.
 [<Struct>]
-type Translation = 
-    | Translation of id: TranslationId * records: TranslationRecord list
+type Translation = {
+    Assembly: AssemblyInfo
+    Language: LanguageIdentifier
+    Records: TranslationRecord list
+} 
+
+/// The identity of a translation.
+[<Struct>]
+type TranslationId = 
+    | TranslationId of fillename: AssemblyFilename * language: LanguageIdentifier
+    override this.ToString() = 
+        this |> function TranslationId(filename, language) -> sprintf "[%O:%O]" filename language
 
 /// A translation set is a set of translations that 
 /// all have different language identifiers and point to the same assembly path.
 
 [<Struct>]
 type TranslationSet = 
-    | TranslationSet of assembly: AssemblyPath * set: Map<LanguageIdentifier, Translation>
+    | TranslationSet of assembly: AssemblyInfo * set: Map<LanguageIdentifier, Translation>
 
 /// A translation group is a group of translations that can be stored inside
 /// _one_ directory. This means that only one translation for a langauge identifier

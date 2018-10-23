@@ -10,13 +10,16 @@ open Xunit
 
 let record original translated = { Original = original; Translated = translated }
 
-let translations = [
-    Translation (TranslationId(AssemblyPath("/tmp/test.dll"), LanguageIdentifier("de-DE")), [
-        record "New" TranslatedString.New
-        record "Auto" ^ TranslatedString.NeedsReview "Automatically Translated"
-        record "Reviewed" ^ TranslatedString.Final "Reviewed"
-        record "Unused" ^ TranslatedString.Unused "Unused"
-    ])
+let translations = [ { 
+        Assembly = { Language = LanguageIdentifier(""); Path = AssemblyPath("/tmp/test.dll") }
+        Language = LanguageIdentifier("de-DE")
+        Records = [
+            record "New" TranslatedString.New
+            record "Auto" ^ TranslatedString.NeedsReview "Automatically Translated"
+            record "Reviewed" ^ TranslatedString.Final "Reviewed"
+            record "Unused" ^ TranslatedString.Unused "Unused"
+        ]
+    }
 ]
 
 let linesOf (str: string) =

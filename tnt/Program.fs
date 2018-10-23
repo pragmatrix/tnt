@@ -9,6 +9,10 @@ open CommandLine
 type AddOptions = {
     // http://www.i18nguy.com/unicode/language-identifiers.html
     // https://www.ietf.org/rfc/rfc3066.txt
+
+    [<Option("alang", HelpText = "Language identifier (code ['-' region]) of the language of the assemblies, default is 'en-US'.")>]
+    AssemblyLanguage: string
+
     [<Option('l', "lang", Required = true, HelpText = "Language identifier (code ['-' region]) of the language to be translated to.")>]
     Language: string
 
@@ -57,8 +61,9 @@ let dispatch (command: obj) =
     match command with
     | :? AddOptions as opts -> 
         API.add 
-            (LanguageIdentifier(opts.Language)) 
-            (opts.Assembly |> Option.ofObj |> Option.map AssemblyPath)
+            (LanguageIdentifier(opts.Language))
+            ( opts.AssemblyLanguage |> Option.ofObj |> Option.map LanguageIdentifier
+            , opts.Assembly |> Option.ofObj |> Option.map AssemblyPath)
 
     | :? UpdateOptions as opts ->
         API.update

@@ -22,8 +22,7 @@ module AssemblyFilename =
 
 module TranslationFilename =
 
-    let ofId (TranslationId(assemblyPath, language)) : TranslationFilename =
-        let assemblyFilename = AssemblyFilename.ofPath assemblyPath
+    let ofId (TranslationId(assemblyFilename, language)) : TranslationFilename =
         sprintf "%s-%s.tnt" (string assemblyFilename) (string language)
         |> TranslationFilename
 

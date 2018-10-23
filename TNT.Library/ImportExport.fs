@@ -22,30 +22,22 @@ let export (translations: Translation list) : File list =
             State = state
         }
 
-    let toFile (Translation(TranslationId(path, language), records)) = {
-        Name = AssemblyFilename.ofPath path
-        TargetLanguage = language
-        TranslationUnits = records |> List.choose toUnit
+    let toFile (translation: Translation) = {
+        Name = AssemblyFilename.ofPath translation.Assembly.Path
+        TargetLanguage = translation.Language
+        TranslationUnits = translation.Records |> List.choose toUnit
     }
 
     translations
     |> List.map toFile
 
-/// Import a number of files into a group, and return the new translations.
-
-[<Struct>]
-type ImportKey = 
-    | ImportKey of AssemblyFilename * LanguageIdentifier
-    override this.ToString() = 
-        this |> function ImportKey(name, language) -> sprintf "[%O:%O]" name language
-
 type ImportWarning = 
-    | DuplicateImports of ImportKey
-    | TranslationNotFound of ImportKey
-    | OriginalStringNotFound of ImportKey * TranslationUnit
-    | UnusedTranslationChanged of ImportKey * (TranslationRecord * TranslationRecord)
-    | IgnoredNewWithTranslation of ImportKey * (TranslationRecord * TranslationUnit)
-    | IgnoredNewReset of ImportKey * (TranslationRecord * TranslationUnit)
+    | DuplicateImports of TranslationId
+    | TranslationNotFound of TranslationId
+    | OriginalStringNotFound of TranslationId * TranslationUnit
+    | UnusedTranslationChanged of TranslationId * (TranslationRecord * TranslationRecord)
+    | IgnoredNewWithTranslation of TranslationId * (TranslationRecord * TranslationUnit)
+    | IgnoredNewReset of TranslationId * (TranslationRecord * TranslationUnit)
     override this.ToString() =
         match this with
         | DuplicateImports key 
@@ -61,21 +53,18 @@ type ImportWarning =
         | IgnoredNewReset(key, (record, _)) 
             -> sprintf "%O: ignored translation to state new, even though it wasn't new anymore: '%s'" key record.Original
 
+/// Import a number of translations and return the translations that changed.
 let import (translations: Translation list) (files: File list) 
     : Translation list * ImportWarning list =
 
     // find duplicates in the file list.
 
-    let key name lang = ImportKey(name, lang)
-    let keyOfTranslation (translation: Translation) : ImportKey =
-        key (Translation.assemblyFilename translation) (Translation.language translation)
-
-    let keyOfFile file = 
-        key file.Name file.TargetLanguage 
+    let idOfFile file = 
+        TranslationId(file.Name, file.TargetLanguage)
 
     let duplicates = 
         files
-        |> Seq.groupBy ^ keyOfFile
+        |> Seq.groupBy ^ idOfFile
         |> Seq.filter ^ fun (_, files) -> Seq.length files > 1
         |> Seq.map fst
         |> Seq.toList
@@ -88,7 +77,7 @@ let import (translations: Translation list) (files: File list)
 
     let translations = 
         translations 
-        |> Seq.groupBy keyOfTranslation
+        |> Seq.groupBy Translation.id
         |> Seq.map ^ Snd.map ^ Seq.exactlyOne
         |> Map.ofSeq
 
@@ -96,9 +85,9 @@ let import (translations: Translation list) (files: File list)
     let tryImportFile
         (file: File) 
         : Translation option * ImportWarning list =
-        let key = keyOfFile file
-        match Map.tryFind key translations with
-        | None -> None, [TranslationNotFound key]
+        let tid = idOfFile file
+        match Map.tryFind tid translations with
+        | None -> None, [TranslationNotFound tid]
         | Some translation ->
 
         let updateRecord 
@@ -117,18 +106,18 @@ let import (translations: Translation list) (files: File list)
                     let newRecord = 
                         { record with 
                             Translated = TranslatedString.Unused (string translatedString) }
-                    newRecord, Some (UnusedTranslationChanged(key, (record, newRecord)))
+                    newRecord, Some (UnusedTranslationChanged(tid, (record, newRecord)))
                 | _ ->
                     { record with Translated = translatedString }, None
                     
             let record, warningOpt = 
                 match unit.State with
                 | New when unit.Target <> "" 
-                    -> record, Some ^ IgnoredNewWithTranslation(key, (record, unit))
+                    -> record, Some ^ IgnoredNewWithTranslation(tid, (record, unit))
                 | New when record.Translated = TranslatedString.New 
                     -> record, None
                 | New 
-                    -> record, Some ^ IgnoredNewReset(key, (record, unit))
+                    -> record, Some ^ IgnoredNewReset(tid, (record, unit))
                 | NeedsReview 
                     -> update ^ TranslatedString.NeedsReview unit.Target
                 | Translated | Final 
@@ -142,7 +131,7 @@ let import (translations: Translation list) (files: File list)
             |> Seq.map ^ Snd.map ^ Seq.exactlyOne
             |> Map.ofSeq
 
-        let records = Translation.records translation
+        let records = translation.Records
 
         let newRecordsAndWarnings, unprocessed = 
             (updates, records)
@@ -156,12 +145,12 @@ let import (translations: Translation list) (files: File list)
         let stringsNotFoundWarnings = 
             unprocessed 
             |> Map.toSeq 
-            |> Seq.map ^ fun (_, tu) -> OriginalStringNotFound(key, tu)
+            |> Seq.map ^ fun (_, tu) -> OriginalStringNotFound(tid, tu)
             |> Seq.toList
 
         let translation = 
             if newRecords <> records then
-                Some ^ Translation(Translation.id translation, newRecords)
+                Some ^ { translation with Records = newRecords }
             else
                 None
 
