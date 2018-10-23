@@ -13,6 +13,7 @@ install-tnt:
 
 .PHONY: update-tnt
 update-tnt:
+	dotnet nuget locals http-cache --clear
 	dotnet tool update -g --add-source https://www.myget.org/F/pragmatrix/api/v3/index.json tnt-cli 
 
 .PHONY: publish
