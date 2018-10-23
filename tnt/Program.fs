@@ -40,6 +40,13 @@ type ImportOptions = {
     Files: string[]
 }
 
+let private argumentTypes = [|
+    typeof<AddOptions>
+    typeof<UpdateOptions>
+    typeof<ImportOptions>
+    typeof<ExportOptions>
+|]
+
 let dispatch (command: obj) = 
 
     let currentDirectory = Directory.current()
@@ -85,9 +92,7 @@ let ok = 0
 
 let protectedMain args =
 
-    let result = 
-        args 
-        |> Parser.Default.ParseArguments<AddOptions, UpdateOptions>
+    let result = Parser.Default.ParseArguments(args, argumentTypes)
 
     match result with
     | :? CommandLine.Parsed<obj> as command ->
