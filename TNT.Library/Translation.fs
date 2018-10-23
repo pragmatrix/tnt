@@ -42,8 +42,7 @@ module Translation =
                 Translated = translatedString
             }
 
-        let stateString (translated: TranslatedString) = 
-            match translated with
+        let stateString = function
             | TranslatedString.New -> "new"
             | TranslatedString.NeedsReview _ -> "needs-review"
             | TranslatedString.Final _ -> "final"
@@ -172,9 +171,6 @@ module TranslationSet =
         else
         let newSet = set |> Map.add language translation
         TranslationSet(assembly, newSet)
-
-    type TSError = 
-        | DifferentAssemblyPaths of AssemblyPath list
 
     // Create a translation set from a list of translations.
     // Each of the translations must point to the Same assembly.
