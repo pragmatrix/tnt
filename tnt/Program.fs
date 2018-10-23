@@ -110,8 +110,8 @@ let protectedMain args =
         | API.Failed -> failed
         | API.Succeeded -> ok
 
-    | :? CommandLine.NotParsed<obj> as np 
-        -> failwithf "command line error: %A" (Seq.toList np.Errors)
+    | :? CommandLine.NotParsed<obj> ->
+        failed
     | x -> failwithf "internal error: %A" x
 
 [<EntryPoint>]
