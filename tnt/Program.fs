@@ -22,23 +22,23 @@ type UpdateOptions = {
     Assembly: string
 }
 
-[<Verb("status", HelpText = "Show all the translations and their status in the current directory")>]
+[<Verb("status", HelpText = "Show all the translations and their status in the current directory.")>]
 type StatusOptions() = 
     class end
 
-[<Verb("export", HelpText = "Export all strings from all translation to an XLIFF file")>]
+[<Verb("export", HelpText = "Export all strings from all translation to an XLIFF file.")>]
 type ExportOptions = {
-    [<Option("srcLang", HelpText = "Language identifier (code ['-' region]) of the language translated from, default is 'en-US'")>]
+    [<Option("srcLang", HelpText = "Language identifier (code ['-' region]) of the language translated from, default is 'en-US'.")>]
     SourceLanguage: string
-    [<Option("name", HelpText = "The XLIFF base name to generate, default is the current directory's name")>]
+    [<Option("name", HelpText = "The XLIFF base name to generate, default is the current directory's name.")>]
     BaseName : string
-    [<Value(0, Required = true, HelpText = "The output directory to export the XLIFF files to")>]
+    [<Value(0, Required = true, HelpText = "The output directory to export the XLIFF files to.")>]
     OutputDirectory: string
 }
 
-[<Verb("import", HelpText = "Import XLIFF translation files and apply the changes to the translations in the current directory")>]
+[<Verb("import", HelpText = "Import XLIFF translation files and apply the changes to the translations in the current directory.")>]
 type ImportOptions = {
-    [<Value(0, Min=1, HelpText = "The XLIFF files to import")>]
+    [<Value(0, Min=1, HelpText = "The XLIFF files to import.")>]
     Files: string seq
 }
 
