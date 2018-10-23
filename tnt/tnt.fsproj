@@ -6,7 +6,7 @@
     <PackageId>tnt-cli</PackageId>
     <Title>The .NET Translation Tool</Title>
     <Description>Command line tool to extract strings from assemblies and manage translations.</Description>
-    <Copyright>2018 Armin Sander</Copyright>
+    <Copyright>(c) 2018 Armin Sander</Copyright>
     <PackAsTool>true</PackAsTool>
     <Version>0.12</Version>
   </PropertyGroup>
