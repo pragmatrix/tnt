@@ -78,7 +78,7 @@ let status() : ResultCode output = output {
         |> Seq.toArray
 
     match keys with
-    | Array.IsEmpty when not Console.IsOutputRedirected -> 
+    | Array.IsEmpty -> 
         yield I ^ "No translations found"
     | keys ->
         for (lang, filename), (status, path) in keys do
