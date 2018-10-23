@@ -8,6 +8,12 @@ type Output =
     | W of string
     | I of string
     | D of string
+    override this.ToString() = 
+        match this with
+        | E s -> "[E] " + s
+        | W s -> "[W] " + s
+        | I s -> "[I] " + s
+        | D s -> "[D] " + s
 
 type Writer = Output -> unit
 type 'r output = Writer -> 'r
