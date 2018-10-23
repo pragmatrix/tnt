@@ -23,8 +23,8 @@ type UpdateOptions = {
     Assembly: string
 }
 
-[<Verb("info", HelpText = "Show all the translations in the current directory")>]
-type InfoOptions() = 
+[<Verb("status", HelpText = "Show all the translations and their status in the current directory")>]
+type StatusOptions() = 
     class end
 
 [<Verb("export", HelpText = "Export all strings from all translation to an XLIFF file")>]
@@ -46,7 +46,7 @@ type ImportOptions = {
 let private argumentTypes = [|
     typeof<AddOptions>
     typeof<UpdateOptions>
-    typeof<InfoOptions>
+    typeof<StatusOptions>
     typeof<ImportOptions>
     typeof<ExportOptions>
 |]
@@ -65,7 +65,7 @@ let dispatch (command: obj) =
         API.update
             (opts.Assembly |> Option.ofObj |> Option.map AssemblyPath)
 
-    | :? InfoOptions ->
+    | :? StatusOptions ->
         API.info()
 
     | :? ExportOptions as opts ->
