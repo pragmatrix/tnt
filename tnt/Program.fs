@@ -1,4 +1,5 @@
 ﻿open System
+open System.Collections.Generic
 open TNT.Model
 open TNT.Library
 open TNT.Library.Output
@@ -39,7 +40,7 @@ type ExportOptions = {
 [<Verb("import", HelpText = "Import XLIFF translation files and apply the changes to the translations in the current directory")>]
 type ImportOptions = {
     [<Value(0, Min=1, HelpText = "The XLIFF files to import")>]
-    Files: string[]
+    Files: string seq
 }
 
 let private argumentTypes = [|
