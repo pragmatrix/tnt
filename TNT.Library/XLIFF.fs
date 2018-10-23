@@ -38,7 +38,8 @@ type TranslationUnit = {
 
 type File = {
     Name: AssemblyFilename
-    TargetLanguage: LanguageIdentifier
+    SourceLanguage: Language
+    TargetLanguage: Language
     TranslationUnits: TranslationUnit list
 }
 
@@ -68,9 +69,7 @@ module private X =
     let name str = XName.op_Implicit str
 
 /// Generate XLIFF version 1.2
-let generateV12
-    (sourceLanguage: LanguageIdentifier) 
-    (files: File list) : XLIFFV12 =
+let generateV12 (files: File list) : XLIFFV12 =
 
     let en (name: string) (ns: string) (nested: obj list) = 
         XElement(X.ns ns + name, nested)
@@ -93,7 +92,7 @@ let generateV12
                 yield e "file" [
                     yield! l [
                         a "original" (string file.Name)
-                        a "source-language" (string sourceLanguage)
+                        a "source-language" (string file.SourceLanguage)
                         a "target-language" (string file.TargetLanguage)
                         a "datatype" SourceFileDatatype
                     ]
@@ -176,9 +175,13 @@ let parseV12 (XLIFFV12 xliff) : File list =
             file.getValue "original"
             |> AssemblyFilename
         
+        let sourceLanguage = 
+            file.getValue "source-language"
+            |> Language
+
         let targetLanguage = 
             file.getValue "target-language" 
-            |> LanguageIdentifier
+            |> Language
 
         let units = 
             let shouldTranslate (element: XElement) = 
@@ -204,6 +207,7 @@ let parseV12 (XLIFFV12 xliff) : File list =
             |> Seq.toList
 
         {
+            SourceLanguage = sourceLanguage
             Name = name
             TargetLanguage = targetLanguage
             TranslationUnits = units

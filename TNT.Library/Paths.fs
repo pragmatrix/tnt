@@ -32,6 +32,6 @@ module XLIFFBaseName =
     // VisualStudio uses the dot extension to separate the identifier from the base name.
     let [<Literal>] IdentifierSeparator = "."
 
-    let filePathForLanguage (LanguageIdentifier(langIdentifier)) (directory: Path) (XLIFFBaseName(baseName)) =
+    let filePathForLanguage (Language(identifier)) (directory: Path) (XLIFFBaseName(baseName)) =
         directory
-        |> Path.extend (baseName + IdentifierSeparator + langIdentifier + FileExtension)
+        |> Path.extend (baseName + IdentifierSeparator + identifier + FileExtension)

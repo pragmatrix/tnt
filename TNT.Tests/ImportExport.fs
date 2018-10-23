@@ -12,13 +12,14 @@ let inline dump v =
 
 let file name lang units = {
     Name = AssemblyFilename name
-    TargetLanguage = LanguageIdentifier lang
+    SourceLanguage = Language "en-US"
+    TargetLanguage = Language lang
     TranslationUnits = units 
 }
 
 let translation path language records = {
-    Assembly = { Language = LanguageIdentifier ""; Path = AssemblyPath path }
-    Language = LanguageIdentifier language
+    Assembly = { Language = Language ""; Path = AssemblyPath path }
+    Language = Language language
     Records = records
 }
 
@@ -33,7 +34,7 @@ let record original translated = {
     Translated = translated
 }
 
-let key name lang = TranslationId(AssemblyFilename name, LanguageIdentifier lang)
+let key name lang = TranslationId(AssemblyFilename name, Language lang)
 
 let emptyTranslations : Translation list = []
 let emptyWarnings : ImportWarning list = []

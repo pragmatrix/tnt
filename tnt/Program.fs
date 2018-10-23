@@ -10,10 +10,10 @@ type AddOptions = {
     // http://www.i18nguy.com/unicode/language-identifiers.html
     // https://www.ietf.org/rfc/rfc3066.txt
 
-    [<Option("alang", HelpText = "Language identifier (code ['-' region]) of the language of the assemblies, default is 'en-US'.")>]
+    [<Option("alang", HelpText = "Language (code ['-' region]) of the assemblies, default is 'en-US'.")>]
     AssemblyLanguage: string
 
-    [<Option('l', "lang", Required = true, HelpText = "Language identifier (code ['-' region]) of the language to be translated to.")>]
+    [<Option('l', "lang", Required = true, HelpText = "Language (code ['-' region]) to be translated to.")>]
     Language: string
 
     [<Value(0, HelpText = "Relative path of the assembly file.")>]
@@ -32,8 +32,6 @@ type StatusOptions() =
 
 [<Verb("export", HelpText = "Export all strings from all translation to an XLIFF file.")>]
 type ExportOptions = {
-    [<Option("srcLang", HelpText = "Language identifier (code ['-' region]) of the language translated from, default is 'en-US'.")>]
-    SourceLanguage: string
     [<Option("name", HelpText = "The XLIFF base name to generate, default is the current directory's name.")>]
     BaseName : string
     [<Value(0, Required = true, HelpText = "The output directory to export the XLIFF files to.")>]
@@ -61,8 +59,8 @@ let dispatch (command: obj) =
     match command with
     | :? AddOptions as opts -> 
         API.add 
-            (LanguageIdentifier(opts.Language))
-            ( opts.AssemblyLanguage |> Option.ofObj |> Option.map LanguageIdentifier
+            (Language(opts.Language))
+            ( opts.AssemblyLanguage |> Option.ofObj |> Option.map Language
             , opts.Assembly |> Option.ofObj |> Option.map AssemblyPath)
 
     | :? UpdateOptions as opts ->
@@ -74,12 +72,6 @@ let dispatch (command: obj) =
 
     | :? ExportOptions as opts ->
 
-        let sourceLanguage =
-            opts.SourceLanguage
-            |> Option.ofObj
-            |> Option.defaultValue "en-US"
-            |> LanguageIdentifier
-
         let baseName = 
             opts.BaseName
             |> Option.ofObj
@@ -89,7 +81,7 @@ let dispatch (command: obj) =
 
         let outputDirectory = Path.parse opts.OutputDirectory
 
-        API.export sourceLanguage baseName outputDirectory
+        API.export baseName outputDirectory
 
     | :? ImportOptions as opts ->
         let xlfFilePaths =

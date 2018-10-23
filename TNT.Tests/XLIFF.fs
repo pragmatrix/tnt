@@ -11,8 +11,11 @@ open Xunit
 let record original translated = { Original = original; Translated = translated }
 
 let translations = [ { 
-        Assembly = { Language = LanguageIdentifier(""); Path = AssemblyPath("/tmp/test.dll") }
-        Language = LanguageIdentifier("de-DE")
+        Assembly = { 
+            Language = Language("en-US")
+            Path = AssemblyPath("/tmp/test.dll") 
+        }
+        Language = Language("de-DE")
         Records = [
             record "New" TranslatedString.New
             record "Auto" ^ TranslatedString.NeedsReview "Automatically Translated"
@@ -31,7 +34,7 @@ let linesOf (str: string) =
 let ``generates XLIFF``() = 
     let generated = 
         ImportExport.export translations
-        |> generateV12 (LanguageIdentifier "en-US") 
+        |> generateV12
         |> string
         |> fun str -> str.Trim()
 
@@ -49,7 +52,8 @@ let ``imports XLIFF``() =
     parsed 
     |> should equal [ {
         Name = AssemblyFilename "test.dll"
-        TargetLanguage = LanguageIdentifier "de-DE"
+        SourceLanguage = Language "en-US"
+        TargetLanguage = Language "de-DE"
         TranslationUnits = [ {
             Source = "New"
             Target = "Neu"

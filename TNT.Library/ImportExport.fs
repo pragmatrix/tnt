@@ -22,11 +22,14 @@ let export (translations: Translation list) : File list =
             State = state
         }
 
-    let toFile (translation: Translation) = {
-        Name = AssemblyFilename.ofPath translation.Assembly.Path
-        TargetLanguage = translation.Language
-        TranslationUnits = translation.Records |> List.choose toUnit
-    }
+    let toFile (translation: Translation) =
+        let assembly = translation.Assembly
+        {
+            Name = AssemblyFilename.ofPath assembly.Path
+            SourceLanguage = assembly.Language
+            TargetLanguage = translation.Language
+            TranslationUnits = translation.Records |> List.choose toUnit
+        }
 
     translations
     |> List.map toFile

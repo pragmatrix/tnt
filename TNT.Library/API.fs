@@ -27,7 +27,7 @@ type ResultCode =
     | Failed
     | Succeeded
 
-let createNewLanguage (assembly: AssemblyInfo) (language: LanguageIdentifier) : unit output = output {
+let createNewLanguage (assembly: AssemblyInfo) (language: Language) : unit output = output {
     let assemblyFilename = assembly.Path |> AssemblyFilename.ofPath
     yield I ^ sprintf "found no language '%s' for '%s', adding one" (string language) (string assemblyFilename)
     let! strings = extract assembly.Path
@@ -85,7 +85,7 @@ let status() : ResultCode output = output {
     return Succeeded
 }
 
-let add (language: LanguageIdentifier) (assemblyLanguage: LanguageIdentifier option, assemblyPath: AssemblyPath option) : ResultCode output = output {
+let add (language: Language) (assemblyLanguage: Language option, assemblyPath: AssemblyPath option) : ResultCode output = output {
     let currentDirectory = Directory.current()
     let translations = Translations.loadAll currentDirectory
     let group = TranslationGroup.fromTranslations translations
@@ -102,7 +102,7 @@ let add (language: LanguageIdentifier) (assemblyLanguage: LanguageIdentifier opt
         match set with
         | None -> 
             let assembly = { 
-                Language = defaultArg assemblyLanguage (LanguageIdentifier "en-US")
+                Language = defaultArg assemblyLanguage (Language "en-US")
                 Path = assemblyPath 
             }
             do! createNewLanguage assembly language
@@ -131,7 +131,6 @@ let update (assembly: AssemblyPath option) = output {
 }
 
 let export 
-    (sourceLanguage: LanguageIdentifier) 
     (baseName: XLIFFBaseName)
     (outputDirectory: Path) 
     : ResultCode output = output {
@@ -151,7 +150,7 @@ let export
                 baseName
                 |> XLIFFBaseName.filePathForLanguage language outputDirectory 
             let files = ImportExport.export translations
-            path, XLIFF.generateV12 sourceLanguage files
+            path, XLIFF.generateV12 files
 
     let existingOnes = 
         allExports
@@ -167,7 +166,7 @@ let export
     else
 
     for (file, content) in allExports do
-        yield I ^ sprintf "exporting language '%s' to '%s'" (string sourceLanguage) (string file)
+        yield I ^ sprintf "exporting translation to '%s'" (string file)
         File.saveText Encoding.UTF8 (string content) file
 
     return Succeeded

@@ -28,10 +28,10 @@ type AssemblyPath =
         this |> function AssemblyPath str -> str
 
 [<Struct>]
-type LanguageIdentifier = 
-    | LanguageIdentifier of string
+type Language = 
+    | Language of string
     override this.ToString() = 
-        this |> function LanguageIdentifier identifier -> identifier
+        this |> function Language identifier -> identifier
 
 /// Strings extracted from a given assembly. The original strings that are used as keys for the translations.
 [<Struct>]
@@ -68,7 +68,7 @@ module TranslationRecord =
 /// Information about an assembly.
 [<Struct>]
 type AssemblyInfo = {
-    Language: LanguageIdentifier
+    Language: Language
     Path: AssemblyPath
 } with
     override this.ToString() = 
@@ -78,26 +78,25 @@ type AssemblyInfo = {
 [<Struct>]
 type Translation = {
     Assembly: AssemblyInfo
-    Language: LanguageIdentifier
+    Language: Language
     Records: TranslationRecord list
 } 
 
 /// The identity of a translation.
 [<Struct>]
 type TranslationId = 
-    | TranslationId of fillename: AssemblyFilename * language: LanguageIdentifier
+    | TranslationId of fillename: AssemblyFilename * language: Language
     override this.ToString() = 
         this |> function TranslationId(filename, language) -> sprintf "[%O:%O]" filename language
 
 /// A translation set is a set of translations that 
-/// all have different language identifiers and point to the same assembly path.
-
+/// all have different languages and point to the same assembly path.
 [<Struct>]
 type TranslationSet = 
-    | TranslationSet of assembly: AssemblyInfo * set: Map<LanguageIdentifier, Translation>
+    | TranslationSet of assembly: AssemblyInfo * set: Map<Language, Translation>
 
 /// A translation group is a group of translations that can be stored inside
-/// _one_ directory. This means that only one translation for a langauge identifier
+/// _one_ directory. This means that only one translation for a language
 /// can exist for one AssemblyFileName.
 [<Struct>]
 type TranslationGroup = 
@@ -153,7 +152,7 @@ type Command =
     /// with an existing language code in the current directory and 
     /// tries to generate the new language. 
     /// Languages are removed by just deleting the files.
-    | Add of language: LanguageIdentifier * AssemblyPath option
+    | Add of language: Language * AssemblyPath option
     /// Extracts all strings and updates all machine translations in the current directory.
     | Update
     /// Garbage collects all translations in the current directory.

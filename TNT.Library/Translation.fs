@@ -71,9 +71,9 @@ module Translation =
         {
             Assembly = { 
                 Path = AssemblyPath(assembly.path)
-                Language = LanguageIdentifier(assembly.language) 
+                Language = Language(assembly.language) 
             }
-            Language = LanguageIdentifier(file.language)
+            Language = Language(file.language)
             Records = records
         }
     
@@ -155,7 +155,7 @@ module TranslationSet =
         |> Seq.map snd
         |> Seq.toList
 
-    let translation (language: LanguageIdentifier) (TranslationSet(_, set)) = 
+    let translation (language: Language) (TranslationSet(_, set)) = 
         set 
         |> Map.tryFind language
 
@@ -206,7 +206,7 @@ module TranslationGroup =
 
     type TranslationGroupError = 
         | AssemblyPathsWithTheSameFilename of (AssemblyFilename * AssemblyPath list) list
-        | TranslationsWithTheSameLanguage of ((AssemblyFilename * LanguageIdentifier) * Translation list) list
+        | TranslationsWithTheSameLanguage of ((AssemblyFilename * Language) * Translation list) list
 
     /// Groups a list of translations, checks for duplicates and inconsistent relations
     /// between assembly paths and names.
@@ -254,7 +254,7 @@ module TranslationGroup =
 
     /// Return a translation if one is found for the given filename / language combination.
     let translation 
-        (filename: AssemblyFilename, language: LanguageIdentifier) 
+        (filename: AssemblyFilename, language: Language) 
         (group: TranslationGroup) = 
         group 
         |> set filename
