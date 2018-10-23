@@ -58,7 +58,7 @@ module Array =
         | [||] -> IsEmpty
         | _ -> IsNotEmpty array
 
-let info() : ResultCode output = output {
+let status() : ResultCode output = output {
     let! groups = loadGroups()
     match groups with
     | Error(code) ->

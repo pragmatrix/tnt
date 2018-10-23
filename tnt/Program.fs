@@ -1,5 +1,4 @@
 ﻿open System
-open System.Collections.Generic
 open TNT.Model
 open TNT.Library
 open TNT.Library.Output
@@ -66,7 +65,7 @@ let dispatch (command: obj) =
             (opts.Assembly |> Option.ofObj |> Option.map AssemblyPath)
 
     | :? StatusOptions ->
-        API.info()
+        API.status()
 
     | :? ExportOptions as opts ->
 
