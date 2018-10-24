@@ -57,9 +57,6 @@ type TranslationRecord = {
     Translated: TranslatedString
 }
 
-module TranslationRecord = 
-    let createNew original = { Original = original; Translated = TranslatedString.New }
-
 /// Information about an assembly.
 [<Struct>]
 type AssemblyInfo = {

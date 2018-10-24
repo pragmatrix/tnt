@@ -8,6 +8,28 @@ open TNT.Model
 module Seq = 
     let setify seq = seq |> Seq.sort |> Seq.distinct
 
+module TranslationRecord = 
+
+    let createNew original = { Original = original; Translated = TranslatedString.New }
+
+    let unuse (record: TranslationRecord) : TranslationRecord option = 
+        match record.Translated with
+        | TranslatedString.New
+            -> None
+        | TranslatedString.NeedsReview str 
+        | TranslatedString.Final str
+        | TranslatedString.Unused str
+            -> Some ^ { record with Translated = TranslatedString.Unused str }
+
+    let reuse (record: TranslationRecord) : TranslationRecord = 
+        match record.Translated with
+        | TranslatedString.New _
+        | TranslatedString.NeedsReview _
+        | TranslatedString.Final _
+            -> record
+        | TranslatedString.Unused str
+            -> { record with Translated = TranslatedString.NeedsReview str }
+
 module TranslationCounters =
 
     let combine (l: TranslationCounters) (r: TranslationCounters) = {
@@ -147,24 +169,6 @@ module Translation =
     let update (strings: OriginalStrings) (translation: Translation) : Translation option = 
         assert (OriginalStrings.assembly strings = translation.Assembly)
 
-        let reuse (record: TranslationRecord) : TranslationRecord = 
-            match record.Translated with
-            | TranslatedString.New _
-            | TranslatedString.NeedsReview _
-            | TranslatedString.Final _
-                -> record
-            | TranslatedString.Unused str
-                -> { record with Translated = TranslatedString.NeedsReview str }
-
-        let unuse (record: TranslationRecord) : TranslationRecord option = 
-            match record.Translated with
-            | TranslatedString.New
-                -> None
-            | TranslatedString.NeedsReview str 
-            | TranslatedString.Final str
-            | TranslatedString.Unused str
-                -> Some ^ { record with Translated = TranslatedString.Unused str }
-
         let recordMap = 
             translation.Records 
             |> Seq.map ^ fun r -> r.Original, r
@@ -172,15 +176,15 @@ module Translation =
 
         let records, unusedMap =
             (recordMap, OriginalStrings.strings strings)
-            ||> List.mapFold ^ fun recordMap string  ->
+            ||> List.mapFold ^ fun recordMap string ->
                 match recordMap.TryFind string with
-                | Some r -> reuse r, recordMap |> Map.remove string
+                | Some r -> TranslationRecord.reuse r, recordMap |> Map.remove string
                 | None -> TranslationRecord.createNew string, recordMap
 
         let recordsAfter = 
             unusedMap 
             |> Map.toSeq 
-            |> Seq.choose (snd >> unuse)
+            |> Seq.choose (snd >> TranslationRecord.unuse)
             |> Seq.append records
             |> Seq.sortBy ^ fun r -> r.Original
             |> Seq.toList
