@@ -16,10 +16,10 @@ type Interface =
 
 [<Fact>]
 let ``extract from FSharp``() = 
-    let strings = extract (AssemblyPath("TNT.Tests.dll"))
-    strings |> List.map string |> should equal ["duplicate"; "original"]
+    let strings = extract ({ Path = AssemblyPath("TNT.Tests.dll"); Language = Language("en-US") })
+    strings |> OriginalStrings.strings |> should equal ["duplicate"; "original"]
 
 [<Fact>]
 let ``extract from CSharp``() = 
-    let strings = extract (AssemblyPath("TNT.Tests.CSharp.dll"))
-    strings |> List.map string |> should equal ["original"]
+    let strings = extract ({ Path = AssemblyPath("TNT.Tests.CSharp.dll"); Language = Language("en-US") })
+    strings |> OriginalStrings.strings |> should equal ["original"]

@@ -5,6 +5,36 @@ module TNT.Library.Translation
 open Newtonsoft.Json
 open TNT.Model
 
+module Seq = 
+    let setify seq = seq |> Seq.sort |> Seq.distinct
+
+module TranslationCounters =
+
+    let combine (l: TranslationCounters) (r: TranslationCounters) = {
+        New = l.New + r.New
+        NeedsReview = l.NeedsReview + r.NeedsReview
+        Final = l.Final + r.Final
+        Unused = l.Unused + r.Unused
+    }
+
+    let ofTranslation (translation: Translation) : TranslationCounters = 
+    
+        let ``new``, needsReview, final, unused = 
+            { New = 1; NeedsReview = 0; Final = 0; Unused = 0 },
+            { New = 0; NeedsReview = 1; Final = 0; Unused = 0 },
+            { New = 0; NeedsReview = 0; Final = 1; Unused = 0 },
+            { New = 0; NeedsReview = 0; Final = 0; Unused = 1 }
+
+        let statusOf = function
+            | TranslatedString.New -> ``new``
+            | TranslatedString.NeedsReview _ -> needsReview
+            | TranslatedString.Final _ -> final
+            | TranslatedString.Unused _ -> unused
+
+        translation.Records
+        |> Seq.map ^ fun r -> statusOf r.Translated
+        |> Seq.reduce combine
+
 [<CR(ModuleSuffix)>]
 module Translation =
 
@@ -98,38 +128,20 @@ module Translation =
         TranslationId(translation.Assembly.Path |> AssemblyFilename.ofPath, translation.Language)
     let assemblyFilename (translation: Translation) = 
         id translation |> function TranslationId(filename, _) -> filename
-    let createNew assembly language originalStrings = {
-        Assembly = assembly
+    let createNew language originalStrings = {
+        Assembly = OriginalStrings.assembly originalStrings
         Language = language
-        Records = originalStrings |> List.map TranslationRecord.createNew
+        Records = 
+            originalStrings 
+            |> OriginalStrings.strings
+            |> Seq.map TranslationRecord.createNew 
+            |> Seq.toList
     }
 
-module TranslationStatus =
-
-    let combine (l: TranslationStatus) (r: TranslationStatus) = {
-        New = l.New + r.New
-        NeedsReview = l.NeedsReview + r.NeedsReview
-        Final = l.Final + r.Final
-        Unused = l.Unused + r.Unused
-    }
-
-    let ofTranslation (translation: Translation) : TranslationStatus = 
-    
-        let ``new``, needsReview, final, unused = 
-            { New = 1; NeedsReview = 0; Final = 0; Unused = 0 },
-            { New = 0; NeedsReview = 1; Final = 0; Unused = 0 },
-            { New = 0; NeedsReview = 0; Final = 1; Unused = 0 },
-            { New = 0; NeedsReview = 0; Final = 0; Unused = 1 }
-
-        let statusOf = function
-            | TranslatedString.New -> ``new``
-            | TranslatedString.NeedsReview _ -> needsReview
-            | TranslatedString.Final _ -> final
-            | TranslatedString.Unused _ -> unused
-
-        translation.Records
-        |> Seq.map ^ fun r -> statusOf r.Translated
-        |> Seq.reduce combine
+    let status (translation: Translation) : string = 
+        let (TranslationId(filename, lang)) = id translation
+        let counters = TranslationCounters.ofTranslation translation
+        sprintf "[%s:%s][%s] %s" (string lang) (string filename) (string counters) (string translation.Assembly.Path)
 
 module Translations = 
 
@@ -137,10 +149,9 @@ module Translations =
     let ids (translations: Translation list) : TranslationId list =
         translations
         |> Seq.map Translation.id
-        |> Seq.sort
-        |> Seq.distinct
+        |> Seq.setify
         |> Seq.toList
-
+    
 module TranslationSet = 
 
     let map f (TranslationSet(assembly, set)) = 
@@ -152,6 +163,12 @@ module TranslationSet =
         set 
         |> Map.toSeq
         |> Seq.map snd
+        |> Seq.toList
+
+    let languages (TranslationSet(_, set)) = 
+        set
+        |> Map.toSeq
+        |> Seq.map fst
         |> Seq.toList
 
     let translation (language: Language) (TranslationSet(_, set)) = 
@@ -194,6 +211,14 @@ module TranslationSet =
             |> Map.ofSeq 
 
         TranslationSet(path, map)
+
+    /// All the original strings that appear in all translations of the set, sorted and without duplicates.
+    let originalStrings (set: TranslationSet) : OriginalStrings =
+        set
+        |> translations
+        |> Seq.collect ^ fun t -> t.Records
+        |> Seq.map ^ fun r -> r.Original
+        |> OriginalStrings.create (assembly set)
 
 module TranslationGroup = 
     
@@ -268,3 +293,17 @@ module TranslationGroup =
         |> sets
         |> List.collect TranslationSet.translations
     
+    /// Add a language to a translation group and return the new translations.
+    let addLanguage (language: Language) (group: TranslationGroup) : Translation list =
+        [
+            for set in sets group do
+                let languages = TranslationSet.languages set
+                if not ^ Seq.contains language languages then
+                    yield 
+                        set 
+                        |> TranslationSet.originalStrings
+                        |> Translation.createNew language
+        ]
+
+            
+        

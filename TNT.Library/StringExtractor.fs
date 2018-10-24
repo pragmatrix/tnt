@@ -34,9 +34,9 @@ module private Private =
                 -> Some ^ string instruction.Operand
             | _ -> None
 
-let extract (name: AssemblyPath) : string list = 
+let extract (assembly: AssemblyInfo) : OriginalStrings = 
 
-    let assemblyDefinition = AssemblyDefinition.ReadAssembly(string name)
+    let assemblyDefinition = AssemblyDefinition.ReadAssembly(string assembly.Path)
 
     let rec extractFromType (typeDefinition: TypeDefinition) : string seq = seq {
         yield!
@@ -59,8 +59,7 @@ let extract (name: AssemblyPath) : string list =
         moduleDefinition.Types
         |> Seq.collect extractFromType
     // ensure reproducibility and remove duplicates
-    |> Seq.sort |> Seq.distinct
-    |> Seq.toList
+    |> OriginalStrings.create assembly
 
     
 
