@@ -1,6 +1,5 @@
 ﻿module TNT.Library.API
 
-open System
 open System.Text
 open System.Runtime.CompilerServices
 open FunToolbox.FileSystem
@@ -27,6 +26,8 @@ let extract (assembly: AssemblyInfo) : OriginalStrings output = output {
     return strings
 }
 
+let private indent str = "  " + str
+
 type ResultCode =
     | Failed
     | Succeeded
@@ -40,7 +41,7 @@ let createNewLanguage (assembly: AssemblyInfo) (language: Language) : unit outpu
         translation |> Translation.path (Directory.current())
     yield I ^ "New translation:"
     translation |> Translation.save translationPath
-    yield I ^ sprintf "  %s" (Translation.status translation)
+    yield I ^ indent ^ Translation.status translation
 }
 
 let private loadGroup() : Result<TranslationGroup, unit> output = output {
@@ -121,7 +122,7 @@ let add (language: Language) (assemblyLanguage: Language option, assemblyPath: A
                 let translationPath = 
                     translation |> Translation.path (Directory.current())
                 translation |> Translation.save translationPath 
-                yield I ^ sprintf "  %s" ^ Translation.status translation
+                yield I ^ indent ^ Translation.status translation
         return Failed
 }        
 
@@ -160,14 +161,14 @@ let export
         |> Seq.toList
 
     if existingOnes <> [] then
-        yield E ^ sprintf "one or more exported files already exists, please remove them"
+        yield E ^ sprintf "One or more exported files already exists, please remove them:"
         for existingFile in existingOnes do
-            yield E ^ sprintf "  %s" (string existingFile)
+            yield E ^ indent ^ string existingFile
         return Failed
     else
 
     for (file, content) in allExports do
-        yield I ^ sprintf "exporting translation to '%s'" (string file)
+        yield I ^ sprintf "Exporting translation to '%s'" (string file)
         File.saveText Encoding.UTF8 (string content) file
 
     return Succeeded
@@ -192,18 +193,19 @@ let import (files: Path list) : ResultCode output = output {
         |> ImportExport.import translations
 
     if warnings <> [] then
-        yield I ^ "import warnings:"
+        yield I ^ "Import warnings:"
         for warning in warnings do
-            yield W ^ sprintf "  %s" (string warning)
+            yield W ^ indent ^ string warning
 
-    if translations <> [] then
-        yield I ^ sprintf "translations changed and will be updated"
+    match translations with
+    | [] ->
+        yield I ^ "No translations changed"
+    | translations ->
+        yield I ^ "Translations updated:"
         for translation in translations do
-            yield I ^ sprintf "  updating '%s'" (string ^ Translation.filename translation)
             let path = Translation.path currentDirectory translation
             translation |> Translation.save path 
-    else
-        yield I ^ sprintf "no translations changed"
+            yield I ^ indent ^ Translation.status translation
 
     return Succeeded
 }
