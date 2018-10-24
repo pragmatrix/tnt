@@ -131,8 +131,22 @@ let update (assembly: AssemblyPath option) = output {
     | Error() ->
         return Failed
     | Ok(group) ->
-        yield E "not supported"
-        return Failed
+    
+    match assembly with
+    | Some _ -> 
+        yield E "Not supported."
+    | None ->
+        let sets = TranslationGroup.sets group
+        for set in sets do
+            let! strings = extract ^ TranslationSet.assembly set
+            let updated = set |> TranslationSet.update strings
+            for translation in updated do
+                let translationPath = 
+                    translation |> Translation.path (Directory.current())
+                translation |> Translation.save translationPath 
+                yield I ^ indent ^ Translation.status translation
+            
+    return Failed
 }
 
 let export 

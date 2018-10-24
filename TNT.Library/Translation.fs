@@ -143,6 +143,58 @@ module Translation =
         let counters = TranslationCounters.ofTranslation translation
         sprintf "[%s:%s][%s] %s" (string lang) (string filename) (string counters) (string translation.Assembly.Path)
 
+    /// Update the translation's original strings and return the translation if it changed.
+    let update (strings: OriginalStrings) (translation: Translation) : Translation option = 
+        assert (OriginalStrings.assembly strings = translation.Assembly)
+
+        let reuse (record: TranslationRecord) : TranslationRecord = 
+            match record.Translated with
+            | TranslatedString.New _
+            | TranslatedString.NeedsReview _
+            | TranslatedString.Final _
+                -> record
+            | TranslatedString.Unused str
+                -> { record with Translated = TranslatedString.NeedsReview str }
+
+        let unuse (record: TranslationRecord) : TranslationRecord option = 
+            match record.Translated with
+            | TranslatedString.New
+                -> None
+            | TranslatedString.NeedsReview str 
+            | TranslatedString.Final str
+            | TranslatedString.Unused str
+                -> Some ^ { record with Translated = TranslatedString.Unused str }
+
+        let recordMap = 
+            translation.Records 
+            |> Seq.map ^ fun r -> r.Original, r
+            |> Map.ofSeq
+
+        let records, unusedMap =
+            (recordMap, OriginalStrings.strings strings)
+            ||> List.mapFold ^ fun recordMap string  ->
+                match recordMap.TryFind string with
+                | Some r -> reuse r, recordMap |> Map.remove string
+                | None -> TranslationRecord.createNew string, recordMap
+
+        let recordsAfter = 
+            unusedMap 
+            |> Map.toSeq 
+            |> Seq.choose (snd >> unuse)
+            |> Seq.append records
+            |> Seq.sortBy ^ fun r -> r.Original
+            |> Seq.toList
+
+        let recordsBefore = 
+            recordMap
+            |> Map.toSeq
+            |> Seq.map snd
+            |> Seq.toList
+
+        if recordsAfter = recordsBefore 
+        then None
+        else Some { translation with Records = recordsAfter }
+
 module Translations = 
 
     /// All the ids (sorted and duplicates removed) from a list of translations.
@@ -219,6 +271,13 @@ module TranslationSet =
         |> Seq.collect ^ fun t -> t.Records
         |> Seq.map ^ fun r -> r.Original
         |> OriginalStrings.create (assembly set)
+
+    /// Update the original strings in the translation set and return the translations that changed.
+    let update (strings: OriginalStrings) (set: TranslationSet) : Translation list =
+        set
+        |> translations
+        |> Seq.choose ^ Translation.update strings
+        |> Seq.toList
 
 module TranslationGroup = 
     
