@@ -17,9 +17,13 @@ module TranslationGroup =
             l |> Seq.map ^ fun ((fn, language), _) ->
                 E ^ sprintf "multiple translations of the same language: '%s' of '%s'" (string language)  (string fn)
 
-let extract (assemblyPath: AssemblyPath) : string list output = output {
-    let strings = StringExtractor.extract assemblyPath
-    yield I ^ sprintf "extracted %d strings from '%s'" (strings.Length) (string assemblyPath)
+let extract (assembly: AssemblyInfo) : OriginalStrings output = output {
+    let strings = StringExtractor.extract assembly
+    let num = 
+        strings
+        |> OriginalStrings.strings
+        |> List.length
+    yield I ^ sprintf "extracted %d strings from '%s'" num (string assembly.Path)
     return strings
 }
 
@@ -30,12 +34,13 @@ type ResultCode =
 let createNewLanguage (assembly: AssemblyInfo) (language: Language) : unit output = output {
     let assemblyFilename = assembly.Path |> AssemblyFilename.ofPath
     yield I ^ sprintf "found no language '%s' for '%s', adding one" (string language) (string assemblyFilename)
-    let! strings = extract assembly.Path
-    let translation = Translation.createNew assembly language strings
+    let! strings = extract assembly
+    let translation = Translation.createNew language strings
     let translationPath = 
         translation |> Translation.path (Directory.current())
+    yield I ^ "New translation:"
     translation |> Translation.save translationPath
-    yield I ^ sprintf "new translation saved to '%s'" (string (Path.name translationPath))
+    yield I ^ sprintf "  %s" (Translation.status translation)
 }
 
 let private loadGroups() : Result<TranslationGroup, ResultCode> output = output {
@@ -65,22 +70,12 @@ let status() : ResultCode output = output {
     | Ok(group) ->
 
     let translations = TranslationGroup.translations group
-    let keys = 
-        translations 
-        |> Seq.map ^ 
-            fun translation ->
-                let (TranslationId(filename, lang)) = Translation.id translation
-                let status = TranslationStatus.ofTranslation translation
-                (lang, filename), (status, translation.Assembly.Path)
-        |> Seq.sortBy fst
-        |> Seq.toArray
-
-    match keys with
-    | Array.IsEmpty -> 
+    match translations with
+    | [] -> 
         yield I ^ "No translations found"
-    | keys ->
-        for (lang, filename), (status, path) in keys do
-            yield I ^ sprintf "[%s:%s][%s] %s" (string lang) (string filename) (string status) (string path)
+    | translations ->
+        for translation in translations do
+            yield I ^ Translation.status translation
 
     return Succeeded
 }
@@ -121,7 +116,19 @@ let add (language: Language) (assemblyLanguage: Language option, assemblyPath: A
                 do! createNewLanguage setAssembly language
                 return Succeeded
     | None ->
-        yield E "Adding a language to all available assemblies is unsupported yet"
+        let translations =
+            group
+            |> TranslationGroup.addLanguage language
+        match translations with
+        | [] -> 
+            yield I "No new translations were added."
+        | translations -> 
+            yield I "New translations:"
+            for translation in translations do
+                let translationPath = 
+                    translation |> Translation.path (Directory.current())
+                translation |> Translation.save translationPath 
+                yield I ^ sprintf "  %s" ^ Translation.status translation
         return Failed
 }        
 
