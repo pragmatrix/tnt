@@ -43,14 +43,12 @@ let createNewLanguage (assembly: AssemblyInfo) (language: Language) : unit outpu
     yield I ^ sprintf "  %s" (Translation.status translation)
 }
 
-let private loadGroups() : Result<TranslationGroup, ResultCode> output = output {
+let private loadGroup() : Result<TranslationGroup, unit> output = output {
     let currentDirectory = Directory.current()
-    let translations = Translations.loadAll currentDirectory
-    let group = TranslationGroup.fromTranslations translations
-    match group with
+    match TranslationGroup.load currentDirectory with
     | Error(error) ->
         yield! TranslationGroup.errorString error
-        return Error(Failed)
+        return Error()
     | Ok(group) ->
         return Ok(group)
 }
@@ -63,10 +61,9 @@ module Array =
         | _ -> IsNotEmpty array
 
 let status() : ResultCode output = output {
-    let! groups = loadGroups()
-    match groups with
-    | Error(code) ->
-        return code
+    match! loadGroup() with
+    | Error() ->
+        return Failed
     | Ok(group) ->
 
     let translations = TranslationGroup.translations group
@@ -81,12 +78,8 @@ let status() : ResultCode output = output {
 }
 
 let add (language: Language) (assemblyLanguage: Language option, assemblyPath: AssemblyPath option) : ResultCode output = output {
-    let currentDirectory = Directory.current()
-    let translations = Translations.loadAll currentDirectory
-    let group = TranslationGroup.fromTranslations translations
-    match group with
-    | Error(error) ->
-        yield! TranslationGroup.errorString error
+    match! loadGroup() with
+    | Error() ->
         return Failed
     | Ok(group) ->
 
@@ -133,19 +126,20 @@ let add (language: Language) (assemblyLanguage: Language option, assemblyPath: A
 }        
 
 let update (assembly: AssemblyPath option) = output {
-    yield E "not supported"
-    return Failed
+    match! loadGroup() with
+    | Error() ->
+        return Failed
+    | Ok(group) ->
+        yield E "not supported"
+        return Failed
 }
 
 let export 
     (baseName: XLIFFBaseName)
     (outputDirectory: Path) 
     : ResultCode output = output {
-    let currentDirectory = Directory.current()
-    let group = TranslationGroup.load currentDirectory
-    match group with
-    | Error(error) ->
-        yield! TranslationGroup.errorString error
+    match! loadGroup() with
+    | Error() ->
         return Failed
     | Ok(group) ->
     let allExports = 
@@ -181,10 +175,8 @@ let export
 
 let import (files: Path list) : ResultCode output = output {
     let currentDirectory = Directory.current()
-    let group = TranslationGroup.load currentDirectory
-    match group with
-    | Error(error) ->
-        yield! TranslationGroup.errorString error
+    match! loadGroup() with
+    | Error() ->
         return Failed
     | Ok(group) ->
     let files = 
