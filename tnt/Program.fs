@@ -22,7 +22,13 @@ type AddOptions = {
 
 [<Verb("update", HelpText = "Update the strings from all assemblies or the specific assembly names provided.")>]
 type UpdateOptions = {
-    [<Value(0, HelpText = "Name of the assembly file.")>]
+    [<Value(0, HelpText = "Name of the assembly files to update. If not provided, all assemblies are updated.")>]
+    Assemblies: string seq
+}
+
+[<Verb("gc", HelpText = "Remove all unused translations from the translation files.")>]
+type GCOptions = {
+    [<Value(0, HelpText = "Name of the assembly files to garbage collect. If not provided, all translations are garbage collected.")>]
     Assemblies: string seq
 }
 
@@ -47,6 +53,7 @@ type ImportOptions = {
 let private argumentTypes = [|
     typeof<AddOptions>
     typeof<UpdateOptions>
+    typeof<GCOptions>
     typeof<StatusOptions>
     typeof<ImportOptions>
     typeof<ExportOptions>
@@ -70,6 +77,14 @@ let dispatch (command: obj) =
             |> Seq.toList
 
         API.update assemblies
+
+    | :? GCOptions as opts ->
+        let assemblies =
+            opts.Assemblies
+            |> Seq.map AssemblyFilename
+            |> Seq.toList
+
+        API.gc assemblies
 
     | :? StatusOptions ->
         API.status()

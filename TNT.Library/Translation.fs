@@ -199,6 +199,22 @@ module Translation =
         then None
         else Some { translation with Records = recordsAfter }
 
+    /// Remove all unused entries from the translation and return the translation if
+    /// it changed.
+    let gc (translation: Translation) : Translation option =
+
+        let records, changed = 
+            translation.Records
+            |> List.partition ^ fun r -> 
+                match r.Translated with
+                | TranslatedString.Unused _ -> false
+                | _ -> true 
+            |> fun (r, u) -> r, u <> []
+
+        changed
+        |> Option.ofBool
+        |> Option.map ^ fun () -> { translation with Records = records }
+
 module Translations = 
 
     /// All the ids (sorted and duplicates removed) from a list of translations.
@@ -281,6 +297,13 @@ module TranslationSet =
         set
         |> translations
         |> Seq.choose ^ Translation.update strings
+        |> Seq.toList
+
+    /// Garbage collect the unused strings and return the translations that changed.
+    let gc (set: TranslationSet) : Translation list =
+        set
+        |> translations
+        |> Seq.choose ^ Translation.gc
         |> Seq.toList
 
 module TranslationGroup = 

@@ -124,24 +124,24 @@ let add (language: Language) (assemblyLanguage: Language option, assemblyPath: A
                 translation |> Translation.save translationPath 
                 yield I ^ indent ^ Translation.status translation
         return Failed
-}        
+}
+
+let private setsOfAssemblies (assemblies: AssemblyFilename list) (group: TranslationGroup) =
+    if assemblies = [] then 
+        TranslationGroup.sets group 
+    else
+        assemblies 
+        |> List.map ^ fun assembly -> 
+            TranslationGroup.set assembly group 
+            |> Option.defaultWith ^ fun () ->
+                failwithf "no translation for '%s'" (string assembly)
+
 
 let update (assemblies: AssemblyFilename list) = output {
     match! loadGroup() with
     | Error() -> return Failed
     | Ok(group) ->
-
-    let sets = 
-        if assemblies = [] then 
-            TranslationGroup.sets group 
-        else
-            assemblies 
-            |> List.map ^ fun assembly -> 
-                TranslationGroup.set assembly group 
-                |> Option.defaultWith ^ fun () ->
-                    failwithf "no translation for '%s'" (string assembly)
-        
-    for set in sets do
+    for set in setsOfAssemblies assemblies group do
         let! strings = extract ^ TranslationSet.assembly set
         let updated = set |> TranslationSet.update strings
         for translation in updated do
@@ -150,7 +150,22 @@ let update (assemblies: AssemblyFilename list) = output {
             translation |> Translation.save translationPath 
             yield I ^ indent ^ Translation.status translation
             
-    return Failed
+    return Succeeded
+}
+
+let gc (assemblies: AssemblyFilename list) = output {
+    match! loadGroup() with
+    | Error() -> return Failed
+    | Ok(group) ->
+    for set in setsOfAssemblies assemblies group do
+        let updated = set |> TranslationSet.gc
+        for translation in updated do
+            let translationPath = 
+                translation |> Translation.path (Directory.current())
+            translation |> Translation.save translationPath 
+            yield I ^ indent ^ Translation.status translation
+
+    return Succeeded
 }
 
 let export 
