@@ -126,25 +126,29 @@ let add (language: Language) (assemblyLanguage: Language option, assemblyPath: A
         return Failed
 }        
 
-let update (assembly: AssemblyPath option) = output {
+let update (assemblies: AssemblyFilename list) = output {
     match! loadGroup() with
-    | Error() ->
-        return Failed
+    | Error() -> return Failed
     | Ok(group) ->
-    
-    match assembly with
-    | Some _ -> 
-        yield E "Not supported."
-    | None ->
-        let sets = TranslationGroup.sets group
-        for set in sets do
-            let! strings = extract ^ TranslationSet.assembly set
-            let updated = set |> TranslationSet.update strings
-            for translation in updated do
-                let translationPath = 
-                    translation |> Translation.path (Directory.current())
-                translation |> Translation.save translationPath 
-                yield I ^ indent ^ Translation.status translation
+
+    let sets = 
+        if assemblies = [] then 
+            TranslationGroup.sets group 
+        else
+            assemblies 
+            |> List.map ^ fun assembly -> 
+                TranslationGroup.set assembly group 
+                |> Option.defaultWith ^ fun () ->
+                    failwithf "no translation for '%s'" (string assembly)
+        
+    for set in sets do
+        let! strings = extract ^ TranslationSet.assembly set
+        let updated = set |> TranslationSet.update strings
+        for translation in updated do
+            let translationPath = 
+                translation |> Translation.path (Directory.current())
+            translation |> Translation.save translationPath 
+            yield I ^ indent ^ Translation.status translation
             
     return Failed
 }

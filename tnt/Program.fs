@@ -20,10 +20,10 @@ type AddOptions = {
     Assembly: string
 }
 
-[<Verb("update", HelpText = "Extract all strings from all assemblies or one specific assembly and update the translation files.")>]
+[<Verb("update", HelpText = "Update the strings from all assemblies or the specific assembly names provided.")>]
 type UpdateOptions = {
-    [<Value(0, HelpText = "Relative path of the assembly file.")>]
-    Assembly: string
+    [<Value(0, HelpText = "Name of the assembly file.")>]
+    Assemblies: string seq
 }
 
 [<Verb("status", HelpText = "Show all the translations and their status in the current directory.")>]
@@ -64,8 +64,12 @@ let dispatch (command: obj) =
             , opts.Assembly |> Option.ofObj |> Option.map AssemblyPath)
 
     | :? UpdateOptions as opts ->
-        API.update
-            (opts.Assembly |> Option.ofObj |> Option.map AssemblyPath)
+        let assemblies =
+            opts.Assemblies
+            |> Seq.map AssemblyFilename
+            |> Seq.toList
+
+        API.update assemblies
 
     | :? StatusOptions ->
         API.status()
