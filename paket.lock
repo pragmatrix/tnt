@@ -237,6 +237,8 @@ NUGET
       System.Threading.Tasks (>= 4.3)
     System.IO.FileSystem.Primitives (4.3)
       System.Runtime (>= 4.3)
+    System.Json (4.5)
+      NETStandard.Library (>= 1.6.1) - restriction: || (&& (== netcoreapp2.1) (< netstandard2.0)) (== netstandard1.6)
     System.Linq (4.3)
       System.Collections (>= 4.3)
       System.Diagnostics.Debug (>= 4.3)
