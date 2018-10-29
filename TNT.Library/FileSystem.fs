@@ -8,11 +8,16 @@ open FunToolbox.FileSystem
 open TNT.Model
 open TNT.Library.Paths
 open TNT.Library.Translation
+
+let [<Literal>] TranslationSubdirectory = ".tnt"
         
 module TranslationFilenames =
     
-    /// Get all translation filenames in the given directory.
+    /// Get all translation filenames in the given directory. Note: the directory does not contain
+    /// the subdirectory ".tnt"
     let inDirectory (directory: Path) : TranslationFilename list = 
+        let directory = directory |> Path.extend TranslationSubdirectory
+        if not ^ Directory.exists directory then [] else
         Directory.EnumerateFiles (string directory, "*.tnt")
         |> Seq.map (Path.parse >> Path.name >> TranslationFilename)
         |> Seq.toList
@@ -32,13 +37,16 @@ module Translation =
     /// The full path of the translation
     let path (directory: Path) (translation: Translation) : Path =
         let filename = filename translation
-        directory |> Path.extend (string filename)
+        directory 
+        |> Path.extend TranslationSubdirectory 
+        |> Path.extend (string filename)
 
     /// Save a translation to the given path, overwrites if a file exists there.
     let save (path: Path) (translation: Translation) =
         translation
         |> Translation.serialize
-        |> fun str -> File.WriteAllText(string path, str, Encoding.UTF8)
+        |> fun str -> 
+            File.WriteAllText(string path, str, Encoding.UTF8)
 
 module Translations = 
 
@@ -55,6 +63,7 @@ module Translations =
         TranslationFilenames.inDirectory directory
         |> Seq.map ^ fun fn -> 
             directory
+            |> Path.extend TranslationSubdirectory
             |> TranslationDirectory.extend fn
         |> Seq.map ^ fun path ->
             let translation = Translation.load path
@@ -70,6 +79,6 @@ module Translations =
 module TranslationGroup = 
     
     let load (directory: Path) = 
-        let translations = Translations.loadAll directory
-        TranslationGroup.fromTranslations translations
+        Translations.loadAll directory
+        |> TranslationGroup.fromTranslations
 

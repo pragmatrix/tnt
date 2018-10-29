@@ -39,6 +39,9 @@ let createNewLanguage (assembly: AssemblyInfo) (language: Language) : unit outpu
     let translation = Translation.createNew language strings
     let translationPath = 
         translation |> Translation.path (Directory.current())
+    // This is the only time we need to make sure that the .tnt subdirectory is created if
+    // it does not exist.
+    Path.ensureDirectoryOfPathExists translationPath
     yield I ^ "New translation:"
     translation |> Translation.save translationPath
     yield I ^ indent ^ Translation.status translation
