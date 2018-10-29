@@ -380,16 +380,13 @@ module TranslationGroup =
         |> List.collect TranslationSet.translations
     
     /// Add a language to a translation group and return the new translations.
-    let addLanguage (language: Language) (group: TranslationGroup) : Translation list =
-        [
-            for set in sets group do
-                let languages = TranslationSet.languages set
-                if not ^ Seq.contains language languages then
-                    yield 
-                        set 
-                        |> TranslationSet.originalStrings
-                        |> Translation.createNew language
-        ]
-
-            
+    let addLanguage (language: Language) (group: TranslationGroup) : Translation list = [
+        for set in sets group do
+            let languages = TranslationSet.languages set
+            if not ^ Seq.contains language languages then
+                yield 
+                    set 
+                    |> TranslationSet.originalStrings
+                    |> Translation.createNew language
+    ]
         

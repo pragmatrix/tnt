@@ -70,7 +70,18 @@ type OutputComputationBuilder() =
 let output = OutputComputationBuilder()
 
 module Output = 
-    let run (writer: Output -> unit) (output: 'r output) = output writer
+    let run (writer: Output -> unit) (output: 'r output) : 'r = output writer
 
+    let sequence (output: 'r output list) : 'r list output =
+        fun writer ->
+            output 
+            |> List.map (run writer)
+
+    let map (f: 'a -> 'b) (input: 'a output) : 'b output =
+        fun writer ->
+            input |> run writer |> f
+
+    let bind (f: 'a -> 'b output) (input: 'a output) : 'b output = 
+        output.Bind(input, f)
 
 

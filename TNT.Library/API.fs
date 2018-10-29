@@ -81,6 +81,29 @@ let status() : ResultCode output = output {
     return Succeeded
 }
 
+/// Update the given translations and update the combined file.
+let private updateTranslations 
+    (group: TranslationGroup) 
+    (descriptionOfChange: string)
+    (changedTranslations: Translation list) = output {
+    match changedTranslations with
+    | [] ->
+        yield I ^ "No translations changed"
+    | translations ->
+        yield I ^ sprintf "Translations %s:" descriptionOfChange
+        // save them all
+        let currentDirectory = Directory.current()
+        for translation in translations do
+            let translationPath = 
+                translation |> Translation.path currentDirectory
+            translation |> Translation.save translationPath 
+            yield I ^ indent ^ Translation.status translation
+
+        // update the group
+
+        // rebuild the combined translations.
+}
+
 let add (language: Language) (assemblyLanguage: Language option, assemblyPath: AssemblyPath option) : ResultCode output = output {
     match! loadGroup() with
     | Error() ->
@@ -116,17 +139,8 @@ let add (language: Language) (assemblyLanguage: Language option, assemblyPath: A
         let translations =
             group
             |> TranslationGroup.addLanguage language
-        match translations with
-        | [] -> 
-            yield I "No new translations were added."
-        | translations -> 
-            yield I "New translations:"
-            for translation in translations do
-                let translationPath = 
-                    translation |> Translation.path (Directory.current())
-                translation |> Translation.save translationPath 
-                yield I ^ indent ^ Translation.status translation
-        return Failed
+        do! updateTranslations group "added" translations
+        return Succeeded
 }
 
 let private setsOfAssemblies (assemblies: AssemblyFilename list) (group: TranslationGroup) =
@@ -144,15 +158,14 @@ let update (assemblies: AssemblyFilename list) = output {
     match! loadGroup() with
     | Error() -> return Failed
     | Ok(group) ->
-    for set in setsOfAssemblies assemblies group do
-        let! strings = extract ^ TranslationSet.assembly set
-        let updated = set |> TranslationSet.update strings
-        for translation in updated do
-            let translationPath = 
-                translation |> Translation.path (Directory.current())
-            translation |> Translation.save translationPath 
-            yield I ^ indent ^ Translation.status translation
-            
+    let! updated = 
+        setsOfAssemblies assemblies group
+        |> List.map ^ fun set ->
+            extract ^ TranslationSet.assembly set
+            |> Output.map ^ fun strings -> TranslationSet.update strings set
+        |> Output.sequence
+
+    do! updateTranslations group "updated" (updated |> List.collect id)
     return Succeeded
 }
 
@@ -160,13 +173,11 @@ let gc (assemblies: AssemblyFilename list) = output {
     match! loadGroup() with
     | Error() -> return Failed
     | Ok(group) ->
-    for set in setsOfAssemblies assemblies group do
-        let updated = set |> TranslationSet.gc
-        for translation in updated do
-            let translationPath = 
-                translation |> Translation.path (Directory.current())
-            translation |> Translation.save translationPath 
-            yield I ^ indent ^ Translation.status translation
+    let updated = 
+        setsOfAssemblies assemblies group
+        |> List.collect TranslationSet.gc
+
+    do! updateTranslations group "garbage collected" updated
 
     return Succeeded
 }
@@ -211,7 +222,6 @@ let export
 }
 
 let import (files: Path list) : ResultCode output = output {
-    let currentDirectory = Directory.current()
     match! loadGroup() with
     | Error() ->
         return Failed
@@ -233,15 +243,7 @@ let import (files: Path list) : ResultCode output = output {
         for warning in warnings do
             yield W ^ indent ^ string warning
 
-    match translations with
-    | [] ->
-        yield I ^ "No translations changed"
-    | translations ->
-        yield I ^ "Translations updated:"
-        for translation in translations do
-            let path = Translation.path currentDirectory translation
-            translation |> Translation.save path 
-            yield I ^ indent ^ Translation.status translation
+    do! updateTranslations group "changed by import" translations
 
     return Succeeded
 }

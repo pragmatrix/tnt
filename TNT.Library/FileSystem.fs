@@ -81,4 +81,3 @@ module TranslationGroup =
     let load (directory: Path) = 
         Translations.loadAll directory
         |> TranslationGroup.fromTranslations
-
