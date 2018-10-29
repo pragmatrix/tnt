@@ -100,8 +100,9 @@ let private updateTranslations
             yield I ^ indent ^ Translation.status translation
 
         // update the group
-
+        let group = TranslationGroup.update translations group
         // rebuild the combined translations.
+        ()
 }
 
 let add (language: Language) (assemblyLanguage: Language option, assemblyPath: AssemblyPath option) : ResultCode output = output {

@@ -389,4 +389,27 @@ module TranslationGroup =
                     |> TranslationSet.originalStrings
                     |> Translation.createNew language
     ]
+
+    /// update the translation group with changed or new translations.
+    let update (updated: Translation list) (group: TranslationGroup) : TranslationGroup =
+        let existingById = 
+            group
+            |> translations
+            |> Seq.map ^ fun translation -> Translation.id translation, translation
+            |> Map.ofSeq
+
+        (existingById, updated)
+        ||> List.fold ^ 
+            fun m t -> Map.add (Translation.id t) t m
+        |> Map.toSeq
+        |> Seq.map snd
+        |> Seq.toList
+        |> fromTranslations
+        |> function
+        | Ok group -> group
+        | Error e -> failwithf "internal error, incosistent language group after update: %A" e
+
+        
+        
+        
         
