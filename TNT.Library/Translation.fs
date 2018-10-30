@@ -409,7 +409,17 @@ module TranslationGroup =
         | Ok group -> group
         | Error e -> failwithf "internal error, incosistent language group after update: %A" e
 
-        
+    /// All the translation records by language.
+    let recordsByLanguage (group: TranslationGroup) : Map<Language, TranslationRecord list> =
+        translations group
+        |> Seq.groupBy ^ fun t -> t.Language
+        |> Seq.map ^ fun (language, translations) ->
+            language, 
+            translations
+            |> Seq.collect ^ fun translation -> translation.Records
+            |> Seq.toList
+        |> Map.ofSeq
+
         
         
         
