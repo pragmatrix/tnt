@@ -47,14 +47,14 @@ namespace TNT.CSharp
 
 		static Dictionary<string, string> LoadTranslations()
 		{
+			var baseDirectory = GetEntryAssemblyDirectory();
 			var translations =
 				GetLanguagesToLookFor(CultureInfo.CurrentUICulture)
-				.SelectMany(language => 
-					GetTranslationFilePaths(GetEntryAssemblyDirectory(), language)
-						.OrderBy(path => path))
+				.Select(language => Path.Combine(baseDirectory, ".tnt/translation-" + language + ".json"))
+				.Where(File.Exists)
 				.Select(path => File.ReadAllText(path, Encoding.UTF8))
 				.Select(JsonValue.Parse)
-				.SelectMany(GetTranslations);
+				.SelectMany(GetTranslationRecords);
 
 			var table = new Dictionary<string, string>();
 
@@ -70,15 +70,13 @@ namespace TNT.CSharp
 			return table;
 		}
 
-		static readonly string[] UsableStates = { "needsReview", "final" };
-
-		static (string, string)[] GetTranslations(JsonValue value)
+		// https://stackoverflow.com/questions/52797/how-do-i-get-the-path-of-the-assembly-the-code-is-in
+		static string GetEntryAssemblyDirectory()
 		{
-			return ((JsonArray)value["records"])
-					.Select(record => (record[0].ToString(), record[1].ToString(), record[2].ToString()))
-					.Where(t => UsableStates.Contains(t.Item1))
-					.Select(t => (t.Item2, t.Item3))
-					.ToArray();
+			var codeBase = Assembly.GetEntryAssembly().CodeBase;
+			var uri = new UriBuilder(codeBase);
+			var path = Uri.UnescapeDataString(uri.Path);
+			return Path.GetDirectoryName(path);
 		}
 
 		// Get languages from more specific to less specific.
@@ -90,19 +88,16 @@ namespace TNT.CSharp
 					yield return l;
 		}
 
-		static IEnumerable<string> GetTranslationFilePaths(string directory, string language)
+		static (string, string)[] GetTranslationRecords(JsonValue value)
 		{
-			return Directory.GetFiles(directory, "*" + language + ".tnt");
+			return ((JsonArray)value["records"])
+					.Select(record => (record[0].ToString(), record[1].ToString(), record[2].ToString()))
+					.Where(t => UsableStates.Contains(t.Item1))
+					.Select(t => (t.Item2, t.Item3))
+					.ToArray();
 		}
 
-		// https://stackoverflow.com/questions/52797/how-do-i-get-the-path-of-the-assembly-the-code-is-in
-		static string GetEntryAssemblyDirectory()
-		{
-			var codeBase = Assembly.GetEntryAssembly().CodeBase;
-			var uri = new UriBuilder(codeBase);
-			var path = Uri.UnescapeDataString(uri.Path);
-			return Path.GetDirectoryName(path);
-		}
+		static readonly string[] UsableStates = { "needsReview", "final" };
 	}
 }
  
