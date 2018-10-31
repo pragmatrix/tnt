@@ -104,10 +104,7 @@ let init (language: Language option) = output {
         match language with
         | Some l when l <> sources.Language ->
             yield I ^ sprintf "Changing source language from [%O] to [%O]" sources.Language l
-            Sources.save path {
-                Language = defaultArg language Sources.DefaultLanguage
-                Sources = Set.empty
-            }
+            Sources.save path { sources with Language = l }
         | _ -> ()
 
     return Succeeded
