@@ -20,15 +20,20 @@ type ResultCode =
     | Failed
     | Succeeded
 
-let private loadSources() : Result<Sources, unit> output = output {
+let private tryLoadSources(): Sources option output = output {
     let currentDirectory = Directory.current()
     let sourcesPath = Sources.path currentDirectory
-    if not ^ File.exists sourcesPath 
-    then 
-        yield E ^ sprintf "Can't find '%s/%s', use 'tnt init' to create it." TranslationSubdirectory Sources.SourcesFilename
+    if File.exists sourcesPath 
+    then return Some ^ Sources.load sourcesPath
+    else return None
+}
+
+let private loadSources() : Result<Sources, unit> output = output {
+    match! tryLoadSources() with
+    | Some sources -> return Ok sources
+    | None ->
+        yield E ^ sprintf "Can't load '%s/%s', use 'tnt init' to create it." TranslationSubdirectory Sources.SourcesFilename
         return Error()
-    else
-        return Ok ^ Sources.load sourcesPath
 }
 
 let private loadSourcesAndGroup() : Result<Sources * TranslationGroup, unit> output = output {
@@ -85,15 +90,26 @@ let private commitTranslations
 
 /// Initialize TNT.
 let init (language: Language option) = output {
-    match! loadSources() with
-    | Ok _ -> return Succeeded
-    | Error() ->
     let path = Sources.path (Directory.current())
-    Path.ensureDirectoryOfPathExists path
-    Sources.save path {
-        Language = defaultArg language Sources.DefaultLanguage
-        Sources = Set.empty
-    }
+    match! tryLoadSources() with
+    | None ->
+        Path.ensureDirectoryOfPathExists path
+        yield I ^ sprintf "Initializing '%s'" TranslationSubdirectory
+        Sources.save path {
+            Language = defaultArg language Sources.DefaultLanguage
+            Sources = Set.empty
+        }
+
+    | Some sources -> 
+        match language with
+        | Some l when l <> sources.Language ->
+            yield I ^ sprintf "Changing source language from [%O] to [%O]" sources.Language l
+            Sources.save path {
+                Language = defaultArg language Sources.DefaultLanguage
+                Sources = Set.empty
+            }
+        | _ -> ()
+
     return Succeeded
 }
 
