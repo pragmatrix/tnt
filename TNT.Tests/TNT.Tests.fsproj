@@ -8,6 +8,7 @@
     <Compile Include="Extraction.fs" />
     <Compile Include="XLIFF.fs" />
     <Compile Include="ImportExport.fs" />
+    <Compile Include="Translation.fs" />
     <None Include="export01.xlf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -32,6 +32,8 @@ module TranslationRecord =
 
 module TranslationCounters =
 
+    let zero = { New = 0; NeedsReview = 0; Final = 0; Unused = 0 }
+    
     let combine (l: TranslationCounters) (r: TranslationCounters) = {
         New = l.New + r.New
         NeedsReview = l.NeedsReview + r.NeedsReview
@@ -55,7 +57,7 @@ module TranslationCounters =
 
         translation.Records
         |> Seq.map ^ fun r -> statusOf r.Translated
-        |> Seq.reduce combine
+        |> Seq.fold combine zero
 
 [<CR(ModuleSuffix)>]
 module Translation =
