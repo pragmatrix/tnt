@@ -22,14 +22,18 @@ module ARPath =
         | AbsolutePath abs -> abs
         | RelativePath rel -> root |> Path.extend rel
 
-    let extend (rel: ARPath) (parent: ARPath) =
-        match parent, rel with
-        | RelativePath parent, RelativePath rel 
-            -> RelativePath (Path.Combine(parent, rel))
-        | AbsolutePath path, RelativePath rel 
-            -> AbsolutePath (path |> Path.extend rel)
+    let extend (right: ARPath) (left: ARPath) =
+        match left, right with
+        | RelativePath ".", right
+            -> right
+        | left, RelativePath "."
+            -> left
         | _, AbsolutePath path 
             -> AbsolutePath path
+        | AbsolutePath path, RelativePath rel 
+            -> AbsolutePath (path |> Path.extend rel)
+        | RelativePath parent, RelativePath rel 
+            -> RelativePath (Path.Combine(parent, rel))
 
     let ofString (path: string) = 
         if Path.IsPathRooted(path)
