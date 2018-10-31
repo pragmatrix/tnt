@@ -89,15 +89,13 @@ let dispatch (command: obj) =
         API.status opts.Verbose
 
     | :? ExportOptions as opts ->
-        let exportDirectory = 
-            let relativeDirectory = 
-                opts.Directory 
-                |> Option.ofObj 
-                |> Option.defaultValue "."
-            Directory.current() 
-            |> Path.extend relativeDirectory
+        let exportPath = 
+            opts.Directory 
+            |> Option.ofObj 
+            |> Option.defaultValue "."
+            |> ARPath.ofString
 
-        API.export exportDirectory
+        API.export exportPath
 
     | :? ImportOptions as opts ->
         let importDirectory = 

@@ -186,10 +186,13 @@ let gc() = output {
     return Succeeded
 }
 
-let private projectName() = Directory.current() |> Path.name |> ProjectName
+let private projectName() = 
+    Directory.current() 
+    |> Path.name 
+    |> ProjectName
 
 let export 
-    (exportDirectory: Path) 
+    (exportDirectory: ARPath) 
     : ResultCode output = output {
     match! loadSourcesAndGroup() with
     | Error() ->
@@ -202,14 +205,16 @@ let export
         |> Seq.map ^ fun translation ->
             let filename = 
                 XLIFFFilename.filenameForLanguage project translation.Language 
-            let path = exportDirectory |> Path.extend ^ string filename
+            let path = exportDirectory |> ARPath.extend ^ RelativePath (string filename)
             let file = ImportExport.export project sources.Language translation
             path, XLIFF.generateV12 [file]
+
+    let rooted = ARPath.rooted ^ Directory.current()
 
     let existingOnes = 
         allExports
         |> Seq.map fst
-        |> Seq.filter File.exists
+        |> Seq.filter ^ fun path -> File.exists (rooted path)
         |> Seq.toList
 
     if existingOnes <> [] then
@@ -221,7 +226,7 @@ let export
 
     for (file, content) in allExports do
         yield I ^ sprintf "Exporting translation to '%s'" (string file)
-        File.saveText Encoding.UTF8 (string content) file
+        File.saveText Encoding.UTF8 (string content) (rooted file)
 
     return Succeeded
 }
