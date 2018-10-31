@@ -5,109 +5,108 @@ open TNT.Library.Output
 open FunToolbox.FileSystem
 open CommandLine
 
-[<Verb("add", HelpText = "Add a new language to all existing translations or to one specific assembly.")>]
+[<Verb("init", HelpText = "Initialize the current directory. Creates the '.tnt' directory and the 'sources.json' file.")>]
+type InitOptions = {
+    [<Option('l', "language", HelpText = "The source language (code ['-' region]), defaults to 'en-US'.")>]
+    Language: string
+}
+
+[<Verb("add", HelpText = "Add a new language or assembly.")>]
 type AddOptions = {
     // http://www.i18nguy.com/unicode/language-identifiers.html
     // https://www.ietf.org/rfc/rfc3066.txt
 
-    [<Option("alang", HelpText = "Language (code ['-' region]) of the assemblies, default is 'en-US'.")>]
-    AssemblyLanguage: string
-
-    [<Option('l', "lang", Required = true, HelpText = "Language (code ['-' region]) to be translated to.")>]
+    [<Option('l', "language", HelpText = "Language (code ['-' region]) to be added.")>]
     Language: string
 
-    [<Value(0, HelpText = "Relative path of the assembly file.")>]
+    [<Option('a', "assembly", HelpText = "Relative path of the assembly file to be added.")>]
     Assembly: string
 }
 
-[<Verb("update", HelpText = "Update the strings from all assemblies or the specific assembly names provided.")>]
-type UpdateOptions = {
-    [<Value(0, HelpText = "Name of the assembly files to update. If not provided, all assemblies are updated.")>]
-    Assemblies: string seq
-}
+[<Verb("update", HelpText = "Extract all strings from all assemblies and update the translations.")>]
+type UpdateOptions() = 
+    class end
 
-[<Verb("gc", HelpText = "Remove all unused translations from the translation files.")>]
-type GCOptions = {
-    [<Value(0, HelpText = "Name of the assembly files to garbage collect. If not provided, all translations are garbage collected.")>]
-    Assemblies: string seq
-}
+[<Verb("gc", HelpText = "Remove all unused translation records.")>]
+type GCOptions() = 
+    class end
 
-[<Verb("status", HelpText = "Show all the translations and their status in the current directory.")>]
+[<Verb("status", HelpText = "Show all the translations and their status.")>]
 type StatusOptions() = 
     class end
 
 [<Verb("export", HelpText = "Export all strings from all translation to an XLIFF file.")>]
 type ExportOptions = {
-    [<Option("name", HelpText = "The XLIFF base name to generate, default is the current directory's name.")>]
-    BaseName : string
-    [<Value(0, Required = true, HelpText = "The output directory to export the XLIFF files to.")>]
-    OutputDirectory: string
+    [<Value(0, HelpText = "The directory to export the XLIFF files to. Default is the current directory.")>]
+    Directory: string
 }
 
 [<Verb("import", HelpText = "Import XLIFF translation files and apply the changes to the translations in the current directory.")>]
 type ImportOptions = {
-    [<Value(0, Min=1, HelpText = "The XLIFF files to import.")>]
-    Files: string seq
+    [<Value(0, HelpText = "The directory to import the XLIFF files from. Default is the current directory.")>]
+    Directory: string
 }
 
 let private argumentTypes = [|
+    typeof<InitOptions>
     typeof<AddOptions>
     typeof<UpdateOptions>
     typeof<GCOptions>
     typeof<StatusOptions>
-    typeof<ImportOptions>
     typeof<ExportOptions>
+    typeof<ImportOptions>
 |]
 
 let dispatch (command: obj) = 
 
-    let currentDirectory = Directory.current()
-
     match command with
+    | :? InitOptions as opts ->
+        let language = opts.Language |> Option.ofObj |> Option.map Language
+        API.init language
+
     | :? AddOptions as opts -> 
-        API.add 
-            (Language(opts.Language))
-            ( opts.AssemblyLanguage |> Option.ofObj |> Option.map Language
-            , opts.Assembly |> Option.ofObj |> Option.map AssemblyPath)
+        let language = opts.Language |> Option.ofObj |> Option.map Language
+        let assembly = opts.Assembly |> Option.ofObj |> Option.map AssemblyPath
 
-    | :? UpdateOptions as opts ->
-        let assemblies =
-            opts.Assemblies
-            |> Seq.map AssemblyFilename
-            |> Seq.toList
+        match language, assembly with
+        | None, None
+        | Some _, Some _ 
+            -> failwith "use either --language or --assembly to specify what should be added"
+        | Some language, _ 
+            -> API.addLanguage language
+        | _, Some assembly 
+            -> API.addAssembly assembly
+        
+    | :? UpdateOptions ->
+        API.update()
 
-        API.update assemblies
-
-    | :? GCOptions as opts ->
-        let assemblies =
-            opts.Assemblies
-            |> Seq.map AssemblyFilename
-            |> Seq.toList
-
-        API.gc assemblies
+    | :? GCOptions ->
+        API.gc()
 
     | :? StatusOptions ->
         API.status()
 
     | :? ExportOptions as opts ->
+        let exportDirectory = 
+            let relativeDirectory = 
+                opts.Directory 
+                |> Option.ofObj 
+                |> Option.defaultValue "."
+            Directory.current() 
+            |> Path.extend relativeDirectory
 
-        let baseName = 
-            opts.BaseName
-            |> Option.ofObj
-            |> Option.defaultWith 
-                ^ fun () -> Path.name currentDirectory
-            |> XLIFFBaseName
-
-        let outputDirectory = Path.parse opts.OutputDirectory
-
-        API.export baseName outputDirectory
+        API.export exportDirectory
 
     | :? ImportOptions as opts ->
-        let xlfFilePaths =
-            opts.Files
-            |> Seq.map ^ fun file -> currentDirectory |> Path.extend file
-            |> Seq.toList
-        API.import xlfFilePaths
+        let importDirectory = 
+            let relativeDirectory = 
+                opts.Directory 
+                |> Option.ofObj 
+                |> Option.defaultValue "."
+            Directory.current() 
+            |> Path.extend relativeDirectory
+
+        API.import importDirectory
 
     | x -> failwithf "internal error: %A" x
 
@@ -116,9 +115,7 @@ let ok = 0
 
 let protectedMain args =
 
-    let result = Parser.Default.ParseArguments(args, argumentTypes)
-
-    match result with
+    match Parser.Default.ParseArguments(args, argumentTypes) with
     | :? CommandLine.Parsed<obj> as command ->
         dispatch command.Value
         |> Output.run Console.WriteLine
@@ -128,12 +125,14 @@ let protectedMain args =
 
     | :? CommandLine.NotParsed<obj> ->
         failed
-    | x -> failwithf "internal error: %A" x
+
+    | x -> 
+        failwithf "internal error: %A" x
 
 [<EntryPoint>]
 let main args =
     try
         protectedMain args
     with e ->
-        printfn "%s" (string e)
+        printfn "%s" (string e.Message)
         failed

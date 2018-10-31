@@ -2,4 +2,6 @@ FSharp.Core
 System.ValueTuple
 Mono.Cecil
 FunToolbox
+System.Json
 Newtonsoft.Json
+Chiron

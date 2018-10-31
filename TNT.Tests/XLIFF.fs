@@ -10,30 +10,29 @@ open Xunit
 
 let record original translated = { Original = original; Translated = translated }
 
-let translations = [ { 
-        Assembly = { 
-            Language = Language("en-US")
-            Path = AssemblyPath("/tmp/test.dll") 
-        }
-        Language = Language("de-DE")
-        Records = [
-            record "New" TranslatedString.New
-            record "Auto" ^ TranslatedString.NeedsReview "Automatically Translated"
-            record "Reviewed" ^ TranslatedString.Final "Reviewed"
-            record "Unused" ^ TranslatedString.Unused "Unused"
-        ]
-    }
-]
+let translation = { 
+    Language = Language("de-DE")
+    Records = [
+        record "New" TranslatedString.New
+        record "Auto" ^ TranslatedString.NeedsReview "Automatically Translated"
+        record "Reviewed" ^ TranslatedString.Final "Reviewed"
+        record "Unused" ^ TranslatedString.Unused "Unused"
+    ]
+}
 
 let linesOf (str: string) =
     str.Split([|'\n'|])
     |> Seq.map (fun str -> str.Trim([|'\r'|]))
     |> Seq.toList
 
+let projectName = ProjectName("project")
+let sourceLanguage = Language("en-US")
+
 [<Fact>]
 let ``generates XLIFF``() = 
     let generated = 
-        ImportExport.export translations
+        ImportExport.export projectName sourceLanguage translation
+        |> List.singleton
         |> generateV12
         |> string
         |> fun str -> str.Trim()
@@ -41,7 +40,8 @@ let ``generates XLIFF``() =
 
     let fn = Directory.current() |> Path.extend "export01.xlf"
     
-    linesOf generated
+    let generated = linesOf generated
+    generated
     |> should equal (File.loadText Encoding.UTF8 fn |> fun str -> str.Trim() |> linesOf)
 
 [<Fact>]
@@ -51,8 +51,8 @@ let ``imports XLIFF``() =
     let parsed = parseV12 xliff
     parsed 
     |> should equal [ {
-        Name = AssemblyFilename "test.dll"
-        SourceLanguage = Language "en-US"
+        Name = string projectName
+        SourceLanguage = sourceLanguage
         TargetLanguage = Language "de-DE"
         TranslationUnits = [ {
             Source = "New"
