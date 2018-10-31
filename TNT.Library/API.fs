@@ -14,38 +14,11 @@ module TranslationGroup =
             l |> Seq.map ^ fun (language, _) ->
                 E ^ sprintf "multiple translations of the same language: '%s'" (string language)
 
-(*
-let extract (path: AssemblyPath) : OriginalStrings output = output {
-    let strings = StringExtractor.extract path
-    let num = 
-        strings
-        |> OriginalStrings.strings
-        |> List.length
-    yield I ^ sprintf "extracted %d strings from '%s'" num (string path)
-    return strings
-}
-
-*)
-
 let private indent str = "  " + str
 
 type ResultCode =
     | Failed
     | Succeeded
-
-(*
-let createNewLanguage (assembly: AssemblyInfo) (language: Language) : unit output = output {
-    let assemblyFilename = assembly.Path |> AssemblyFilename.ofPath
-    yield I ^ sprintf "found no language '%s' for '%s', adding one" (string language) (string assemblyFilename)
-    let! strings = extract assembly
-    let translation = Translation.createNew language strings
-    let translationPath = 
-        translation |> Translation.path (Directory.current())
-    yield I ^ "New translation:"
-    translation |> Translation.save translationPath
-    yield I ^ indent ^ Translation.status translation
-}
-*)
 
 let private loadSources() : Result<Sources, unit> output = output {
     let currentDirectory = Directory.current()
@@ -74,16 +47,6 @@ let private loadSourcesAndGroup() : Result<Sources * TranslationGroup, unit> out
 let private loadGroup() =
     loadSourcesAndGroup()
     |> Output.map ^ Result.map snd
-
-(*
-/// tbd: funtoolbox candidate. (also Seq & list)
-module Array = 
-    let (|IsEmpty|IsNotEmpty|) (array: 'e array) =
-        match array with
-        | [||] -> IsEmpty
-        | _ -> IsNotEmpty array
-
-*)
 
 let status() : ResultCode output = output {
     match! loadGroup() with
@@ -172,19 +135,6 @@ let addAssembly (assemblyPath: AssemblyPath) : ResultCode output = output {
     }
     return Succeeded
 }
-
-(*
-let private setsOfAssemblies (assemblies: AssemblyFilename list) (group: TranslationGroup) =
-    if assemblies = [] then 
-        TranslationGroup.sets group 
-    else
-        assemblies 
-        |> List.map ^ fun assembly -> 
-            TranslationGroup.set assembly group 
-            |> Option.defaultWith ^ fun () ->
-                failwithf "no translation for '%s'" (string assembly)
-
-*)
 
 let update() = output {
     match! loadSourcesAndGroup() with
