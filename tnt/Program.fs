@@ -24,11 +24,11 @@ type AddOptions = {
 }
 
 [<Verb("update", HelpText = "Extract all strings from all assemblies and update the translations.")>]
-type UpdateOptions = 
+type UpdateOptions() = 
     class end
 
 [<Verb("gc", HelpText = "Remove all unused translation records.")>]
-type GCOptions = 
+type GCOptions() = 
     class end
 
 [<Verb("status", HelpText = "Show all the translations and their status.")>]
