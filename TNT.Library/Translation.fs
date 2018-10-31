@@ -141,7 +141,10 @@ module Translation =
 
     let status (translation: Translation) : string = 
         let counters = TranslationCounters.ofTranslation translation
-        sprintf "[%s][%s]" (string translation.Language) (string counters)
+        sprintf "[%s][%s] %s" 
+            (string translation.Language) 
+            (string counters) 
+            (sprintf "%s/%O" TNT.Subdirectory (TranslationFilename.ofTranslation translation))
 
     /// Update the translation's original strings and return the translation if it changed.
     let update (strings: OriginalStrings) (translation: Translation) : Translation option = 

@@ -14,6 +14,9 @@ module AssemblyFilename =
         Path.GetFileName(string path)
         |> AssemblyFilename
 
+module TNT =
+    let [<Literal>] Subdirectory = ".tnt"
+
 module TranslationFilename =
 
     let ofTranslation (translation: Translation) : TranslationFilename =

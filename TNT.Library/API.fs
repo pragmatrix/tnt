@@ -32,7 +32,7 @@ let private loadSources() : Result<Sources, unit> output = output {
     match! tryLoadSources() with
     | Some sources -> return Ok sources
     | None ->
-        yield E ^ sprintf "Can't load '%s/%s', use 'tnt init' to create it." TranslationSubdirectory Sources.SourcesFilename
+        yield E ^ sprintf "Can't load '%s/%s', use 'tnt init' to create it." TNT.Subdirectory Sources.SourcesFilename
         return Error()
 }
 
@@ -55,12 +55,10 @@ let private loadGroup() =
 
 let status() : ResultCode output = output {
     match! loadGroup() with
-    | Error() ->
-        return Failed
+    | Error() -> return Failed
     | Ok(group) ->
 
-    let translations = TranslationGroup.translations group
-    match translations with
+    match TranslationGroup.translations group with
     | [] -> 
         yield I ^ "No translations, use 'tnt add' to add one."
     | translations ->
@@ -94,7 +92,7 @@ let init (language: Language option) = output {
     match! tryLoadSources() with
     | None ->
         Path.ensureDirectoryOfPathExists path
-        yield I ^ sprintf "Initializing '%s'" TranslationSubdirectory
+        yield I ^ sprintf "Initializing '%s'" TNT.Subdirectory
         Sources.save path {
             Language = defaultArg language Sources.DefaultLanguage
             Sources = Set.empty

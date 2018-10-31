@@ -9,8 +9,6 @@ open TNT.Model
 open TNT.Library.Paths
 open TNT.Library.Translation
 
-let [<Literal>] TranslationSubdirectory = ".tnt"
-
 module Sources = 
 
     let DefaultLanguage = Language("en-US")
@@ -18,7 +16,7 @@ module Sources =
     
     let path (baseDirectory: Path) : Path = 
         baseDirectory
-        |> Path.extend TranslationSubdirectory
+        |> Path.extend TNT.Subdirectory
         |> Path.extend SourcesFilename
 
     let load (path: Path) : Sources =
@@ -47,7 +45,7 @@ module TranslationFilenames =
     /// Get all translation filenames in the given directory. Note: the directory does not contain
     /// the subdirectory ".tnt"
     let inDirectory (baseDirectory: Path) : TranslationFilename list = 
-        let directory = baseDirectory |> Path.extend TranslationSubdirectory
+        let directory = baseDirectory |> Path.extend TNT.Subdirectory
         if not ^ Directory.exists directory then [] else
         Directory.EnumerateFiles (string directory, string TranslationFilename.Pattern)
         |> Seq.map (Path.parse >> Path.name >> TranslationFilename)
@@ -63,7 +61,7 @@ module Translation =
     let path (directory: Path) (translation: Translation) : Path =
         let filename = filename translation
         directory 
-        |> Path.extend TranslationSubdirectory 
+        |> Path.extend TNT.Subdirectory 
         |> Path.extend (string filename)
 
     /// Load the translation at the given path.
@@ -94,7 +92,7 @@ module Translations =
         TranslationFilenames.inDirectory directory
         |> Seq.map ^ fun fn -> 
             directory
-            |> Path.extend TranslationSubdirectory
+            |> Path.extend TNT.Subdirectory
             |> Path.extend (string fn)
         |> Seq.map ^ fun path ->
             let translation = Translation.load path
