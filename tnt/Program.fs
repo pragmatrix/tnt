@@ -32,8 +32,10 @@ type GCOptions() =
     class end
 
 [<Verb("status", HelpText = "Show all the translations and their status.")>]
-type StatusOptions() = 
-    class end
+type StatusOptions = { 
+    [<Option('v', "verbose", HelpText = "Provide more detailed status information.")>]
+    Verbose: bool
+}
 
 [<Verb("export", HelpText = "Export all strings from all translation to an XLIFF file.")>]
 type ExportOptions = {
@@ -83,8 +85,8 @@ let dispatch (command: obj) =
     | :? GCOptions ->
         API.gc()
 
-    | :? StatusOptions ->
-        API.status()
+    | :? StatusOptions as opts ->
+        API.status opts.Verbose
 
     | :? ExportOptions as opts ->
         let exportDirectory = 

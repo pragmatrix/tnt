@@ -14,7 +14,8 @@ module TranslationGroup =
             l |> Seq.map ^ fun (language, _) ->
                 E ^ sprintf "multiple translations of the same language: '%s'" (string language)
 
-let private indent str = "  " + str
+let [<Literal>] private DefaultIndent = "  "
+let private indent str = DefaultIndent + str
 
 type ResultCode =
     | Failed
@@ -53,21 +54,6 @@ let private loadGroup() =
     loadSourcesAndGroup()
     |> Output.map ^ Result.map snd
 
-let status() : ResultCode output = output {
-    match! loadGroup() with
-    | Error() -> return Failed
-    | Ok(group) ->
-
-    match TranslationGroup.translations group with
-    | [] -> 
-        yield I ^ "No translations, use 'tnt add' to add one."
-    | translations ->
-        for translation in translations do
-            yield I ^ Translation.status translation
-
-    return Succeeded
-}
-
 /// Update the given translations and update the combined file.
 let private commitTranslations 
     (descriptionOfChange: string)
@@ -104,6 +90,28 @@ let init (language: Language option) = output {
             yield I ^ sprintf "Changing source language from [%O] to [%O]" sources.Language l
             Sources.save path { sources with Language = l }
         | _ -> ()
+
+    return Succeeded
+}
+
+let status (verbose: bool) : ResultCode output = output {
+    match! loadSourcesAndGroup() with
+    | Error() -> return Failed
+    | Ok(sources, group) ->
+
+    if verbose then
+        let strings = 
+            sources.Format
+            |> Properties.strings DefaultIndent
+        for string in strings do
+            yield I ^ string
+
+    match TranslationGroup.translations group with
+    | [] -> 
+        yield I ^ "No translations, use 'tnt add' to add one."
+    | translations ->
+        for translation in translations do
+            yield I ^ Translation.status translation
 
     return Succeeded
 }

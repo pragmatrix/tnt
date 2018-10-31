@@ -96,6 +96,8 @@ module OriginalStrings =
         |> Seq.collect strings
         |> create
 
+
+
 /// A source of strings.
 type Source = 
     | AssemblySource of AssemblyPath
