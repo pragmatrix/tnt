@@ -37,7 +37,7 @@ type StatusOptions = {
     Verbose: bool
 }
 
-[<Verb("export", HelpText = "Export all strings from all translation to an XLIFF file.")>]
+[<Verb("export", HelpText = "Export all strings from all translations to an XLIFF file.")>]
 type ExportOptions = {
     [<Value(0, HelpText = "The directory to export the XLIFF files to. Default is the current directory.")>]
     Directory: string
