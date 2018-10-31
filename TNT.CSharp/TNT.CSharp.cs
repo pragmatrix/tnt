@@ -91,7 +91,7 @@ namespace TNT.CSharp
 		static (string, string)[] GetTranslationRecords(JsonValue value)
 		{
 			return ((JsonArray)value["records"])
-					.Select(record => (record[0].ToString(), record[1].ToString(), record[2].ToString()))
+					.Select(record => ((string)record[0], (string)record[1], (string)record[2]))
 					.Where(t => UsableStates.Contains(t.Item1))
 					.Select(t => (t.Item2, t.Item3))
 					.ToArray();

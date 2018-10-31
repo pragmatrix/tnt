@@ -6,19 +6,22 @@ open Chiron
 
 let deserialize (json: string) : Sources = 
     let value = JsonValue.Parse json
+
+    let str (value: JsonValue) : string = 
+        JsonValue.op_Implicit(value)
     
     let parseAssemblySource (value: JsonValue) : Source = 
-        AssemblySource(AssemblyPath(string value.["path"]))
+        AssemblySource(AssemblyPath(str value.["path"]))
 
     let parseSource (value: JsonArray) : Source =
         if value.Count <> 2 then
             failwithf "a source must have a type and a content object"
-        let sourceType = string value.[0]
-        match sourceType with
+        match str value.[0] with
         | "assembly" -> parseAssemblySource value.[1]
         | unknown -> failwithf "unsupported source type: '%s'" unknown
     
-    let language = value.["language"] |> string |> Language
+
+    let language = str value.["language"] |> Language
     let sources = 
         value.["sources"] :?> JsonArray
         |> Seq.map (unbox >> parseSource)
