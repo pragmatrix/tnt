@@ -59,8 +59,6 @@ let private argumentTypes = [|
 
 let dispatch (command: obj) = 
 
-    let currentDirectory = Directory.current()
-
     match command with
     | :? InitOptions as opts ->
         let language = opts.Language |> Option.ofObj |> Option.map Language
@@ -117,9 +115,7 @@ let ok = 0
 
 let protectedMain args =
 
-    let result = Parser.Default.ParseArguments(args, argumentTypes)
-
-    match result with
+    match Parser.Default.ParseArguments(args, argumentTypes) with
     | :? CommandLine.Parsed<obj> as command ->
         dispatch command.Value
         |> Output.run Console.WriteLine
@@ -129,12 +125,14 @@ let protectedMain args =
 
     | :? CommandLine.NotParsed<obj> ->
         failed
-    | x -> failwithf "internal error: %A" x
+
+    | x -> 
+        failwithf "internal error: %A" x
 
 [<EntryPoint>]
 let main args =
     try
         protectedMain args
     with e ->
-        printfn "%s" (string e)
+        printfn "%s" (string e.Message)
         failed
