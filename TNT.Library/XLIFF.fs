@@ -37,7 +37,7 @@ type TranslationUnit = {
 }
 
 type File = {
-    Name: AssemblyFilename
+    Name: string
     SourceLanguage: Language
     TargetLanguage: Language
     TranslationUnits: TranslationUnit list
@@ -173,7 +173,6 @@ let parseV12 (XLIFFV12 xliff) : File list =
     let parseFile (file: XElement) =
         let name = 
             file.getValue "original"
-            |> AssemblyFilename
         
         let sourceLanguage = 
             file.getValue "source-language"

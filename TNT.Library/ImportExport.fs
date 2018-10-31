@@ -3,8 +3,8 @@
 open TNT.Model
 open TNT.Library.XLIFF
 
-/// Convert a number of translations to a list of files.
-let export (translations: Translation list) : File list =
+/// Convert a translations to a file.
+let export (project: ProjectName) (sourceLanguage: Language) (translation: Translation)  : File =
 
     let toUnit (record: TranslationRecord) =
 
@@ -22,65 +22,77 @@ let export (translations: Translation list) : File list =
             State = state
         }
 
-    let toFile (translation: Translation) =
-        let assembly = translation.Assembly
-        {
-            Name = AssemblyFilename.ofPath assembly.Path
-            SourceLanguage = assembly.Language
-            TargetLanguage = translation.Language
-            TranslationUnits = translation.Records |> List.choose toUnit
-        }
+    let toFile (translation: Translation) = {
+        Name = string project
+        SourceLanguage = sourceLanguage
+        TargetLanguage = translation.Language
+        TranslationUnits = translation.Records |> List.choose toUnit
+    }
 
-    translations
-    |> List.map toFile
+    toFile translation
 
 type ImportWarning = 
-    | DuplicateImports of TranslationId
-    | TranslationNotFound of TranslationId
-    | OriginalStringNotFound of TranslationId * TranslationUnit
-    | UnusedTranslationChanged of TranslationId * (TranslationRecord * TranslationRecord)
-    | IgnoredNewWithTranslation of TranslationId * (TranslationRecord * TranslationUnit)
-    | IgnoredNewReset of TranslationId * (TranslationRecord * TranslationUnit)
+    | ProjectMismatch of ProjectName * ProjectName
+    | DuplicateImports of Language
+    | TranslationNotFound of Language
+    | OriginalStringNotFound of Language * TranslationUnit
+    | UnusedTranslationChanged of Language * (TranslationRecord * TranslationRecord)
+    | IgnoredNewWithTranslation of Language * (TranslationRecord * TranslationUnit)
+    | IgnoredNewReset of Language * (TranslationRecord * TranslationUnit)
     override this.ToString() =
         match this with
-        | DuplicateImports key 
-            -> sprintf "%O: found two or more files with the same key" key
-        | TranslationNotFound key 
-            -> sprintf "%O: translation missing" key
-        | OriginalStringNotFound(key, tu) 
-            -> sprintf "%O: original string not found: '%s'" key tu.Source
-        | UnusedTranslationChanged(key, (before, _)) 
-            -> sprintf "%O: unused translation changed: '%s'" key before.Original
-        | IgnoredNewWithTranslation(key, (record, _)) 
-            -> sprintf "%O: ignored translation of a record marked new :'%s'" key record.Original
-        | IgnoredNewReset(key, (record, _)) 
-            -> sprintf "%O: ignored translation to state new, even though it wasn't new anymore: '%s'" key record.Original
+        | ProjectMismatch(wrong, expected)
+            -> sprintf "'%O': unexpected project name of <file>, expect '%O'." wrong expected
+        | DuplicateImports language 
+            -> sprintf "[%O] found two or more files with the same language" language
+        | TranslationNotFound language 
+            -> sprintf "[%O] translation missing" language
+        | OriginalStringNotFound(language, tu) 
+            -> sprintf "[%O] original string not found: '%s'" language tu.Source
+        | UnusedTranslationChanged(language, (before, _)) 
+            -> sprintf "[%O] unused translation changed: '%s'" language before.Original
+        | IgnoredNewWithTranslation(language, (record, _)) 
+            -> sprintf "[%O] ignored translation of a record marked new: '%s'" language record.Original
+        | IgnoredNewReset(language, (record, _)) 
+            -> sprintf "[%O] ignored translation to state new, even though it wasn't new anymore: '%s'" language record.Original
 
 /// Import a number of translations and return the translations that changed.
-let import (translations: Translation list) (files: File list) 
+let import (project: ProjectName) (translations: Translation list) (files: File list) 
     : Translation list * ImportWarning list =
 
-    // find duplicates in the file list.
+    // find files that does not belong to us.
 
-    let idOfFile file = 
-        TranslationId(file.Name, file.TargetLanguage)
+    let mismatchedNames = 
+        files 
+        |> Seq.map ^ fun file -> ProjectName file.Name
+        |> Seq.filter ^ (<>) project
+        |> Seq.toList
 
-    let duplicates = 
+    if mismatchedNames <> [] 
+    then
+        [], 
+        mismatchedNames 
+        |> List.map ^ fun wrong -> ProjectMismatch(wrong, project)
+    else
+
+    // find duplicated languages in the file list.
+
+    let duplicatedLanguages = 
         files
-        |> Seq.groupBy ^ idOfFile
+        |> Seq.groupBy ^ fun file -> file.TargetLanguage
         |> Seq.filter ^ fun (_, files) -> Seq.length files > 1
         |> Seq.map fst
         |> Seq.toList
 
-    match duplicates with
-    | _::_ -> [], duplicates |> List.map DuplicateImports
-    | [] ->
+    if duplicatedLanguages <> [] 
+    then [], duplicatedLanguages |> List.map DuplicateImports
+    else
     
     // group translations, expect no duplicates.
 
     let translations = 
         translations 
-        |> Seq.groupBy Translation.id
+        |> Seq.groupBy ^ fun translation -> translation.Language
         |> Seq.map ^ Snd.map ^ Seq.exactlyOne
         |> Map.ofSeq
 
@@ -88,9 +100,11 @@ let import (translations: Translation list) (files: File list)
     let tryImportFile
         (file: File) 
         : Translation option * ImportWarning list =
-        let tid = idOfFile file
-        match Map.tryFind tid translations with
-        | None -> None, [TranslationNotFound tid]
+        
+        let language = file.TargetLanguage
+
+        match Map.tryFind language translations with
+        | None -> None, [TranslationNotFound language]
         | Some translation ->
 
         let updateRecord 
@@ -109,18 +123,18 @@ let import (translations: Translation list) (files: File list)
                     let newRecord = 
                         { record with 
                             Translated = TranslatedString.Unused (string translatedString) }
-                    newRecord, Some (UnusedTranslationChanged(tid, (record, newRecord)))
+                    newRecord, Some (UnusedTranslationChanged(language, (record, newRecord)))
                 | _ ->
                     { record with Translated = translatedString }, None
                     
             let record, warningOpt = 
                 match unit.State with
                 | New when unit.Target <> "" 
-                    -> record, Some ^ IgnoredNewWithTranslation(tid, (record, unit))
+                    -> record, Some ^ IgnoredNewWithTranslation(language, (record, unit))
                 | New when record.Translated = TranslatedString.New 
                     -> record, None
                 | New 
-                    -> record, Some ^ IgnoredNewReset(tid, (record, unit))
+                    -> record, Some ^ IgnoredNewReset(language, (record, unit))
                 | NeedsReview 
                     -> update ^ TranslatedString.NeedsReview unit.Target
                 | Translated | Final 
@@ -148,14 +162,13 @@ let import (translations: Translation list) (files: File list)
         let stringsNotFoundWarnings = 
             unprocessed 
             |> Map.toSeq 
-            |> Seq.map ^ fun (_, tu) -> OriginalStringNotFound(tid, tu)
+            |> Seq.map ^ fun (_, tu) -> OriginalStringNotFound(language, tu)
             |> Seq.toList
 
         let translation = 
-            if newRecords <> records then
-                Some ^ { translation with Records = newRecords }
-            else
-                None
+            if newRecords <> records 
+            then Some ^ { translation with Records = newRecords }
+            else None
 
         translation, warnings @ stringsNotFoundWarnings
 

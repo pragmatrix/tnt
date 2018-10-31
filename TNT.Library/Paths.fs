@@ -6,12 +6,6 @@ open System.IO
 open TNT.Model
 open FunToolbox.FileSystem
 
-module TranslationDirectory = 
-
-    let extend (file: TranslationFilename) (dir: Path) =
-        dir 
-        |> Path.extend (string file)
-
 module AssemblyFilename = 
 
     let ofPath (path: AssemblyPath) = 
@@ -22,16 +16,21 @@ module AssemblyFilename =
 
 module TranslationFilename =
 
-    let ofId (TranslationId(assemblyFilename, language)) : TranslationFilename =
-        sprintf "%s-%s.tnt" (string assemblyFilename) (string language)
+    let ofTranslation (translation: Translation) : TranslationFilename =
+        sprintf "translation-%s.json" (string translation.Language)
         |> TranslationFilename
 
-module XLIFFBaseName = 
+    let Pattern = GlobPattern("translation-*.json")
+
+module XLIFFFilename = 
     
-    let [<Literal>] FileExtension = ".xlf"
+    let [<Literal>] Extension = ".xlf"
     // VisualStudio uses the dot extension to separate the identifier from the base name.
     let [<Literal>] IdentifierSeparator = "."
 
-    let filePathForLanguage (Language(identifier)) (directory: Path) (XLIFFBaseName(baseName)) =
-        directory
-        |> Path.extend (baseName + IdentifierSeparator + identifier + FileExtension)
+    let filenameForLanguage (project: ProjectName) (Language(identifier)) : XLIFFFilename =
+        XLIFFFilename ^ string project + IdentifierSeparator + identifier + Extension
+
+    let pattern (project: ProjectName) : GlobPattern =
+        GlobPattern(string project + "*" + Extension)
+    

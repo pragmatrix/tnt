@@ -1,24 +1,25 @@
 ﻿namespace TNT.Model
 
+/// Project name, currently the name of the current directory.
+[<Struct>]
+type ProjectName = 
+    | ProjectName of string
+    override this.ToString() = 
+        this |> function ProjectName str -> str
+
+/// A glob pattern "*": any substring, "?": any character
+[<Struct>]
+type GlobPattern = 
+    | GlobPattern of string
+    override this.ToString() =
+        this |> function GlobPattern str -> str
+
 /// The filename of an assembly.
 [<Struct>]
 type AssemblyFilename = 
     | AssemblyFilename of string
     override this.ToString() = 
         this |> function AssemblyFilename str -> str
-
-/// The filename of a translation file.
-[<Struct>]
-type TranslationFilename = 
-    | TranslationFilename of string
-    override this.ToString() = 
-        this |> function TranslationFilename str -> str
-
-/// The base name of an XLIFF file.
-type [<Struct>] XLIFFBaseName =
-    | XLIFFBaseName of string
-    override this.ToString() = 
-        this |> function XLIFFBaseName str -> str
 
 /// A relative path to the assembly.
 [<Struct>] 
@@ -32,6 +33,20 @@ type Language =
     | Language of string
     override this.ToString() = 
         this |> function Language identifier -> identifier
+
+/// The filename of a translation file.
+[<Struct>]
+type TranslationFilename = 
+    | TranslationFilename of string
+    override this.ToString() = 
+        this |> function TranslationFilename str -> str
+
+/// The filename of an XLIFF file.
+[<Struct>]
+type XLIFFFilename = 
+    | XLIFFFilename of string
+    override this.ToString() = 
+        this |> function XLIFFFilename str -> str
 
 [<RQA>]
 type TranslatedString = 
@@ -66,45 +81,41 @@ type AssemblyInfo = {
     override this.ToString() = 
         sprintf "[%s]%s" (string this.Language) (string this.Path)
 
-/// The original strings extracted from a given assembly. 
+/// The original strings extracted. 
 /// The strings are sorted and duplicates are removed.
 [<Struct>]
 type OriginalStrings =
-    private OriginalStrings of assembly: AssemblyInfo * strings: string list
+    private OriginalStrings of strings: Set<string>
 
 module OriginalStrings = 
-    let create assembly strings = 
-        OriginalStrings(assembly, strings |> Seq.sort |> Seq.distinct |> Seq.toList)
-    let assembly (OriginalStrings(assembly, _)) = assembly
-    let strings (OriginalStrings(_, strings)) = strings
+    let create strings = 
+        OriginalStrings(Set.ofSeq strings)
+    let strings (OriginalStrings(strings)) = strings |> Set.toList
+    let merge list = 
+        list 
+        |> Seq.collect strings
+        |> create
 
-/// A translation of an assembly.
+/// A source of strings.
+type Source = 
+    | AssemblySource of AssemblyPath
+
+/// A defininiton of sources.
+type Sources = {
+    Language: Language
+    Sources: Set<Source>
+}
+
+/// A translation of strings.
 [<Struct>]
 type Translation = {
-    Assembly: AssemblyInfo
     Language: Language
     Records: TranslationRecord list
 }
 
-/// The identity of a translation.
+/// A group of translations for different langauges.
 [<Struct>]
-type TranslationId = 
-    | TranslationId of fillename: AssemblyFilename * language: Language
-    override this.ToString() = 
-        this |> function TranslationId(filename, language) -> sprintf "[%O:%O]" filename language
-
-/// A translation set is a set of translations that 
-/// all have different languages and point to the same assembly path.
-[<Struct>]
-type TranslationSet = 
-    | TranslationSet of assembly: AssemblyInfo * set: Map<Language, Translation>
-
-/// A translation group is a group of translations that can be stored inside
-/// _one_ directory. This means that only one translation for a language
-/// can exist for one AssemblyFileName.
-[<Struct>]
-type TranslationGroup = 
-    | TranslationGroup of Map<AssemblyFilename, TranslationSet>
+type TranslationGroup = TranslationGroup of Map<Language, Translation>
 
 [<Struct>]
 type TranslationCounters = {

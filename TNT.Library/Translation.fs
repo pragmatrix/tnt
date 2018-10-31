@@ -63,13 +63,7 @@ module Translation =
     [<AutoOpen>]
     module public SerializationTypes =
 
-        type Assembly = {
-            path: string
-            language: string
-        }
-
         type TranslationFile = {
-            assembly: Assembly
             language: string
             records: string[][]
         }
@@ -117,26 +111,14 @@ module Translation =
             |> Seq.map deserializeTranslationRecord
             |> Seq.toList
 
-        let assembly = file.assembly
-
         {
-            Assembly = { 
-                Path = AssemblyPath(assembly.path)
-                Language = Language(assembly.language) 
-            }
             Language = Language(file.language)
             Records = records
         }
     
     let serialize (translation: Translation) : string = 
 
-        let assembly = translation.Assembly
-
         let json = {
-            assembly = { 
-                path = string assembly
-                language = string assembly.Language
-            }
             language = string translation.Language
             records = 
                 translation.Records
@@ -146,12 +128,7 @@ module Translation =
 
         JsonConvert.SerializeObject(json, Formatting.Indented)
         
-    let id (translation: Translation) = 
-        TranslationId(translation.Assembly.Path |> AssemblyFilename.ofPath, translation.Language)
-    let assemblyFilename (translation: Translation) = 
-        id translation |> function TranslationId(filename, _) -> filename
     let createNew language originalStrings = {
-        Assembly = OriginalStrings.assembly originalStrings
         Language = language
         Records = 
             originalStrings 
@@ -161,13 +138,11 @@ module Translation =
     }
 
     let status (translation: Translation) : string = 
-        let (TranslationId(filename, lang)) = id translation
         let counters = TranslationCounters.ofTranslation translation
-        sprintf "[%s:%s][%s] %s" (string lang) (string filename) (string counters) (string translation.Assembly.Path)
+        sprintf "[%s][%s]" (string translation.Language) (string counters)
 
     /// Update the translation's original strings and return the translation if it changed.
     let update (strings: OriginalStrings) (translation: Translation) : Translation option = 
-        assert (OriginalStrings.assembly strings = translation.Assembly)
 
         let recordMap = 
             translation.Records 
@@ -215,15 +190,20 @@ module Translation =
         |> Option.ofBool
         |> Option.map ^ fun () -> { translation with Records = records }
 
+(*
 module Translations = 
+*)
 
+(*
     /// All the ids (sorted and duplicates removed) from a list of translations.
     let ids (translations: Translation list) : TranslationId list =
         translations
         |> Seq.map Translation.id
         |> Seq.setify
         |> Seq.toList
-    
+*)
+
+(*
 module TranslationSet = 
 
     let map f (TranslationSet(assembly, set)) = 
@@ -305,6 +285,7 @@ module TranslationSet =
         |> translations
         |> Seq.choose ^ Translation.gc
         |> Seq.toList
+*)
 
 module TranslationGroup = 
     
@@ -312,31 +293,21 @@ module TranslationGroup =
         TranslationGroup(f value)
 
     type TranslationGroupError = 
-        | AssemblyPathsWithTheSameFilename of (AssemblyFilename * AssemblyPath list) list
-        | TranslationsWithTheSameLanguage of ((AssemblyFilename * Language) * Translation list) list
+        | TranslationsWithTheSameLanguage of (Language * Translation list) list
 
     /// Groups a list of translations, checks for duplicates and inconsistent relations
     /// between assembly paths and names.
     let fromTranslations (translations: Translation list) 
         : Result<TranslationGroup, TranslationGroupError> =
 
-        // find different AssemblyPaths that point to the same filename.
-        let overlappingAssemblies =
-            translations
-            |> List.map ^ fun t -> t.Assembly.Path
-            |> List.groupBy ^ AssemblyFilename.ofPath
-            |> Seq.filter (snd >> function _::_::_ -> true | _ -> false)
-            |> Seq.toList
-
-        if overlappingAssemblies <> [] 
-        then Error ^ AssemblyPathsWithTheSameFilename overlappingAssemblies
-        else
-
         // check for duplicated languages
 
-        let duplicatedList =
+        let byLanguage =
             translations
-            |> List.groupBy ^ fun t -> Translation.assemblyFilename t, t.Language
+            |> List.groupBy ^ fun t -> t.Language
+
+        let duplicatedList =
+            byLanguage
             |> Seq.filter (snd >> function _::_::_ -> true | _ -> false)
             |> Seq.toList
 
@@ -344,17 +315,37 @@ module TranslationGroup =
         then Error ^ TranslationsWithTheSameLanguage duplicatedList
         else
 
-        // group
+        byLanguage 
+        |> Seq.map ^ Snd.map List.exactlyOne
+        |> Map.ofSeq
+        |> TranslationGroup
+        |> Ok
 
-        let grouped = 
-            translations
-            |> List.groupBy ^ Translation.assemblyFilename
-            |> Seq.map ^ fun (fn, translations) ->
-                fn, TranslationSet.fromTranslations translations
-            |> Map.ofSeq
+    let translations (TranslationGroup map) =
+        map
+        |> Map.toSeq
+        |> Seq.map snd
+        |> Seq.toList
 
-        Ok ^ TranslationGroup(grouped)
+    let hasLanguage (language: Language) (TranslationGroup(map)) : bool = 
+        map.ContainsKey language
 
+    /// Returns all the original strings in the translation group.
+    let originalStrings (TranslationGroup(map)) : OriginalStrings = 
+        map
+        |> Map.toSeq
+        |> Seq.map snd
+        |> Seq.collect ^ fun translation -> translation.Records
+        |> Seq.map ^ fun record -> record.Original
+        |> OriginalStrings.create
+
+    /// Add a language to a translation group and return the new translation.
+    let addLanguage (language: Language) (TranslationGroup(map) as group) : Translation option =
+        if map.ContainsKey language then None else
+        let strings = originalStrings group
+        Some ^ Translation.createNew language strings
+
+(*
     /// Try get the TranslationSet with the given AssemblyFilename
     let set (filename: AssemblyFilename) (TranslationGroup(map)) : TranslationSet option = 
         map.TryFind filename
@@ -373,22 +364,7 @@ module TranslationGroup =
         |> Map.toSeq 
         |> Seq.map snd 
         |> Seq.toList
-
-    let translations group =
-        group
-        |> sets
-        |> List.collect TranslationSet.translations
     
-    /// Add a language to a translation group and return the new translations.
-    let addLanguage (language: Language) (group: TranslationGroup) : Translation list = [
-        for set in sets group do
-            let languages = TranslationSet.languages set
-            if not ^ Seq.contains language languages then
-                yield 
-                    set 
-                    |> TranslationSet.originalStrings
-                    |> Translation.createNew language
-    ]
 
     /// update the translation group with changed or new translations.
     let update (updated: Translation list) (group: TranslationGroup) : TranslationGroup =
@@ -407,7 +383,7 @@ module TranslationGroup =
         |> fromTranslations
         |> function
         | Ok group -> group
-        | Error e -> failwithf "internal error, incosistent language group after update: %A" e
+        | Error e -> failwithf "internal error, inconsistent language group after update: %A" e
 
     /// All the translation records by language.
     let recordsByLanguage (group: TranslationGroup) : Map<Language, TranslationRecord list> =
@@ -419,7 +395,7 @@ module TranslationGroup =
             |> Seq.collect ^ fun translation -> translation.Records
             |> Seq.toList
         |> Map.ofSeq
-
+*)
         
         
         

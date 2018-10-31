@@ -2,6 +2,7 @@
 /// marked with functions in TNT.CSharp or TNT.FSharp.
 module TNT.Library.StringExtractor
 
+open FunToolbox.FileSystem
 open Mono.Cecil
 open Mono.Cecil.Cil
 open TNT.Model
@@ -34,9 +35,9 @@ module private Private =
                 -> Some ^ string instruction.Operand
             | _ -> None
 
-let extract (assembly: AssemblyInfo) : OriginalStrings = 
+let extract (path: Path) : OriginalStrings = 
 
-    let assemblyDefinition = AssemblyDefinition.ReadAssembly(string assembly.Path)
+    let assemblyDefinition = AssemblyDefinition.ReadAssembly(string path)
 
     let rec extractFromType (typeDefinition: TypeDefinition) : string seq = seq {
         yield!
@@ -58,8 +59,7 @@ let extract (assembly: AssemblyInfo) : OriginalStrings =
     |> Seq.collect ^ fun moduleDefinition ->
         moduleDefinition.Types
         |> Seq.collect extractFromType
-    // ensure reproducibility and remove duplicates
-    |> OriginalStrings.create assembly
+    |> OriginalStrings.create
 
     
 

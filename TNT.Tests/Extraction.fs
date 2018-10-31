@@ -1,5 +1,6 @@
 module TNT.Tests.Extraction
 
+open FunToolbox.FileSystem
 open FsUnit.Xunit
 open Xunit
 open TNT.Model
@@ -15,11 +16,13 @@ type Interface =
     abstract EmptyFunction : unit -> unit
 
 [<Fact>]
-let ``extract from FSharp``() = 
-    let strings = extract ({ Path = AssemblyPath("TNT.Tests.dll"); Language = Language("en-US") })
+let ``extract from FSharp``() =
+    let path = Directory.current() |> Path.extend "TNT.Tests.dll"
+    let strings = extract path
     strings |> OriginalStrings.strings |> should equal ["duplicate"; "original"]
 
 [<Fact>]
 let ``extract from CSharp``() = 
-    let strings = extract ({ Path = AssemblyPath("TNT.Tests.CSharp.dll"); Language = Language("en-US") })
+    let path = Directory.current() |> Path.extend "TNT.Tests.CSharp.dll"
+    let strings = extract path
     strings |> OriginalStrings.strings |> should equal ["original"]

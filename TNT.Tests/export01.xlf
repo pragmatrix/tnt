@@ -1,7 +1,7 @@
 ﻿<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
-  <file original="test.dll" source-language="en-US" target-language="de-DE" datatype="x-net-assembly">
+  <file original="project" source-language="en-US" target-language="de-DE" datatype="x-net-assembly">
     <body>
-      <group id="b7a3e44b9590a567cdb6232a706a279e178e649b9c04ab8eb6c5f61f425a0">
+      <group id="244210e48437b6556980a7249a99369934a35242934cef9d7bd253b3bf2c1">
         <trans-unit id="18fdd549b2ed367ac0c74cbec1214644728515b3edbcb78e7d322757a7c8359" translate="yes" xml:space="preserve">
           <source>New</source>
           <target state="new"></target>
