@@ -669,5 +669,5 @@ NUGET
     xunit.extensibility.execution (2.4) - restriction: || (== netcoreapp2.1) (&& (== netstandard1.6) (>= net46)) (&& (== netstandard1.6) (>= netstandard2.0)) (== netstandard2.0)
       xunit.extensibility.core (2.4)
   remote: https://www.myget.org/F/pragmatrix/api/v3/index.json
-    FunToolbox (1.3.1)
+    FunToolbox (1.3.2)
       FSharp.Core
