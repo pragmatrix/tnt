@@ -33,7 +33,13 @@ type AssemblyPath =
 type LanguageTag = 
     | LanguageTag of string
     override this.ToString() = 
-        this |> function LanguageTag identifier -> identifier
+        this |> function LanguageTag tag -> tag
+    /// The primary language subtag.
+    member this.Primary =
+        string this
+        |> fun str -> str.Split('-')
+        |> Array.head
+        |> LanguageTag
 
 /// The filename of a translation file.
 [<Struct>]
