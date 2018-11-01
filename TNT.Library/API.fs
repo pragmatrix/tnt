@@ -266,11 +266,15 @@ let translate (languages: LanguageTag list) : ResultCode output = output {
     | Error() -> return Failed
     | Ok(sources, group)  ->
     let toTranslate = 
+
         let filter = 
-            if languages = [] 
-            then fun _ -> true
-            else fun translation -> List.contains translation.Language languages
-        group 
+            if languages = [] then fun _ -> true
+            else 
+            fun translation -> 
+                List.contains translation.Language languages
+                || List.contains translation.Language.Primary languages
+
+        group
         |> TranslationGroup.translations
         |> List.filter filter
 
