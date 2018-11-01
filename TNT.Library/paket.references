@@ -5,3 +5,4 @@ FunToolbox
 System.Json
 Newtonsoft.Json
 Chiron
+Google.Cloud.Translation.V2

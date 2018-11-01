@@ -139,11 +139,15 @@ module Translation =
             |> Seq.toList
     }
 
-    let status (translation: Translation) : string = 
+    let shortStatus (translation: Translation) : string = 
         let counters = TranslationCounters.ofTranslation translation
-        sprintf "[%s][%s] %s" 
+        sprintf "[%s][%s]" 
             (string translation.Language) 
             (string counters) 
+
+    let status (translation: Translation) : string = 
+        sprintf "%s %s" 
+            (shortStatus translation)
             (sprintf "%s/%O" TNT.Subdirectory (TranslationFilename.ofTranslation translation))
 
     /// Update the translation's original strings and return the translation if it changed.

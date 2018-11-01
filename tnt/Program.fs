@@ -4,6 +4,7 @@ open TNT.Library
 open TNT.Library.Output
 open FunToolbox.FileSystem
 open CommandLine
+open TNT.Library
 
 [<Verb("init", HelpText = "Initialize the current directory. Creates the '.tnt' directory and the 'sources.json' file.")>]
 type InitOptions = {
@@ -47,6 +48,18 @@ type ExportOptions = {
 type ImportOptions = {
     [<Value(0, HelpText = "The directory to import the XLIFF files from. Default is the current directory.")>]
     Directory: string
+}
+
+[<Verb("translate", HelpText = "Machine translate new strings")>]
+type TranslateOptions = {
+    // [<Option('p', "provider", HelpText = "The machine translation provider, default is 'Google'.")>]
+    // Provider: string
+
+    // [<Option("list", HelpText = "List the target languages supported by the machine translation provider.")>]
+    // List: bool
+
+    [<Value(0, HelpText = "The language(s) to translate to. If none are provided, all new strings of all languages are translated.")>]
+    Languages: string seq
 }
 
 let private argumentTypes = [|
@@ -107,6 +120,14 @@ let dispatch (command: obj) =
             |> Path.extend relativeDirectory
 
         API.import importDirectory
+
+    | :? TranslateOptions as opts ->
+        let languages = 
+            opts.Languages 
+            |> Seq.map Language
+            |> Seq.toList
+
+        API.translate languages
 
     | x -> failwithf "internal error: %A" x
 
