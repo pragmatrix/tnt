@@ -5,7 +5,7 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <PackageId>tnt-cli</PackageId>
     <Title>The .NET Translation Tool</Title>
-    <Description>Command line tool for managing translations based on tagged strings extracted from .NET assemblies. Supports XLIFF roundtrips and machine translations.</Description>
+    <Description>Command line tool for managing translations based on strings extracted from .NET assemblies. Supports XLIFF roundtrips and machine translations.</Description>
     <Copyright>(c) 2018 Armin Sander</Copyright>
     <PackAsTool>true</PackAsTool>
     <Version>0.30.3</Version>
