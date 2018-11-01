@@ -4,7 +4,6 @@ open TNT.Library
 open TNT.Library.Output
 open FunToolbox.FileSystem
 open CommandLine
-open TNT.Library
 
 [<Verb("init", HelpText = "Initialize the current directory. Creates the '.tnt' directory and the 'sources.json' file.")>]
 type InitOptions = {
