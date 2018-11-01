@@ -28,11 +28,18 @@ type AssemblyPath =
     override this.ToString() = 
         this |> function AssemblyPath str -> str
 
+/// An IETF language tag. https://en.wikipedia.org/wiki/IETF_language_tag
 [<Struct>]
-type Language = 
-    | Language of string
+type LanguageTag = 
+    | LanguageTag of string
     override this.ToString() = 
-        this |> function Language identifier -> identifier
+        this |> function LanguageTag tag -> tag
+    /// The primary language subtag.
+    member this.Primary =
+        string this
+        |> fun str -> str.Split('-')
+        |> Array.head
+        |> LanguageTag
 
 /// The filename of a translation file.
 [<Struct>]
@@ -75,7 +82,7 @@ type TranslationRecord = {
 /// Information about an assembly.
 [<Struct>]
 type AssemblyInfo = {
-    Language: Language
+    Language: LanguageTag
     Path: AssemblyPath
 } with
     override this.ToString() = 
@@ -104,20 +111,20 @@ type Source =
 
 /// A defininiton of sources.
 type Sources = {
-    Language: Language
+    Language: LanguageTag
     Sources: Set<Source>
 }
 
 /// A translation of strings.
 [<Struct>]
 type Translation = {
-    Language: Language
+    Language: LanguageTag
     Records: TranslationRecord list
 }
 
 /// A group of translations for different langauges.
 [<Struct>]
-type TranslationGroup = TranslationGroup of Map<Language, Translation>
+type TranslationGroup = TranslationGroup of Map<LanguageTag, Translation>
 
 [<Struct>]
 type TranslationCounters = {

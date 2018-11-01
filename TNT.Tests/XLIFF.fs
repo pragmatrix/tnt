@@ -11,7 +11,7 @@ open Xunit
 let record original translated = { Original = original; Translated = translated }
 
 let translation = { 
-    Language = Language("de-DE")
+    Language = LanguageTag("de-DE")
     Records = [
         record "New" TranslatedString.New
         record "Auto" ^ TranslatedString.NeedsReview "Automatically Translated"
@@ -26,7 +26,7 @@ let linesOf (str: string) =
     |> Seq.toList
 
 let projectName = ProjectName("project")
-let sourceLanguage = Language("en-US")
+let sourceLanguage = LanguageTag("en-US")
 
 [<Fact>]
 let ``generates XLIFF``() = 
@@ -53,7 +53,7 @@ let ``imports XLIFF``() =
     |> should equal [ {
         Name = string projectName
         SourceLanguage = sourceLanguage
-        TargetLanguage = Language "de-DE"
+        TargetLanguage = LanguageTag "de-DE"
         TranslationUnits = [ {
             Source = "New"
             Target = "Neu"

@@ -4,6 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Output.fs" />
     <Compile Include="Model.fs" />
     <Compile Include="Formatting.fs" />
     <Compile Include="StringExtractor.fs" />
@@ -13,7 +14,8 @@
     <Compile Include="XLIFF.fs" />
     <Compile Include="ImportExport.fs" />
     <Compile Include="FileSystem.fs" />
-    <Compile Include="Output.fs" />
+    <Compile Include="MachineTranslation.fs" />
+    <Compile Include="MachineTranslation.Google.fs" />
     <Compile Include="API.fs" />
     <None Include="paket.references" />
   </ItemGroup>

@@ -4,8 +4,9 @@ open System.Text
 open System.Runtime.CompilerServices
 open FunToolbox.FileSystem
 open TNT.Model
-open TNT.Library.FileSystem
 open TNT.Library.Output
+open TNT.Library.FileSystem
+open TNT.Library.MachineTranslation
 
 module TranslationGroup = 
 
@@ -73,7 +74,7 @@ let private commitTranslations
 }
 
 /// Initialize TNT.
-let init (language: Language option) = output {
+let init (language: LanguageTag option) = output {
     let path = Sources.path (Directory.current())
     match! tryLoadSources() with
     | None ->
@@ -117,7 +118,7 @@ let status (verbose: bool) : ResultCode output = output {
 }
 
 /// Add a new language.
-let addLanguage (language: Language) = output {
+let addLanguage (language: LanguageTag) = output {
     match! loadGroup() with
     | Error() -> return Failed
     | Ok(group) ->
@@ -256,6 +257,34 @@ let import (importDirectory: Path) : ResultCode output = output {
             yield W ^ indent ^ string warning
 
     do! commitTranslations "changed by import" translations
+
+    return Succeeded
+}
+
+let translate (languages: LanguageTag list) : ResultCode output = output {
+    match! loadSourcesAndGroup() with
+    | Error() -> return Failed
+    | Ok(sources, group)  ->
+    let toTranslate = 
+        let filter = 
+            if languages = [] 
+            then fun _ -> true
+            else fun translation -> List.contains translation.Language languages
+        group 
+        |> TranslationGroup.translations
+        |> List.filter filter
+
+    // note: the API may fail at any time, but if it does, continuing does not make
+    // sense, but the translations done before should also not get lost, so we
+    // translate and commit the results one by one.
+    for translation in toTranslate do
+        let result = 
+            Translate.newStrings Google.Translator sources.Language translation
+        yield I ^ (string result)
+        match result with
+        | Translated(_, translation) ->
+            do! commitTranslations "translated" [translation]
+        | _ -> ()
 
     return Succeeded
 }

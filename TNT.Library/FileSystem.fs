@@ -11,7 +11,7 @@ open TNT.Library.Translation
 
 module Sources = 
 
-    let DefaultLanguage = Language("en-US")
+    let DefaultLanguage = LanguageTag("en-US")
     let [<Literal>] SourcesFilename = "sources.json"
     
     let path (baseDirectory: Path) : Path = 

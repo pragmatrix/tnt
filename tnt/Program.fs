@@ -49,6 +49,18 @@ type ImportOptions = {
     Directory: string
 }
 
+[<Verb("translate", HelpText = "Machine translate new strings.")>]
+type TranslateOptions = {
+    // [<Option('p', "provider", HelpText = "The machine translation provider, default is 'Google'.")>]
+    // Provider: string
+
+    // [<Option("list", HelpText = "List the target languages supported by the machine translation provider.")>]
+    // List: bool
+
+    [<Value(0, HelpText = "The language(s) to translate to. If none are provided, all new strings of all languages are translated.")>]
+    Languages: string seq
+}
+
 let private argumentTypes = [|
     typeof<InitOptions>
     typeof<AddOptions>
@@ -57,17 +69,18 @@ let private argumentTypes = [|
     typeof<StatusOptions>
     typeof<ExportOptions>
     typeof<ImportOptions>
+    typeof<TranslateOptions>
 |]
 
 let dispatch (command: obj) = 
 
     match command with
     | :? InitOptions as opts ->
-        let language = opts.Language |> Option.ofObj |> Option.map Language
+        let language = opts.Language |> Option.ofObj |> Option.map LanguageTag
         API.init language
 
     | :? AddOptions as opts -> 
-        let language = opts.Language |> Option.ofObj |> Option.map Language
+        let language = opts.Language |> Option.ofObj |> Option.map LanguageTag
         let assembly = opts.Assembly |> Option.ofObj |> Option.map AssemblyPath
 
         match language, assembly with
@@ -107,6 +120,14 @@ let dispatch (command: obj) =
             |> Path.extend relativeDirectory
 
         API.import importDirectory
+
+    | :? TranslateOptions as opts ->
+        let languages = 
+            opts.Languages 
+            |> Seq.map LanguageTag
+            |> Seq.toList
+
+        API.translate languages
 
     | x -> failwithf "internal error: %A" x
 

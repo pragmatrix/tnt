@@ -65,7 +65,7 @@ module XLIFFFilename =
     // VisualStudio uses the dot extension to separate the identifier from the base name.
     let [<Literal>] IdentifierSeparator = "."
 
-    let filenameForLanguage (project: ProjectName) (Language(identifier)) : XLIFFFilename =
+    let filenameForLanguage (project: ProjectName) (LanguageTag(identifier)) : XLIFFFilename =
         XLIFFFilename ^ string project + IdentifierSeparator + identifier + Extension
 
     let pattern (project: ProjectName) : GlobPattern =

@@ -15,3 +15,4 @@ nuget FunToolbox
 nuget Newtonsoft.Json
 nuget System.Json
 nuget Chiron
+nuget Google.Cloud.Translation.V2

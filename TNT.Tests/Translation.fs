@@ -10,7 +10,7 @@ module Counters =
     [<Fact>]
     let ``counting zero translation records``() = 
         {
-            Language = Language("")
+            Language = LanguageTag("")
             Records = []
         }
         |> TranslationCounters.ofTranslation

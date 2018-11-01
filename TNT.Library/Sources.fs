@@ -23,7 +23,7 @@ module Sources =
             | unknown -> failwithf "unsupported source type: '%s'" unknown
     
 
-        let language = str value.["language"] |> Language
+        let language = str value.["language"] |> LanguageTag
         let sources = 
             value.["sources"] :?> JsonArray
             |> Seq.map (unbox >> parseSource)

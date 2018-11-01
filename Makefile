@@ -4,6 +4,12 @@ paket=.paket/paket
 setup:
 	${paket} install
 
+version=${shell grep -Po '<Version>\K[0-9.]+' tnt/tnt.fsproj}
+
+.PHONY: version
+version:
+	echo ${version}
+
 push=.paket/paket push --url https://www.myget.org/F/pragmatrix/api/v2/package --api-key ${MYGETAPIKEY} 
 
 .PHONY: install-tnt
@@ -14,7 +20,11 @@ install-tnt:
 .PHONY: update-tnt
 update-tnt:
 	dotnet nuget locals http-cache --clear
-	dotnet tool update -g --add-source https://www.myget.org/F/pragmatrix/api/v3/index.json tnt-cli 
+	dotnet tool update -g --add-source https://www.myget.org/F/pragmatrix/api/v3/index.json tnt-cli
+
+.PHONY: update-tnt-wait
+update-tnt-wait:
+	until make update-tnt | grep -m 1 "version '${version}'"; do (echo "waiting for version ${version} to appear..."; sleep 1); done
 
 .PHONY: publish
 publish:
@@ -28,3 +38,5 @@ publish:
 	${push} tmp/TNT.FSharp.*.nupkg
 	${push} tmp/TNT.CSharp.*.nupkg
 
+.PHONY: publish-and-update
+publish-and-update: publish update-tnt-wait
