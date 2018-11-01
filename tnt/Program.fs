@@ -49,7 +49,7 @@ type ImportOptions = {
     Directory: string
 }
 
-[<Verb("translate", HelpText = "Machine translate new strings")>]
+[<Verb("translate", HelpText = "Machine translate new strings.")>]
 type TranslateOptions = {
     // [<Option('p', "provider", HelpText = "The machine translation provider, default is 'Google'.")>]
     // Provider: string
