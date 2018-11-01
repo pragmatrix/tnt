@@ -99,7 +99,7 @@ module Translate =
         let report = 
             let all = toTranslate.Length
             let unusable = unprocessed.Count
-            let translated = all - (resultPairs.Count - unusable)
+            let translated = resultPairs.Count - unusable
             {
                 Provider = translator.ProviderName
                 SourceLanguage = sourceLanguage
