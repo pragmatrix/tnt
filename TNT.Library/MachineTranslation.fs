@@ -32,7 +32,7 @@ type TranslationReport = {
                 -> sprintf "%d of %d translated" this.Translated this.All
             | _ -> sprintf "%d of %d translated, %d unused" this.Translated this.All this.Unusable
 
-        String.concat " " [prefix; details]
+        Text.concat " " [prefix; details]
 
 module TranslationReport =
 
