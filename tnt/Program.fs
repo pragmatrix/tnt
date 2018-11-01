@@ -76,11 +76,11 @@ let dispatch (command: obj) =
 
     match command with
     | :? InitOptions as opts ->
-        let language = opts.Language |> Option.ofObj |> Option.map Language
+        let language = opts.Language |> Option.ofObj |> Option.map LanguageTag
         API.init language
 
     | :? AddOptions as opts -> 
-        let language = opts.Language |> Option.ofObj |> Option.map Language
+        let language = opts.Language |> Option.ofObj |> Option.map LanguageTag
         let assembly = opts.Assembly |> Option.ofObj |> Option.map AssemblyPath
 
         match language, assembly with
@@ -124,7 +124,7 @@ let dispatch (command: obj) =
     | :? TranslateOptions as opts ->
         let languages = 
             opts.Languages 
-            |> Seq.map Language
+            |> Seq.map LanguageTag
             |> Seq.toList
 
         API.translate languages

@@ -7,9 +7,9 @@ type TranslationReport = {
     /// The provider and its specific settings that were used.
     Provider: string
     /// The source language.
-    SourceLanguage: Language
+    SourceLanguage: LanguageTag
     /// The target language.
-    TargetLanguage: Language
+    TargetLanguage: LanguageTag
     /// All the successfully translated strings we received back and could integrate into
     /// the translation.
     Translated: int
@@ -63,14 +63,14 @@ type TranslationResult =
 
 type Translator = {
     ProviderName: string
-    Translate: (Language * Language) -> string list -> (string * string) list
+    Translate: (LanguageTag * LanguageTag) -> string list -> (string * string) list
 }
 
 module Translate = 
 
     let newStrings 
         (translator: Translator) 
-        (sourceLanguage: Language) 
+        (sourceLanguage: LanguageTag) 
         (translation: Translation) =
         let toTranslate = 
             translation.Records

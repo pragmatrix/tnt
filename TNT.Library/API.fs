@@ -74,7 +74,7 @@ let private commitTranslations
 }
 
 /// Initialize TNT.
-let init (language: Language option) = output {
+let init (language: LanguageTag option) = output {
     let path = Sources.path (Directory.current())
     match! tryLoadSources() with
     | None ->
@@ -118,7 +118,7 @@ let status (verbose: bool) : ResultCode output = output {
 }
 
 /// Add a new language.
-let addLanguage (language: Language) = output {
+let addLanguage (language: LanguageTag) = output {
     match! loadGroup() with
     | Error() -> return Failed
     | Ok(group) ->
@@ -261,7 +261,7 @@ let import (importDirectory: Path) : ResultCode output = output {
     return Succeeded
 }
 
-let translate (languages: Language list) : ResultCode output = output {
+let translate (languages: LanguageTag list) : ResultCode output = output {
     match! loadSourcesAndGroup() with
     | Error() -> return Failed
     | Ok(sources, group)  ->

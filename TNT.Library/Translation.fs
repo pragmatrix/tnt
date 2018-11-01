@@ -114,7 +114,7 @@ module Translation =
             |> Seq.toList
 
         {
-            Language = Language(file.language)
+            Language = LanguageTag(file.language)
             Records = records
         }
     
@@ -205,7 +205,7 @@ module TranslationGroup =
         TranslationGroup(f value)
 
     type TranslationGroupError = 
-        | TranslationsWithTheSameLanguage of (Language * Translation list) list
+        | TranslationsWithTheSameLanguage of (LanguageTag * Translation list) list
 
     /// Groups a list of translations, checks for duplicates and inconsistent relations
     /// between assembly paths and names.
@@ -239,7 +239,7 @@ module TranslationGroup =
         |> Seq.map snd
         |> Seq.toList
 
-    let hasLanguage (language: Language) (TranslationGroup(map)) : bool = 
+    let hasLanguage (language: LanguageTag) (TranslationGroup(map)) : bool = 
         map.ContainsKey language
 
     /// Returns all the original strings in the translation group.
@@ -252,7 +252,7 @@ module TranslationGroup =
         |> OriginalStrings.create
 
     /// Add a language to a translation group and return the new translation.
-    let addLanguage (language: Language) (TranslationGroup(map) as group) : Translation option =
+    let addLanguage (language: LanguageTag) (TranslationGroup(map) as group) : Translation option =
         if map.ContainsKey language then None else
         let strings = originalStrings group
         Some ^ Translation.createNew language strings

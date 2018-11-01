@@ -38,8 +38,8 @@ type TranslationUnit = {
 
 type File = {
     Name: string
-    SourceLanguage: Language
-    TargetLanguage: Language
+    SourceLanguage: LanguageTag
+    TargetLanguage: LanguageTag
     TranslationUnits: TranslationUnit list
 }
 
@@ -176,11 +176,11 @@ let parseV12 (XLIFFV12 xliff) : File list =
         
         let sourceLanguage = 
             file.getValue "source-language"
-            |> Language
+            |> LanguageTag
 
         let targetLanguage = 
             file.getValue "target-language" 
-            |> Language
+            |> LanguageTag
 
         let units = 
             let shouldTranslate (element: XElement) = 

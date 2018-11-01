@@ -15,13 +15,13 @@ let project = ProjectName("project")
 
 let file lang units = {
     Name = string project
-    SourceLanguage = Language "en-US"
-    TargetLanguage = Language lang
+    SourceLanguage = LanguageTag "en-US"
+    TargetLanguage = LanguageTag lang
     TranslationUnits = units 
 }
 
 let translation language records = {
-    Language = Language language
+    Language = LanguageTag language
     Records = records
 }
 
@@ -39,7 +39,7 @@ let emptyTranslations : Translation list = []
 let emptyWarnings : ImportWarning list = []
 
 let import = import project
-let lang l = Language(l)
+let lang l = LanguageTag(l)
 
 [<Fact>]
 let ``wrong project``() = 

@@ -4,7 +4,7 @@ open TNT.Model
 open TNT.Library.XLIFF
 
 /// Convert a translations to a file.
-let export (project: ProjectName) (sourceLanguage: Language) (translation: Translation)  : File =
+let export (project: ProjectName) (sourceLanguage: LanguageTag) (translation: Translation)  : File =
 
     let toUnit (record: TranslationRecord) =
 
@@ -33,12 +33,12 @@ let export (project: ProjectName) (sourceLanguage: Language) (translation: Trans
 
 type ImportWarning = 
     | ProjectMismatch of ProjectName * ProjectName
-    | DuplicateImports of Language
-    | TranslationNotFound of Language
-    | OriginalStringNotFound of Language * TranslationUnit
-    | UnusedTranslationChanged of Language * (TranslationRecord * TranslationRecord)
-    | IgnoredNewWithTranslation of Language * (TranslationRecord * TranslationUnit)
-    | IgnoredNewReset of Language * (TranslationRecord * TranslationUnit)
+    | DuplicateImports of LanguageTag
+    | TranslationNotFound of LanguageTag
+    | OriginalStringNotFound of LanguageTag * TranslationUnit
+    | UnusedTranslationChanged of LanguageTag * (TranslationRecord * TranslationRecord)
+    | IgnoredNewWithTranslation of LanguageTag * (TranslationRecord * TranslationUnit)
+    | IgnoredNewReset of LanguageTag * (TranslationRecord * TranslationUnit)
     override this.ToString() =
         match this with
         | ProjectMismatch(wrong, expected)
