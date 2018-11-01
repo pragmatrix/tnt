@@ -20,7 +20,11 @@ install-tnt:
 .PHONY: update-tnt
 update-tnt:
 	dotnet nuget locals http-cache --clear
-	until dotnet tool update -g --add-source https://www.myget.org/F/pragmatrix/api/v3/index.json tnt-cli | grep -m 1 "version '${version}'"; do (echo "waiting..."; sleep 1); done
+	dotnet tool update -g --add-source https://www.myget.org/F/pragmatrix/api/v3/index.json tnt-cli
+
+.PHONY: update-tnt-wait
+update-tnt-wait:
+	until make update-tnt | grep -m 1 "version '${version}'"; do (echo "waiting for version ${version} to appear..."; sleep 1); done
 
 .PHONY: publish
 publish:
@@ -35,4 +39,4 @@ publish:
 	${push} tmp/TNT.CSharp.*.nupkg
 
 .PHONY: publish-and-update
-publish-and-update: publish update-tnt
+publish-and-update: publish update-tnt-wait
