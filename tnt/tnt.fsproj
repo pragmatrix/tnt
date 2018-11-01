@@ -8,7 +8,7 @@
     <Description>Command line tool to extract strings from assemblies and manage translations.</Description>
     <Copyright>(c) 2018 Armin Sander</Copyright>
     <PackAsTool>true</PackAsTool>
-    <Version>0.30.0</Version>
+    <Version>0.30.1</Version>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.fs" />

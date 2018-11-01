@@ -69,6 +69,7 @@ let private argumentTypes = [|
     typeof<StatusOptions>
     typeof<ExportOptions>
     typeof<ImportOptions>
+    typeof<TranslateOptions>
 |]
 
 let dispatch (command: obj) = 
