@@ -15,35 +15,13 @@ namespace TNT.CSharp
 		[MethodImpl(MethodImplOptions.NoInlining)]
 		public static string t(this string original)
 		{
-			var tt = ThreadTranslations;
-			if (tt == null)
-			{
-				tt = ResolveTranslations();
-				ThreadTranslations = tt;
-			}
-
 			return
-				tt.TryGetValue(original, out var translated)
+				Translations.TryGetValue(original, out var translated)
 					? translated
 					: original;
 		}
 
-		[ThreadStatic] static Dictionary<string, string> ThreadTranslations;
-		static Dictionary<string, string> GlobalTranslations;
-		static readonly object Section = new object();
-
-		static Dictionary<string, string> ResolveTranslations()
-		{
-			lock (Section)
-			{
-				var global = GlobalTranslations;
-				if (global != null)
-					return global;
-				global = LoadTranslations();
-				GlobalTranslations = global;
-				return global;
-			}
-		}
+		static readonly Dictionary<string, string> Translations = LoadTranslations();
 
 		static Dictionary<string, string> LoadTranslations()
 		{
