@@ -63,7 +63,7 @@ type TranslateOptions = {
 
 [<Verb("show", HelpText = "Show system related information.")>]
 type ShowOptions = {
-    [<Value(0, HelpText = "The information to show, 'cultures' shows the currently supported cultures.")>]
+    [<Value(0, HelpText = "The information to show, 'languages' shows the currently supported languages.")>]
     Categories: string seq
 }
 

@@ -308,8 +308,8 @@ let show (categories: string list): ResultCode output = output {
 
     for category in categories do
         match category with
-        | "cultures" -> 
-            yield I ^ "supported cultures:"
+        | "languages" -> 
+            yield I ^ "supported languages:"
             for tag, name in SystemCultures.All |> Map.toSeq do
                 yield I ^ sprintf "%s %s" tag.Formatted name.Formatted
         | unsupported -> 
