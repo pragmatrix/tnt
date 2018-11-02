@@ -1,11 +1,17 @@
 ﻿namespace TNT.Model
 
+[<AutoOpen>]
+module private Helper =
+    let inline quoted str = "\"" + str + "\""
+    
 /// Project name, currently the name of the current directory.
 [<Struct>]
 type ProjectName = 
     | ProjectName of string
     override this.ToString() = 
         this |> function ProjectName str -> str
+    member this.Formatted = 
+        quoted ^ string this
 
 /// A glob pattern "*": any substring, "?": any character
 [<Struct>]
@@ -40,6 +46,18 @@ type LanguageTag =
         |> fun str -> str.Split('-')
         |> Array.head
         |> LanguageTag
+    member this.Formatted = 
+        string this 
+        |> sprintf "[%s]"
+
+/// An english name of a culture.
+[<Struct>]
+type CultureName = 
+    | CultureName of string
+    override this.ToString() = 
+        this |> function CultureName name -> name
+    member this.Formatted = 
+        quoted ^ string this
 
 /// The filename of a translation file.
 [<Struct>]
@@ -79,15 +97,6 @@ type TranslationRecord = {
     Translated: TranslatedString
 }
 
-/// Information about an assembly.
-[<Struct>]
-type AssemblyInfo = {
-    Language: LanguageTag
-    Path: AssemblyPath
-} with
-    override this.ToString() = 
-        sprintf "[%s]%s" (string this.Language) (string this.Path)
-
 /// The original strings extracted. 
 /// The strings are sorted and duplicates are removed.
 [<Struct>]
@@ -102,8 +111,6 @@ module OriginalStrings =
         list 
         |> Seq.collect strings
         |> create
-
-
 
 /// A source of strings.
 type Source = 
@@ -143,3 +150,6 @@ type TranslationCounters = {
         |> Seq.filter ^ fun (_, v) -> v <> 0
         |> Seq.map ^ fun (indicator, v) -> string v + indicator
         |> String.concat ","
+    member this.Formatted = 
+        string this
+        |> sprintf "[%s]" 

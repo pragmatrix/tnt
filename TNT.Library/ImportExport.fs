@@ -42,19 +42,19 @@ type ImportWarning =
     override this.ToString() =
         match this with
         | ProjectMismatch(wrong, expected)
-            -> sprintf "'%O': unexpected project name of <file>, expect '%O'." wrong expected
+            -> sprintf "%s: unexpected project name of <file>, expect %s." wrong.Formatted expected.Formatted
         | DuplicateImports language 
-            -> sprintf "[%O] found two or more files with the same language" language
+            -> sprintf "%s found two or more files with the same language" language.Formatted
         | TranslationNotFound language 
-            -> sprintf "[%O] translation missing" language
+            -> sprintf "%s translation missing" language.Formatted
         | OriginalStringNotFound(language, tu) 
-            -> sprintf "[%O] original string not found: '%s'" language tu.Source
+            -> sprintf "%s original string not found: '%s'" language.Formatted tu.Source
         | UnusedTranslationChanged(language, (before, _)) 
-            -> sprintf "[%O] unused translation changed: '%s'" language before.Original
+            -> sprintf "%s unused translation changed: '%s'" language.Formatted before.Original
         | IgnoredNewWithTranslation(language, (record, _)) 
-            -> sprintf "[%O] ignored translation of a record marked new: '%s'" language record.Original
+            -> sprintf "%s ignored translation of a record marked new: '%s'" language.Formatted record.Original
         | IgnoredNewReset(language, (record, _)) 
-            -> sprintf "[%O] ignored translation to state new, even though it wasn't new anymore: '%s'" language record.Original
+            -> sprintf "%s ignored translation to state new, even though it wasn't new anymore: '%s'" language.Formatted record.Original
 
 /// Import a number of translations and return the translations that changed.
 let import (project: ProjectName) (translations: Translation list) (files: File list) 

@@ -73,6 +73,14 @@ let private commitTranslations
             yield I ^ indent ^ Translation.status translation
 }
 
+let private warnIfUnsupported (language: LanguageTag) : unit output = output {
+    if not ^ SystemCultures.isSupported language then
+        yield W ^ 
+            sprintf "%s is not supported by your .NET installation." language.Formatted
+        yield I ^ 
+            sprintf "For a list of supported languages, enter 'tnt show languages'."
+}
+
 /// Initialize TNT.
 let init (language: LanguageTag option) = output {
     let path = Sources.path (Directory.current())
@@ -88,7 +96,8 @@ let init (language: LanguageTag option) = output {
     | Some sources -> 
         match language with
         | Some l when l <> sources.Language ->
-            yield I ^ sprintf "Changing source language from [%O] to [%O]" sources.Language l
+            do! warnIfUnsupported l
+            yield I ^ sprintf "Changing source language from %s to %s" sources.Language.Formatted l.Formatted
             Sources.save path { sources with Language = l }
         | _ -> ()
 
@@ -122,6 +131,8 @@ let addLanguage (language: LanguageTag) = output {
     match! loadGroup() with
     | Error() -> return Failed
     | Ok(group) ->
+
+    do! warnIfUnsupported language
 
     let translations = 
         group
@@ -290,6 +301,20 @@ let translate (languages: LanguageTag list) : ResultCode output = output {
             do! commitTranslations "translated" [translation]
         | _ -> ()
 
+    return Succeeded
+}
+
+let show (categories: string list): ResultCode output = output {
+
+    for category in categories do
+        match category with
+        | "cultures" -> 
+            yield I ^ "supported cultures:"
+            for tag, name in SystemCultures.All |> Map.toSeq do
+                yield I ^ sprintf "%s %s" tag.Formatted name.Formatted
+        | unsupported -> 
+            yield E ^ sprintf "unsupported category: %s" unsupported
+        
     return Succeeded
 }
 

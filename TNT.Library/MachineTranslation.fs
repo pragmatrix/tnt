@@ -22,7 +22,7 @@ type TranslationReport = {
     override this.ToString() = 
 
         let prefix = 
-            sprintf "%s: [%O]->[%O]" this.Provider this.SourceLanguage this.TargetLanguage
+            sprintf "%s: %s->%s" this.Provider this.SourceLanguage.Formatted this.TargetLanguage.Formatted
 
         let details =
             match () with

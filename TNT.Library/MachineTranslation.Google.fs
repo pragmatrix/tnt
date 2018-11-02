@@ -23,8 +23,8 @@ let Translator = {
             elif isSupported tag.Primary then 
                 tag.Primary
             else 
-                failwithf "Unsupported language [%O]. Supported are: [%s]" 
-                    (string tag) 
+                failwithf "Unsupported language %s. Supported are: [%s]" 
+                    tag.Formatted 
                     (supportedTags |> Seq.map string |> String.concat ",")
 
         let sourceLanguage, targetLanguage = 

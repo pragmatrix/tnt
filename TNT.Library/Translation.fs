@@ -141,14 +141,20 @@ module Translation =
 
     let shortStatus (translation: Translation) : string = 
         let counters = TranslationCounters.ofTranslation translation
-        sprintf "[%s][%s]" 
-            (string translation.Language) 
-            (string counters) 
+        sprintf "%s%s" 
+            (translation.Language.Formatted) 
+            (counters.Formatted) 
+
+    let private quote str = "\"" + str + "\""
 
     let status (translation: Translation) : string = 
-        sprintf "%s %s" 
-            (shortStatus translation)
+        Text.concat " " [
+            shortStatus translation 
+            SystemCultures.tryGetName (translation.Language) 
+                |> Option.map ^ fun cn -> cn.Formatted
+                |> Option.defaultValue ""
             (sprintf "%s/%O" TNT.Subdirectory (TranslationFilename.ofTranslation translation))
+        ]
 
     /// Update the translation's original strings and return the translation if it changed.
     let update (strings: OriginalStrings) (translation: Translation) : Translation option = 

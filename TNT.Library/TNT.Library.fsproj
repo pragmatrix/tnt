@@ -9,6 +9,7 @@
     <Compile Include="Formatting.fs" />
     <Compile Include="StringExtractor.fs" />
     <Compile Include="Paths.fs" />
+    <Compile Include="SystemCultures.fs" />
     <Compile Include="Sources.fs" />
     <Compile Include="Translation.fs" />
     <Compile Include="XLIFF.fs" />

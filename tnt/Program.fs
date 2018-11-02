@@ -61,6 +61,12 @@ type TranslateOptions = {
     Languages: string seq
 }
 
+[<Verb("show", HelpText = "Show system related information.")>]
+type ShowOptions = {
+    [<Value(0, HelpText = "The information to show, 'cultures' shows the currently supported cultures.")>]
+    Categories: string seq
+}
+
 let private argumentTypes = [|
     typeof<InitOptions>
     typeof<AddOptions>
@@ -70,6 +76,7 @@ let private argumentTypes = [|
     typeof<ExportOptions>
     typeof<ImportOptions>
     typeof<TranslateOptions>
+    typeof<ShowOptions>
 |]
 
 let dispatch (command: obj) = 
@@ -128,6 +135,10 @@ let dispatch (command: obj) =
             |> Seq.toList
 
         API.translate languages
+
+    | :? ShowOptions as opts ->
+
+        API.show (opts.Categories |> Seq.toList)
 
     | x -> failwithf "internal error: %A" x
 
