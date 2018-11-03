@@ -60,6 +60,9 @@ namespace TNT.CSharp
 		// Get languages from more specific to less specific.
 		static IEnumerable<string> GetLanguagesToLookFor(CultureInfo ci)
 		{
+			// did we reach the invariant culture?
+			if (ci.Name == "")
+				yield break;
 			yield return ci.Name;
 			if (ci.Parent != null)
 				foreach (var l in GetLanguagesToLookFor(ci.Parent))
