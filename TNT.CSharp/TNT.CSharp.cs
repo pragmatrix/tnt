@@ -21,7 +21,6 @@ namespace TNT.CSharp
 					: original;
 		}
 
-		static readonly string[] UsableStates = { "needs-review", "final" };
 		static readonly Dictionary<string, string> Translations = LoadTranslations();
 
 		static Dictionary<string, string> LoadTranslations()
@@ -29,11 +28,11 @@ namespace TNT.CSharp
 			var baseDirectory = GetEntryAssemblyDirectory();
 			var translations =
 				GetLanguagesToLookFor(CultureInfo.CurrentUICulture)
-				.Select(language => Path.Combine(baseDirectory, ".tnt/translation-" + language + ".json"))
+				.Select(language => Path.Combine(baseDirectory, ".tnt-content/" + language + ".tnt"))
 				.Where(File.Exists)
 				.Select(path => File.ReadAllText(path, Encoding.UTF8))
 				.Select(JsonValue.Parse)
-				.SelectMany(GetTranslationRecords);
+				.SelectMany(GetTranslationPairs);
 
 			var table = new Dictionary<string, string>();
 
@@ -70,14 +69,11 @@ namespace TNT.CSharp
 					yield return l;
 		}
 
-		static (string, string)[] GetTranslationRecords(JsonValue value)
+		static (string, string)[] GetTranslationPairs(JsonValue value)
 		{
-			return ((JsonArray)value["records"])
-					.Select(record => ((string)record[0], (string)record[1], (string)record[2]))
-					.Where(t => UsableStates.Contains(t.Item1))
-					.Select(t => (t.Item2, t.Item3))
+			return ((JsonArray)value)
+					.Select(pair => ((string)pair[0], (string)pair[1]))
 					.ToArray();
 		}
 	}
 }
- 
