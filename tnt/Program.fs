@@ -23,8 +23,8 @@ type AddOptions = {
     Assembly: string
 }
 
-[<Verb("update", HelpText = "Extract all strings from all assemblies and update the translations.")>]
-type UpdateOptions() = 
+[<Verb("fetch", HelpText = "Get all strings from all sources and update the translations.")>]
+type FetchOptions() = 
     class end
 
 [<Verb("gc", HelpText = "Remove all unused translation records.")>]
@@ -70,7 +70,7 @@ type ShowOptions = {
 let private argumentTypes = [|
     typeof<InitOptions>
     typeof<AddOptions>
-    typeof<UpdateOptions>
+    typeof<FetchOptions>
     typeof<GCOptions>
     typeof<StatusOptions>
     typeof<ExportOptions>
@@ -99,8 +99,8 @@ let dispatch (command: obj) =
         | _, Some assembly 
             -> API.addAssembly assembly
         
-    | :? UpdateOptions ->
-        API.update()
+    | :? FetchOptions ->
+        API.fetch()
 
     | :? GCOptions ->
         API.gc()

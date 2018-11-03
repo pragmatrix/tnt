@@ -157,7 +157,7 @@ let addAssembly (assemblyPath: AssemblyPath) : ResultCode output = output {
         return Succeeded
     else
 
-    yield I ^ sprintf "Adding '%s' as translation source, use 'tnt update' to update the translation files." (string assemblyPath)
+    yield I ^ sprintf "Adding '%s' as translation source, use 'tnt fetch' to update the translation files." (string assemblyPath)
 
     let sourcesPath = Directory.current() |> Sources.path
     Sources.save sourcesPath { 
@@ -167,7 +167,7 @@ let addAssembly (assemblyPath: AssemblyPath) : ResultCode output = output {
     return Succeeded
 }
 
-let update() = output {
+let fetch() = output {
     match! loadSourcesAndGroup() with
     | Error() -> return Failed
     | Ok(sources, group) ->
