@@ -21,6 +21,7 @@ namespace TNT.CSharp
 					: original;
 		}
 
+		static readonly string[] UsableStates = { "needsReview", "final" };
 		static readonly Dictionary<string, string> Translations = LoadTranslations();
 
 		static Dictionary<string, string> LoadTranslations()
@@ -77,8 +78,6 @@ namespace TNT.CSharp
 					.Select(t => (t.Item2, t.Item3))
 					.ToArray();
 		}
-
-		static readonly string[] UsableStates = { "needsReview", "final" };
 	}
 }
  
