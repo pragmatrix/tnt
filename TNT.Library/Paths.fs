@@ -16,6 +16,12 @@ module Translation =
 
     let FilenamePattern = GlobPattern("translation-*.json")
 
+module TranslationContent =
+
+    let filename (content: TranslationContent) : TranslationContent filename = 
+        sprintf "%s.tnt" (string content.Language)
+        |> Filename
+
 // Tag related to XLIFF
 [<Struct>]
 type XLIFF = XLIFF

@@ -132,3 +132,10 @@ type TranslationCounters = {
     member this.Formatted = 
         string this
         |> sprintf "[%s]" 
+
+/// The deployment record of a language.
+[<Struct>]
+type TranslationContent = {
+    Language: LanguageTag
+    Pairs: (string * string) list
+}

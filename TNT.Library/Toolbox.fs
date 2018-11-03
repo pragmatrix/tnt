@@ -38,7 +38,14 @@ module ARPath =
         else RelativePath path
 
 /// A filename tagged with a phantom type.
-type 't filename = 
+type 'tag filename = 
     | Filename of string
     override this.ToString() = 
         this |> function Filename fn -> fn
+
+/// A tagged, relative path.
+[<Struct>]
+type 'tag rpath = 
+    | RPath of string
+    override this.ToString() = 
+        this |> function RPath path -> path

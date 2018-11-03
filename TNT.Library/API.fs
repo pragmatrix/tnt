@@ -281,7 +281,7 @@ let translate (languages: LanguageTag list) : ResultCode output = output {
         let filter = 
             if languages = [] then fun _ -> true
             else 
-            fun translation -> 
+            fun (translation : Translation) -> 
                 List.contains translation.Language languages
                 || List.contains translation.Language.Primary languages
 

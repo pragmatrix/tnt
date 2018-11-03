@@ -263,3 +263,13 @@ module TranslationGroup =
         let strings = originalStrings group
         Some ^ Translation.createNew language strings
         
+module TranslationContent =
+
+    let serialize (content: TranslationContent) =
+        
+        let json = [|
+            for pair in content.Pairs ->
+                [| fst pair; snd pair |]
+        |]
+
+        JsonConvert.SerializeObject(json, Formatting.Indented)
