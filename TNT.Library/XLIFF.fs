@@ -85,38 +85,35 @@ let generateV12 (files: File list) : XLIFFV12 =
     let preserveSpace = 
         XAttribute(XNamespace.Xml + "space", "preserve")
 
-    let root = 
-        e "xliff" [
-            yield a "version" Version
-            for file in files do
-                yield e "file" [
-                    yield! l [
-                        a "original" (string file.Name)
-                        a "source-language" (string file.SourceLanguage)
-                        a "target-language" (string file.TargetLanguage)
-                        a "datatype" SourceFileDatatype
-                    ]
-                    yield e "body" [
-                        // Although optional, Multilingual App Toolkit for Windows requires <group> for loading
-                        // _and_ the id attribute for saving the xliff properly.
-                        yield e "group" [
-                            yield a "id" (Hash.ofString ^ string file.Name)
-                            for unit in file.TranslationUnits do
-                                yield e "trans-unit" [
-                                    a "id" (Hash.ofString unit.Source)
-                                    // this resource should be translated.
-                                    a "translate" "yes"
-                                    preserveSpace
-                                    e "source" [ XText(unit.Source) ]
-                                    e "target" [
-                                        a "state" (string unit.State) 
-                                        XText(unit.Target) 
-                                    ]
-                                ]
+    let root = e "xliff" [
+        yield a "version" Version
+        for file in files -> e "file" [
+            yield! l [
+                a "original" (string file.Name)
+                a "source-language" (string file.SourceLanguage)
+                a "target-language" (string file.TargetLanguage)
+                a "datatype" SourceFileDatatype
+            ]
+            yield e "body" [
+                // Although optional, Multilingual App Toolkit for Windows requires <group> for loading
+                // _and_ the id attribute for saving the xliff properly.
+                e "group" [
+                    yield a "id" (Hash.ofString ^ string file.Name)
+                    for unit in file.TranslationUnits -> e "trans-unit" [
+                        a "id" (Hash.ofString unit.Source)
+                        // this resource should be translated.
+                        a "translate" "yes"
+                        preserveSpace
+                        e "source" [ XText(unit.Source) ]
+                        e "target" [
+                            a "state" (string unit.State) 
+                            XText(unit.Target) 
                         ]
                     ]
                 ]
+            ]
         ]
+    ]
     
     XLIFFV12 ^ XDocument(root).ToString()
 
