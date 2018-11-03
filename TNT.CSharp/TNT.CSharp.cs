@@ -21,7 +21,7 @@ namespace TNT.CSharp
 					: original;
 		}
 
-		static readonly string[] UsableStates = { "needsReview", "final" };
+		static readonly string[] UsableStates = { "needs-review", "final" };
 		static readonly Dictionary<string, string> Translations = LoadTranslations();
 
 		static Dictionary<string, string> LoadTranslations()
