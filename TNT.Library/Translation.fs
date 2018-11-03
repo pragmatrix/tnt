@@ -153,7 +153,7 @@ module Translation =
             SystemCultures.tryGetName (translation.Language) 
                 |> Option.map ^ fun cn -> cn.Formatted
                 |> Option.defaultValue ""
-            (sprintf "%s/%O" TNT.Subdirectory (TranslationFilename.ofTranslation translation))
+            (sprintf "%s/%O" TNT.Subdirectory (Translation.filename translation))
         ]
 
     /// Update the translation's original strings and return the translation if it changed.

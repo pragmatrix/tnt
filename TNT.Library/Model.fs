@@ -20,13 +20,6 @@ type GlobPattern =
     override this.ToString() =
         this |> function GlobPattern str -> str
 
-/// The filename of an assembly.
-[<Struct>]
-type AssemblyFilename = 
-    | AssemblyFilename of string
-    override this.ToString() = 
-        this |> function AssemblyFilename str -> str
-
 /// A relative path to the assembly.
 [<Struct>] 
 type AssemblyPath = 
@@ -58,20 +51,6 @@ type CultureName =
         this |> function CultureName name -> name
     member this.Formatted = 
         quoted ^ string this
-
-/// The filename of a translation file.
-[<Struct>]
-type TranslationFilename = 
-    | TranslationFilename of string
-    override this.ToString() = 
-        this |> function TranslationFilename str -> str
-
-/// The filename of an XLIFF file.
-[<Struct>]
-type XLIFFFilename = 
-    | XLIFFFilename of string
-    override this.ToString() = 
-        this |> function XLIFFFilename str -> str
 
 [<RQA>]
 type TranslatedString = 
@@ -129,7 +108,7 @@ type Translation = {
     Records: TranslationRecord list
 }
 
-/// A group of translations for different langauges.
+/// A group of translations for different languages.
 [<Struct>]
 type TranslationGroup = TranslationGroup of Map<LanguageTag, Translation>
 

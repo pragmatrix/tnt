@@ -4,6 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Toolbox.fs" />
     <Compile Include="Output.fs" />
     <Compile Include="Model.fs" />
     <Compile Include="Formatting.fs" />

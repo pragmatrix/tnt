@@ -2,71 +2,32 @@
 [<AutoOpen>]
 module TNT.Library.Paths
 
-open System.IO
 open TNT.Model
-open FunToolbox.FileSystem
-
-/// Absolute or relative path. Toolbox candidate.
-type ARPath =
-    | AbsolutePath of Path
-    | RelativePath of string
-    override this.ToString() = 
-        match this with
-        | AbsolutePath p -> string p
-        | RelativePath p -> p
-
-module ARPath =
-
-    /// Returns an absolute path be prepending root to it if it's relative.
-    let rooted (root: Path) = function
-        | AbsolutePath abs -> abs
-        | RelativePath rel -> root |> Path.extend rel
-
-    let extend (right: ARPath) (left: ARPath) =
-        match left, right with
-        | RelativePath ".", right
-            -> right
-        | left, RelativePath "."
-            -> left
-        | _, AbsolutePath path 
-            -> AbsolutePath path
-        | AbsolutePath path, RelativePath rel 
-            -> AbsolutePath (path |> Path.extend rel)
-        | RelativePath parent, RelativePath rel 
-            -> RelativePath (Path.Combine(parent, rel))
-
-    let ofString (path: string) = 
-        if Path.IsPathRooted(path)
-        then AbsolutePath ^ Path.parse path
-        else RelativePath path
-
-module AssemblyFilename = 
-
-    let ofPath (path: AssemblyPath) = 
-        // note: AssemblyPath is a relative path, so we can't use
-        // the FunToolbox Path which is always an absolute one.
-        Path.GetFileName(string path)
-        |> AssemblyFilename
 
 module TNT =
     let [<Literal>] Subdirectory = ".tnt"
 
-module TranslationFilename =
+module Translation =
 
-    let ofTranslation (translation: Translation) : TranslationFilename =
+    /// The filename of the translation
+    let filename (translation: Translation) : Translation filename =
         sprintf "translation-%s.json" (string translation.Language)
-        |> TranslationFilename
+        |> Filename
 
-    let Pattern = GlobPattern("translation-*.json")
+    let FilenamePattern = GlobPattern("translation-*.json")
 
-module XLIFFFilename = 
-    
+// Tag related to XLIFF
+[<Struct>]
+type XLIFF = XLIFF
+
+module XLIFF = 
+
     let [<Literal>] Extension = ".xlf"
     // VisualStudio uses the dot extension to separate the identifier from the base name.
     let [<Literal>] IdentifierSeparator = "."
 
-    let filenameForLanguage (project: ProjectName) (LanguageTag(identifier)) : XLIFFFilename =
-        XLIFFFilename ^ string project + IdentifierSeparator + identifier + Extension
+    let filenameForLanguage (project: ProjectName) (LanguageTag(identifier)) : XLIFF filename =
+        Filename ^ string project + IdentifierSeparator + identifier + Extension
 
     let pattern (project: ProjectName) : GlobPattern =
         GlobPattern(string project + "*" + Extension)

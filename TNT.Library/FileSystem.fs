@@ -44,22 +44,18 @@ module TranslationFilenames =
     
     /// Get all translation filenames in the given directory. Note: the directory does not contain
     /// the subdirectory ".tnt"
-    let inDirectory (baseDirectory: Path) : TranslationFilename list = 
+    let inDirectory (baseDirectory: Path) : Translation filename list = 
         let directory = baseDirectory |> Path.extend TNT.Subdirectory
         if not ^ Directory.exists directory then [] else
-        Directory.EnumerateFiles (string directory, string TranslationFilename.Pattern)
-        |> Seq.map (Path.parse >> Path.name >> TranslationFilename)
+        Directory.EnumerateFiles (string directory, string Translation.FilenamePattern)
+        |> Seq.map (Path.parse >> Path.name >> Filename)
         |> Seq.toList
 
 module Translation = 
     
-    /// The filename of the translation
-    let filename (translation: Translation) : TranslationFilename =
-        TranslationFilename.ofTranslation translation
-
     /// The full path of the translation
     let path (directory: Path) (translation: Translation) : Path =
-        let filename = filename translation
+        let filename = Translation.filename translation
         directory 
         |> Path.extend TNT.Subdirectory 
         |> Path.extend (string filename)
@@ -114,8 +110,8 @@ module TranslationGroup =
 module XLIFFFilenames = 
     
     /// Get all the XLIFF files in the directory baseName.
-    let inDirectory (directory: Path) (project: ProjectName) : XLIFFFilename list =
-        Directory.EnumerateFiles (string directory, string ^ XLIFFFilename.pattern project)
-        |> Seq.map (Path.parse >> Path.name >> XLIFFFilename)
+    let inDirectory (directory: Path) (project: ProjectName) : XLIFF filename list =
+        Directory.EnumerateFiles (string directory, string ^ XLIFF.pattern project)
+        |> Seq.map (Path.parse >> Path.name >> Filename)
         |> Seq.toList
     

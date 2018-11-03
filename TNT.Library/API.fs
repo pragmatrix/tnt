@@ -216,7 +216,7 @@ let export
         |> TranslationGroup.translations
         |> Seq.map ^ fun translation ->
             let filename = 
-                XLIFFFilename.filenameForLanguage project translation.Language 
+                XLIFF.filenameForLanguage project translation.Language 
             let path = exportDirectory |> ARPath.extend ^ RelativePath (string filename)
             let file = ImportExport.export project sources.Language translation
             path, XLIFF.generateV12 [file]
