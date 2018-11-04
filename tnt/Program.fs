@@ -61,6 +61,10 @@ type TranslateOptions = {
     Languages: string seq
 }
 
+[<Verb("sync", HelpText = "Synchronize all the translations in the '.tnt-content' directory.")>]
+type SyncOptions() = 
+    class end
+
 [<Verb("show", HelpText = "Show system related information.")>]
 type ShowOptions = {
     [<Value(0, HelpText = "The information to show, 'languages' shows the currently supported languages.")>]
@@ -76,6 +80,7 @@ let private argumentTypes = [|
     typeof<ExportOptions>
     typeof<ImportOptions>
     typeof<TranslateOptions>
+    typeof<SyncOptions>
     typeof<ShowOptions>
 |]
 
@@ -135,6 +140,10 @@ let dispatch (command: obj) =
             |> Seq.toList
 
         API.translate languages
+
+    | :? SyncOptions ->
+
+        API.sync()
 
     | :? ShowOptions as opts ->
 

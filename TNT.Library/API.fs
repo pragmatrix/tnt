@@ -425,6 +425,11 @@ let translate (languages: LanguageTag list) : ResultCode output = output {
     return Succeeded
 }
 
+let sync (): ResultCode output = output {
+    do! syncAllContent()
+    return Succeeded
+}
+
 let show (categories: string list): ResultCode output = output {
 
     for category in categories do
