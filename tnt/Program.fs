@@ -88,7 +88,7 @@ let dispatch (command: obj) =
 
     | :? AddOptions as opts -> 
         let language = opts.Language |> Option.ofObj |> Option.map LanguageTag
-        let assembly = opts.Assembly |> Option.ofObj |> Option.map AssemblyPath
+        let assembly = opts.Assembly |> Option.ofObj |> Option.map RPath
 
         match language, assembly with
         | None, None

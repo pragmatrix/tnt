@@ -153,7 +153,9 @@ module Translation =
             SystemCultures.tryGetName (translation.Language) 
                 |> Option.map ^ fun cn -> cn.Formatted
                 |> Option.defaultValue ""
-            (sprintf "%s/%O" TNT.Subdirectory (Translation.filename translation))
+            (sprintf "%O" 
+                (TNT.Subdirectory 
+                |> RPath.extendF (Translation.filename translation)))
         ]
 
     /// Update the translation's original strings and return the translation if it changed.
@@ -273,3 +275,21 @@ module TranslationContent =
         |]
 
         JsonConvert.SerializeObject(json, Formatting.Indented)
+
+    let fromTranslation (translation: Translation) : TranslationContent = 
+    
+        let recordToPair (record: TranslationRecord) : (string * string) option =
+            match record.Translated with
+            | TranslatedString.New
+            | TranslatedString.Unused _
+                -> None
+            | TranslatedString.NeedsReview str 
+            | TranslatedString.Final str 
+                -> Some (record.Original, str)
+
+        {
+            Language = translation.Language
+            Pairs = 
+                translation.Records
+                |> List.choose recordToPair
+        }

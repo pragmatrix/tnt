@@ -37,15 +37,51 @@ module ARPath =
         then AbsolutePath ^ Path.parse path
         else RelativePath path
 
+/// A tagged, relative path.
+type [<Struct>] 'tag rpath = 
+    | RPath of string
+    override this.ToString() = 
+        this |> function RPath path -> path
+
+
 /// A filename tagged with a phantom type.
 type 'tag filename = 
     | Filename of string
     override this.ToString() = 
         this |> function Filename fn -> fn
 
-/// A tagged, relative path.
-[<Struct>]
-type 'tag rpath = 
-    | RPath of string
-    override this.ToString() = 
-        this |> function RPath path -> path
+module RPath =
+
+    let extend (right: 'tag rpath) (left: _ rpath) : 'tag rpath =
+        let left, right = 
+            RelativePath (string left),
+            RelativePath (string right)
+        left 
+        |> ARPath.extend right
+        |> string
+        |> RPath
+
+    let inline ofFilename (fn: 'tag filename): 'tag rpath =
+        string fn |> RPath
+
+    let inline extendF (right: 'tag filename) (path: _ rpath) : 'tag rpath = 
+        path |> extend (ofFilename right)
+
+    let inline at (absolute: Path) (path: _ rpath) : Path =
+        absolute |> Path.extend (string path)
+
+module Path = 
+
+    let inline extend (right: 'tag rpath) (left: Path) : Path = 
+        left |> Path.extend (string right)
+
+    let inline extendF (right: 'tag filename) (left: Path) : Path = 
+        left |> extend (RPath.ofFilename right)
+
+module Filename = 
+
+    let inline toPath (fn: 'tag filename) : 'tag rpath = 
+        RPath.ofFilename fn
+
+    let inline at (path: Path) (fn: 'tag filename) : Path = 
+        path |> Path.extend (toPath fn)

@@ -38,7 +38,7 @@ let ``generates XLIFF``() =
         |> fun str -> str.Trim()
 
 
-    let fn = Directory.current() |> Path.extend "export01.xlf"
+    let fn = Directory.current() |> Path.extendF (Filename "export01.xlf")
     
     let generated = linesOf generated
     generated
@@ -46,7 +46,7 @@ let ``generates XLIFF``() =
 
 [<Fact>]
 let ``imports XLIFF``() = 
-    let fn = Directory.current() |> Path.extend "import01.xlf"
+    let fn = Directory.current() |> Path.extendF (Filename "import01.xlf")
     let xliff = XLIFFV12 ^ File.loadText Encoding.UTF8 fn
     let parsed = parseV12 xliff
     parsed 

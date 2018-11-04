@@ -1,5 +1,7 @@
 ﻿namespace TNT.Model
 
+open TNT.Library
+
 [<AutoOpen>]
 module private Helper =
     let inline quoted str = "\"" + str + "\""
@@ -20,12 +22,8 @@ type GlobPattern =
     override this.ToString() =
         this |> function GlobPattern str -> str
 
-/// A relative path to the assembly.
-[<Struct>] 
-type AssemblyPath = 
-    | AssemblyPath of string
-    override this.ToString() = 
-        this |> function AssemblyPath str -> str
+/// A tag used to tag paths that point to an assembly source.
+type AssemblySource = private | Tag
 
 /// An IETF language tag. https://en.wikipedia.org/wiki/IETF_language_tag
 [<Struct>]
@@ -93,7 +91,7 @@ module OriginalStrings =
 
 /// A source of strings.
 type Source = 
-    | AssemblySource of AssemblyPath
+    | AssemblySource of AssemblySource rpath
 
 /// A defininiton of sources.
 type Sources = {

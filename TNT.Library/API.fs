@@ -4,8 +4,8 @@ open System.Text
 open System.Runtime.CompilerServices
 open FunToolbox.FileSystem
 open TNT.Model
+open TNT.Library
 open TNT.Library.Output
-open TNT.Library.FileSystem
 open TNT.Library.MachineTranslation
 
 module TranslationGroup = 
@@ -23,8 +23,7 @@ type ResultCode =
     | Succeeded
 
 let private tryLoadSources(): Sources option output = output {
-    let currentDirectory = Directory.current()
-    let sourcesPath = Sources.path currentDirectory
+    let sourcesPath = Directory.current() |> Path.extend Sources.path
     if File.exists sourcesPath 
     then return Some ^ Sources.load sourcesPath
     else return None
@@ -34,7 +33,7 @@ let private loadSources() : Result<Sources, unit> output = output {
     match! tryLoadSources() with
     | Some sources -> return Ok sources
     | None ->
-        yield E ^ sprintf "Can't load '%s/%s', use 'tnt init' to create it." TNT.Subdirectory Sources.SourcesFilename
+        yield E ^ sprintf "Can't load '%O', use 'tnt init' to create it." Sources.path
         return Error()
 }
 
@@ -55,7 +54,124 @@ let private loadGroup() =
     loadSourcesAndGroup()
     |> Output.map ^ Result.map snd
 
-/// Update the given translations and update the combined file.
+let private translationsDirectory() = 
+    Directory.current()
+    |> Path.extend TNT.Subdirectory
+
+/// Sync translations to the content directory. This is not done by synchronizing
+/// all the given languages by checking of the existence and file dates in the 
+/// .tnt and .tnt-content directories.
+/// We are doing this to keep the synchronization incremental, independent, and to
+/// support it as a separate command.
+let private syncContent
+    (languages: LanguageTag list) 
+    (cache: Translation list) = output {
+
+    let currentDirectory = Directory.current()
+
+    let atCurrentDirectory rpath = 
+        rpath |> RPath.at currentDirectory
+
+    let translationPath language = 
+        TNT.Subdirectory
+        |> RPath.extendF ^ Translation.filenameOfLanguage language
+
+    let contentPath language = 
+        TNT.ContentSubdirectory
+        |> RPath.extendF ^ TranslationContent.filenameOfLanguage language
+    
+    let translations, contents = 
+        let filterByExistence mkPath =
+            languages 
+            |> Seq.filter (
+                mkPath
+                >> atCurrentDirectory
+                >> File.exists)
+            |> Set.ofSeq
+
+        filterByExistence translationPath,
+        filterByExistence contentPath
+
+    let toCreate, toUpdate, toDelete = 
+        Set.difference translations contents,
+        Set.intersect contents translations,
+        Set.difference contents translations
+
+    let resolveTranslation = 
+        let map = 
+            cache
+            |> Seq.map ^ fun t -> translationPath t.Language, t
+            |> Map.ofSeq
+        fun (path: Translation rpath) ->
+            match map.TryFind path with
+            | Some t -> t
+            | None -> Translation.load (atCurrentDirectory path)
+
+    let toCreate = 
+        toCreate
+        |> Seq.map ^ fun tag -> translationPath tag, contentPath tag
+        |> Seq.toList
+
+    if toCreate <> [] 
+        && toUpdate = Set.empty 
+        && toDelete = Set.empty 
+        && not ^ Directory.exists (atCurrentDirectory TNT.ContentSubdirectory) then
+        yield I ^ sprintf "creating directory: %s" (string TNT.ContentSubdirectory)
+        Path.ensureDirectoryExists (atCurrentDirectory TNT.ContentSubdirectory)
+
+    for (tPath, cPath) in toCreate do
+        yield I ^ sprintf "creating: %s" (string cPath)
+        resolveTranslation tPath
+        |> TranslationContent.fromTranslation
+        |> TranslationContent.save (atCurrentDirectory cPath)
+
+    let toUpdate =
+        toUpdate
+        |> Seq.map ^ fun tag -> translationPath tag, contentPath tag
+        |> Seq.filter ^ fun (tp, cp) -> 
+            File.lastWriteTimeUTC (atCurrentDirectory tp) 
+            >= File.lastWriteTimeUTC (atCurrentDirectory cp)
+        |> Seq.toList
+
+    for (tPath, cPath) in toUpdate do
+        yield I ^ sprintf "updating: %s" (string cPath)
+        resolveTranslation tPath
+        |> TranslationContent.fromTranslation
+        |> TranslationContent.save (atCurrentDirectory cPath)
+
+    let toDelete = 
+        toDelete
+        |> Seq.map ^ contentPath
+        
+    for cPath in toDelete do
+        yield I ^ sprintf "deleting: %s" (string cPath)
+        File.delete (atCurrentDirectory cPath)
+}
+
+/// Sync the complete languages / content directory. 
+/// Use translations in the cache if they used to the new content files.
+let private syncAllContent() = output {
+
+    let currentDirectory = Directory.current()
+
+    let contentLanguages = 
+        TranslationContents.scan currentDirectory
+        |> Seq.choose ^ TranslationContent.languageOf 
+        |> Set.ofSeq
+
+    let translationLanguages = 
+        Translations.scan currentDirectory
+        |> Seq.choose ^ Translation.languageOf
+        |> Set.ofSeq
+
+    let languagesInvolved = 
+        Set.union contentLanguages translationLanguages
+        |> Set.toList
+
+    do! syncContent languagesInvolved []
+}    
+
+/// Commit the given translations and synchronize the related content files.
 let private commitTranslations 
     (descriptionOfChange: string)
     (changedTranslations: Translation list) = output {
@@ -65,12 +181,18 @@ let private commitTranslations
     | translations ->
         yield I ^ sprintf "Translations %s:" descriptionOfChange
         // save them all
-        let currentDirectory = Directory.current()
+        let translationsDirectory = translationsDirectory()
         for translation in translations do
-            let translationPath = 
-                translation |> Translation.path currentDirectory
-            translation |> Translation.save translationPath 
+            do
+                let translationPath = 
+                    translation
+                    |> Translation.filename
+                    |> Filename.at translationsDirectory
+                translation |> Translation.save translationPath
             yield I ^ indent ^ Translation.status translation
+
+        let languagesInvolved = changedTranslations |> List.map ^ fun t -> t.Language
+        do! syncContent languagesInvolved changedTranslations
 }
 
 let private warnIfUnsupported (language: LanguageTag) : unit output = output {
@@ -83,11 +205,11 @@ let private warnIfUnsupported (language: LanguageTag) : unit output = output {
 
 /// Initialize TNT.
 let init (language: LanguageTag option) = output {
-    let path = Sources.path (Directory.current())
+    let path = Directory.current() |> Path.extend Sources.path 
     match! tryLoadSources() with
     | None ->
         Path.ensureDirectoryOfPathExists path
-        yield I ^ sprintf "Initializing '%s'" TNT.Subdirectory
+        yield I ^ sprintf "Initializing '%s'" (string TNT.Subdirectory)
         Sources.save path {
             Language = defaultArg language Sources.DefaultLanguage
             Sources = Set.empty
@@ -144,7 +266,7 @@ let addLanguage (language: LanguageTag) = output {
 }
 
 /// Add a new assembly.
-let addAssembly (assemblyPath: AssemblyPath) : ResultCode output = output {
+let addAssembly (assemblyPath: AssemblySource rpath) : ResultCode output = output {
     match! loadSources() with
     | Error() -> return Failed
     | Ok(sources) ->
@@ -159,7 +281,7 @@ let addAssembly (assemblyPath: AssemblyPath) : ResultCode output = output {
 
     yield I ^ sprintf "Adding '%s' as translation source, use 'tnt fetch' to update the translation files." (string assemblyPath)
 
-    let sourcesPath = Directory.current() |> Sources.path
+    let sourcesPath = Directory.current() |> Path.extend Sources.path
     Sources.save sourcesPath { 
         sources with 
             Sources = Set.add assemblySource sources.Sources 
@@ -251,7 +373,7 @@ let import (importDirectory: Path) : ResultCode output = output {
     let project = projectName()
     let files = 
         XLIFFFilenames.inDirectory importDirectory project
-        |> Seq.map ^ fun fn -> importDirectory |> Path.extend (string fn)
+        |> Seq.map ^ fun fn -> importDirectory |> Path.extendF fn
         |> Seq.map ^ File.loadText Encoding.UTF8
         |> Seq.map XLIFF.XLIFFV12
         |> Seq.collect XLIFF.parseV12
@@ -268,7 +390,6 @@ let import (importDirectory: Path) : ResultCode output = output {
             yield W ^ indent ^ string warning
 
     do! commitTranslations "changed by import" translations
-
     return Succeeded
 }
 
