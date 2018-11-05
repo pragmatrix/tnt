@@ -14,6 +14,9 @@ type ARPath =
 
 module ARPath =
 
+    let private normalize (path: string) = 
+        path.Replace("\\", "/")
+
     /// Returns an absolute path be prepending root to it if it's relative.
     let rooted (root: Path) = function
         | AbsolutePath abs -> abs
@@ -30,7 +33,7 @@ module ARPath =
         | AbsolutePath path, RelativePath rel 
             -> AbsolutePath (path |> Path.extend rel)
         | RelativePath parent, RelativePath rel 
-            -> RelativePath (Path.Combine(parent, rel))
+            -> RelativePath (Path.Combine(parent, rel) |> normalize)
 
     let ofString (path: string) = 
         if Path.IsPathRooted(path)
@@ -42,7 +45,6 @@ type [<Struct>] 'tag rpath =
     | RPath of string
     override this.ToString() = 
         this |> function RPath path -> path
-
 
 /// A filename tagged with a phantom type.
 type 'tag filename = 
