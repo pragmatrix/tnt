@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard1.6</TargetFramework>
     <Version>0.4.0</Version>
+    <RootNamespace>TNT</RootNamespace>
   </PropertyGroup>
   <PropertyGroup>
     <!-- Disable Paket restore under NCrunch build -->

@@ -5,7 +5,7 @@ open TNT.Library
 [<AutoOpen>]
 module private Helper =
     let inline quoted str = "\"" + str + "\""
-    
+
 /// Project name, currently the name of the current directory.
 [<Struct>]
 type ProjectName = 

@@ -7,7 +7,7 @@ open CommandLine
 
 [<Verb("init", HelpText = "Initialize the current directory. Creates the '.tnt' directory and the 'sources.json' file.")>]
 type InitOptions = {
-    [<Option('l', "language", HelpText = "The source language (code ['-' region]), defaults to 'en-US'.")>]
+    [<Option('l', "language", HelpText = "The source language (code ['-' region] or name), defaults to 'en-US'.")>]
     Language: string
 }
 
@@ -16,7 +16,7 @@ type AddOptions = {
     // http://www.i18nguy.com/unicode/language-identifiers.html
     // https://www.ietf.org/rfc/rfc3066.txt
 
-    [<Option('l', "language", HelpText = "Language (code ['-' region]) to be added.")>]
+    [<Option('l', "language", HelpText = "Language (code ['-' region] or name) to be added.")>]
     Language: string
 
     [<Option('a', "assembly", HelpText = "Relative path of the assembly file to be added.")>]
@@ -51,12 +51,6 @@ type ImportOptions = {
 
 [<Verb("translate", HelpText = "Machine translate new strings.")>]
 type TranslateOptions = {
-    // [<Option('p', "provider", HelpText = "The machine translation provider, default is 'Google'.")>]
-    // Provider: string
-
-    // [<Option("list", HelpText = "List the target languages supported by the machine translation provider.")>]
-    // List: bool
-
     [<Value(0, HelpText = "The language(s) to translate to. If none are provided, all new strings of all languages are translated.")>]
     Languages: string seq
 }
@@ -84,15 +78,19 @@ let private argumentTypes = [|
     typeof<ShowOptions>
 |]
 
+let private resolveLanguage (nameOrTag: string) : LanguageTag = 
+    SystemCultures.tryFindTagByTagOrName nameOrTag
+    |> Option.defaultWith ^ fun () -> LanguageTag(Text.trim nameOrTag)
+
 let dispatch (command: obj) = 
 
     match command with
     | :? InitOptions as opts ->
-        let language = opts.Language |> Option.ofObj |> Option.map LanguageTag
+        let language = opts.Language |> Option.ofObj |> Option.map resolveLanguage
         API.init language
 
     | :? AddOptions as opts -> 
-        let language = opts.Language |> Option.ofObj |> Option.map LanguageTag
+        let language = opts.Language |> Option.ofObj |> Option.map resolveLanguage
         let assembly = opts.Assembly |> Option.ofObj |> Option.map RPath
 
         match language, assembly with
@@ -136,7 +134,7 @@ let dispatch (command: obj) =
     | :? TranslateOptions as opts ->
         let languages = 
             opts.Languages 
-            |> Seq.map LanguageTag
+            |> Seq.map resolveLanguage
             |> Seq.toList
 
         API.translate languages

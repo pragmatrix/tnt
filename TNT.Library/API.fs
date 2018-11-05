@@ -436,7 +436,7 @@ let show (categories: string list): ResultCode output = output {
         match category with
         | "languages" -> 
             yield I ^ "supported languages:"
-            for tag, name in SystemCultures.All |> Map.toSeq do
+            for { Tag = tag; EnglishName = name } in SystemCultures.All do
                 yield I ^ sprintf "%s %s" tag.Formatted name.Formatted
         | unsupported -> 
             yield E ^ sprintf "unsupported category: %s" unsupported
