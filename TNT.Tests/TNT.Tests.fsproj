@@ -21,6 +21,7 @@
     <ProjectReference Include="..\TNT.FSharp\TNT.FSharp.fsproj" />
     <ProjectReference Include="..\TNT.Library\TNT.Library.fsproj" />
     <ProjectReference Include="..\TNT.Tests.CSharp\TNT.Tests.CSharp.csproj" />
+    <ProjectReference Include="..\TNT.T\TNT.T.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <!-- Disable Paket restore under NCrunch build -->

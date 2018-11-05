@@ -33,10 +33,10 @@ publish:
 	dotnet clean -c Release
 	cd tnt        && rm -rf obj bin && dotnet pack -c Release -o ../tmp
 	# cd TNT.FSharp && rm -rf obj bin && dotnet pack -c Release -o ../tmp
-	cd TNT.CSharp && rm -rf obj bin && dotnet pack -c Release -o ../tmp
+	cd TNT.T && rm -rf obj bin && dotnet pack -c Release -o ../tmp
 	${push} tmp/tnt-cli.*.nupkg
 	# ${push} tmp/TNT.FSharp.*.nupkg
-	${push} tmp/TNT.CSharp.*.nupkg
+	${push} tmp/TNT.T.*.nupkg
 
 .PHONY: publish-and-update
 publish-and-update: publish update-tnt-wait

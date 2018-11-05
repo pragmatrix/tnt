@@ -1,6 +1,4 @@
-﻿using TNT.CSharp;
-
-namespace TNT.Tests.CSharp
+﻿namespace TNT.Tests.CSharp
 {
 	public class TranslateableTextClass
 	{

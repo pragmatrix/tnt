@@ -8,7 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Json;
 
-namespace TNT.CSharp
+namespace TNT
 {
 	public static class Extensions
 	{

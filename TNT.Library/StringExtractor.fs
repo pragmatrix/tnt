@@ -11,7 +11,7 @@ open TNT.Model
 module private Private = 
 
     let TFunctions = [|
-        "System.String TNT.CSharp.Extensions::t(System.String)"
+        "System.String TNT.Extensions::t(System.String)"
         "System.String TNT.FSharp.Extensions::String.get_t(System.String)"
     |]
 
