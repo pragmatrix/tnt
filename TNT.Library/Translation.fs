@@ -132,11 +132,12 @@ module Translation =
             | TranslatedString.Unused _ -> "unused"
 
         let serializeRecord (record: TranslationRecord) : Json = Array [
-            String ^ stateString record.Translated
-            String record.Original
-            String ^ string record.Translated
-            Array (record.Contexts |> List.map (string >> String))
-            Array (record.Notes |> List.map String)
+            yield String ^ stateString record.Translated
+            yield String record.Original
+            yield String ^ string record.Translated
+            yield Array (record.Contexts |> List.map (string >> String))
+            if record.Notes <> [] then
+                yield Array (record.Notes |> List.map String)
         ]
 
     let destructure (f: Json<'a>) (js: Json) = 
