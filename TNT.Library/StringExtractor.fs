@@ -37,20 +37,25 @@ module private Private =
 
 let private logicalContext (typeDefinition: TypeDefinition) : LogicalContext =
 
-    LogicalContext (typeDefinition.FullName)
-
-(*
     let rec buildContext (typeDefinition: TypeDefinition) (soFar: string list) = 
-        let soFar = typeDefinition.Name :: soFar
+
+        let isCompilerGenerated = 
+            typeDefinition.HasCustomAttributes 
+            && (typeDefinition.CustomAttributes 
+                |> Seq.exists ^ fun attr -> attr.AttributeType.Name = "CompilerGeneratedAttribute")
+        
+        let soFar = 
+            if isCompilerGenerated
+            then soFar
+            else typeDefinition.Name :: soFar
+            
         match typeDefinition.DeclaringType with
         | null -> typeDefinition.Namespace :: soFar
         | dt -> buildContext dt soFar
 
     buildContext typeDefinition []
-    |> Seq.rev 
     |> String.concat "."
     |> LogicalContext
-*)
 
 let extract (path: Path) : OriginalStrings = 
 

@@ -30,5 +30,8 @@ let ``extract from CSharp``() =
     let strings = extract path
     strings 
     |> OriginalStrings.strings 
-    |> List.map fst
-    |> should equal ["original"]
+    |> should equal 
+        [
+            "original", [ LogicalContext "TNT.Tests.CSharp.TranslateableTextClass" ]
+            "originalCG", [ LogicalContext "TNT.Tests.CSharp" ]
+        ]
