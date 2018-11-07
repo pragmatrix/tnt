@@ -131,11 +131,12 @@ module Translation =
             | TranslatedString.Final _ -> "final"
             | TranslatedString.Unused _ -> "unused"
 
-        let serializeTranslatedString (record: TranslationRecord) : Json = Array [
+        let serializeRecord (record: TranslationRecord) : Json = Array [
             String ^ stateString record.Translated
             String record.Original
             String ^ string record.Translated
             Array (record.Contexts |> List.map (string >> String))
+            Array (record.Notes |> List.map String)
         ]
 
     let destructure (f: Json<'a>) (js: Json) = 
@@ -172,7 +173,7 @@ module Translation =
             "language", String ^ string translation.Language
             "records",
                 translation.Records
-                |> Seq.map serializeTranslatedString
+                |> Seq.map serializeRecord
                 |> Seq.toList
                 |> Array
         ]
