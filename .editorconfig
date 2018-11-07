@@ -1,0 +1,17 @@
+root = true
+
+[*.{fs,cs}]
+indent_style=space
+indent_size=4
+
+[*.{fsproj,csproj}]
+indent_style=space
+indent_size=2
+
+[*.xlf]
+indent_style=space
+indent_size=2
+
+[*.json]
+indent_style=space
+indent_size=2
