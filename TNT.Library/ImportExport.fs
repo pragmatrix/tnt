@@ -41,6 +41,41 @@ let export (project: ProjectName) (sourceLanguage: LanguageTag) (translation: Tr
 
     toFile translation
 
+[<AutoOpen>]
+module internal ImportHelper =
+
+    let isContextNode (str: string) = 
+        str.startsWith ContextPrefix
+    
+    let importNotes (unit: TranslationUnit) : string list = 
+        unit.Notes
+        |> Seq.map ^ Text.trim
+        |> Seq.filter ((<>) "")
+        |> Seq.filter (isContextNode >> not)
+        |> Seq.toList
+
+    module Text = 
+        let sentences (str: string) : string seq = 
+            let r = str.Split('.')
+            r 
+            |> Seq.mapi ^ fun index str -> 
+                if index <> r.Length-1 then str + "." else str
+
+        let trimToMaxCharacters (num: int) (ellipsis : string) (str: string) : string =
+            match str with
+            | ""
+            | _ when num <= 0 -> ""
+            | _ when str.Length <= num -> str
+            | _ when ellipsis.Length >= num -> str.[0..num-1]
+            | str -> str.[0..num-1-ellipsis.Length] + ellipsis
+
+    let limitText (str: string) = 
+        str 
+        |> Text.trim
+        |> Text.sentences
+        |> Seq.head
+        |> Text.trimToMaxCharacters 48 "..."
+
 type ImportWarning = 
     | ProjectMismatch of ProjectName * ProjectName
     | DuplicateImports of LanguageTag
@@ -58,27 +93,14 @@ type ImportWarning =
         | TranslationNotFound language 
             -> sprintf "%s translation missing" language.Formatted
         | OriginalStringNotFound(language, tu) 
-            -> sprintf "%s original string not found: '%s'" language.Formatted tu.Source
+            -> sprintf "%s original string not found: '%s'" language.Formatted (limitText tu.Source)
         | UnusedTranslationChanged(language, (before, _)) 
-            -> sprintf "%s unused translation changed: '%s'" language.Formatted before.Original
+            -> sprintf "%s unused translation changed: '%s'" language.Formatted (limitText before.Original)
         | IgnoredNewWithTranslation(language, (record, _)) 
-            -> sprintf "%s ignored translation of a record marked new: '%s'" language.Formatted record.Original
+            -> sprintf "%s ignored translation of a record marked new: '%s'" language.Formatted (limitText record.Original)
         | IgnoredNewReset(language, (record, _)) 
-            -> sprintf "%s ignored translation to state new, even though it wasn't new anymore: '%s'" language.Formatted record.Original
-
-[<AutoOpen>]
-module private ImportHelper =
-
-    let isContextNode (str: string) = 
-        str.startsWith ContextPrefix
-    
-    let importNotes (unit: TranslationUnit) : string list = 
-        unit.Notes
-        |> Seq.map ^ Text.trim
-        |> Seq.filter ((<>) "")
-        |> Seq.filter (isContextNode >> not)
-        |> Seq.toList
-
+            -> sprintf "%s ignored translation to state new, even though it wasn't new anymore: '%s'" language.Formatted (limitText record.Original)
+            
 /// Import a number of translations and return the translations that changed.
 let import (project: ProjectName) (translations: Translation list) (files: File list) 
     : Translation list * ImportWarning list =

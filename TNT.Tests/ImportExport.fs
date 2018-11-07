@@ -178,7 +178,38 @@ let ``context get ignored and notes get overwritten by import``() =
     import [currentTranslation] [importFile]
     |> should equal ([translationExpected], emptyWarnings)
 
+[<Fact>]
+let ``sentence splitting``() =
+    Text.sentences "Hello. World."
+    |> Seq.toList
+    |> should equal [
+        "Hello."
+        " World." (* The space here does not belong to a sentence, but information should not get lost. *)
+        "" (* well, this trailing "" is not perfect and does not seem to have a purpose *)]
 
+    Text.sentences ""
+    |> Seq.toList
+    |> should equal ["" (* this is required, because there must always be at least one sentence, even if the input string is empty *)]
 
-    
+[<Theory>]
+[<InlineData("", "")>]
+[<InlineData("Hello", "Hello")>]
+[<InlineData("Hellola", "He...")>]
+let ``trimToMaxCharacters`` (a: string) (b: string) = 
+    a 
+    |> Text.trimToMaxCharacters 5 "..."
+    |> should equal b
 
+[<Theory>]
+[<InlineData(6, "Hello")>]
+[<InlineData(5, "Hello")>]
+[<InlineData(4, "He..")>]
+[<InlineData(3, "H..")>]
+[<InlineData(2, "He")>]
+[<InlineData(1, "H")>]
+[<InlineData(0, "")>]
+[<InlineData(-1, "")>]
+let ``trimming to a length less than the ellipsis' length`` (max: int) (expected: string) = 
+
+    "Hello" |> Text.trimToMaxCharacters max ".."
+    |> should equal expected
