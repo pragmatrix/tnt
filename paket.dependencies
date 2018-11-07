@@ -12,7 +12,6 @@ nuget FsUnit.xUnit
 nuget Mono.Cecil
 nuget System.ValueTuple
 nuget FunToolbox
-nuget Newtonsoft.Json
 nuget System.Json
 nuget Chiron
 nuget Google.Cloud.Translation.V2
