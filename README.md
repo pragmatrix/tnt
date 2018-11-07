@@ -110,7 +110,10 @@ TBD
 
 #### File `.tnt-content/[tag].tnt` 
 
-## License
+## License & Copyright
 
+[MIT](LICENSE)
+
+(c) 2018 Armin Sander
 
 
