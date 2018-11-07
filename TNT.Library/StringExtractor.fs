@@ -35,11 +35,28 @@ module private Private =
                 -> Some ^ string instruction.Operand
             | _ -> None
 
+let private logicalContext (typeDefinition: TypeDefinition) : LogicalContext =
+
+    LogicalContext (typeDefinition.FullName)
+
+(*
+    let rec buildContext (typeDefinition: TypeDefinition) (soFar: string list) = 
+        let soFar = typeDefinition.Name :: soFar
+        match typeDefinition.DeclaringType with
+        | null -> typeDefinition.Namespace :: soFar
+        | dt -> buildContext dt soFar
+
+    buildContext typeDefinition []
+    |> Seq.rev 
+    |> String.concat "."
+    |> LogicalContext
+*)
+
 let extract (path: Path) : OriginalStrings = 
 
     let assemblyDefinition = AssemblyDefinition.ReadAssembly(string path)
 
-    let rec extractFromType (typeDefinition: TypeDefinition) : string seq = seq {
+    let rec extractFromType (typeDefinition: TypeDefinition) : (string * LogicalContext) seq = seq {
         yield!
             typeDefinition.NestedTypes
             |> Seq.collect ^ fun nestedTypeDefinition ->
@@ -50,7 +67,10 @@ let extract (path: Path) : OriginalStrings =
                 let body = methodDefinition.Body
                 // body may be null for abstract / interface methods.
                 if body <> null then
-                    body.Instructions |> extractFromInstructions
+                    let context = logicalContext typeDefinition
+                    body.Instructions 
+                    |> extractFromInstructions
+                    |> Seq.map ^ fun str -> str, context
                 else
                     Seq.empty
     }
@@ -59,6 +79,7 @@ let extract (path: Path) : OriginalStrings =
     |> Seq.collect ^ fun moduleDefinition ->
         moduleDefinition.Types
         |> Seq.collect extractFromType
+    |> Seq.mapSnd List.singleton
     |> OriginalStrings.create
 
     

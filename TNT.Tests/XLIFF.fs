@@ -8,7 +8,7 @@ open TNT.Model
 open FsUnit.Xunit
 open Xunit
 
-let record original translated = { Original = original; Translated = translated }
+let record original translated = { Original = original; Translated = translated; Contexts = [] }
 
 let translation = { 
     Language = LanguageTag("de-DE")

@@ -2,7 +2,7 @@
 [<AutoOpen>]
 module TNT.Library.Translation
 
-open Newtonsoft.Json
+open Chiron
 open TNT.Model
 
 module Seq = 
@@ -10,7 +10,11 @@ module Seq =
 
 module TranslationRecord = 
 
-    let createNew original = { Original = original; Translated = TranslatedString.New }
+    let createNew original contexts = { 
+        Original = original; 
+        Translated = TranslatedString.New 
+        Contexts = contexts
+    }
 
     let unuse (record: TranslationRecord) : TranslationRecord option = 
         match record.Translated with
@@ -21,14 +25,20 @@ module TranslationRecord =
         | TranslatedString.Unused str
             -> Some ^ { record with Translated = TranslatedString.Unused str }
 
-    let reuse (record: TranslationRecord) : TranslationRecord = 
-        match record.Translated with
+    /// Update an existing translation record string.
+    let update 
+        (existing: TranslationRecord) 
+        (newContexts: LogicalContext list) : TranslationRecord = 
+        match existing.Translated with
         | TranslatedString.New _
         | TranslatedString.NeedsReview _
-        | TranslatedString.Final _
-            -> record
-        | TranslatedString.Unused str
-            -> { record with Translated = TranslatedString.NeedsReview str }
+        | TranslatedString.Final _ -> 
+            { existing with Contexts = newContexts }
+        | TranslatedString.Unused str -> 
+            { existing with 
+                Translated = TranslatedString.NeedsReview str 
+                Contexts = newContexts
+            }
 
 module TranslationCounters =
 
@@ -70,25 +80,44 @@ module Translation =
             records: string[][]
         }
 
-        let deserializeTranslationRecord (strings: string[]) = 
-            if strings.Length < 3 then 
+        let str = function
+            | String str -> str
+            | unexpected -> failwithf "expected a string, seen: %A" unexpected
+
+        let array = function
+            | Array json -> json
+            | unexpected -> failwithf "expected an array, seen: %A" unexpected
+
+        let deserializeTranslationRecord (record: Json) = 
+            match record with
+            | Array arr when arr.Length >= 3 ->
+                let original = str arr.[0]
+                let translatedString = 
+                    let translated = str arr.[2]
+                    match str arr.[0] with
+                    | "new" -> TranslatedString.New
+                    | "needs-review" -> TranslatedString.NeedsReview translated
+                    | "final" -> TranslatedString.Final translated
+                    | "unused" -> TranslatedString.Unused translated
+                    | unknown -> failwithf "'%s': invalid translated string state" unknown
+
+                let contexts = 
+                    if arr.Length <= 3 then [] else
+                    match arr.[3] with
+                    | Array arr 
+                        -> arr |> List.map (str >> LogicalContext)
+                    | unexpected 
+                        -> failwithf "expected an array of strings at the third position inside a language record, seen: %A" unexpected
+
+                {
+                    Original = original
+                    Translated = translatedString
+                    Contexts = contexts
+                }
+            | unexpected ->
                 failwithf 
-                    "expect a translation string to be an array of at least three strings, the state, the original, the translated. (length: %d)" 
-                    strings.Length
-            let original = strings.[1]
-            let translatedString = 
-                let translated = strings.[2]
-                match strings.[0] with
-                | "new" -> TranslatedString.New
-                | "needs-review" -> TranslatedString.NeedsReview translated
-                | "final" -> TranslatedString.Final translated
-                | "unused" -> TranslatedString.Unused translated
-                | unknown -> failwithf "'%s': invalid translated string state" unknown
-            
-            {
-                Original = original
-                Translated = translatedString
-            }
+                    "expect a translation record to be an array of at least three things, the original, the state, and the translated string, seen: %A" 
+                    unexpected
 
         let stateString = function
             | TranslatedString.New -> "new"
@@ -96,46 +125,62 @@ module Translation =
             | TranslatedString.Final _ -> "final"
             | TranslatedString.Unused _ -> "unused"
 
-        let serializeTranslatedString (record: TranslationRecord) = [| 
-            stateString record.Translated
-            record.Original
-            string record.Translated
-        |]
+        let serializeTranslatedString (record: TranslationRecord) : Json = Array [
+            String ^ stateString record.Translated
+            String record.Original
+            String ^ string record.Translated
+            Array (record.Contexts |> List.map (string >> String))
+        ]
 
-    let deserialize (json: string) : Translation =
+    let destructure (f: Json<'a>) (js: Json) = 
+        match f js with
+        | Value v, _ -> v
+        | _ -> failwith "parse error"
 
-        let file = 
-            json
-            |> JsonConvert.DeserializeObject<TranslationFile>
+    let deserialize (js: string) : Translation =
+
+        let file = Json.parse js
+
+        let (language : string, records : Json) = 
+            file 
+            |> destructure ^ json {
+                let! language = Json.read "language"
+                let! records = Json.read "records"
+                return (language, records)
+            }
 
         let records = 
-            file.records 
+            records
+            |> array
             |> Seq.map deserializeTranslationRecord
             |> Seq.toList
 
         {
-            Language = LanguageTag(file.language)
+            Language = LanguageTag(language)
             Records = records
         }
     
     let serialize (translation: Translation) : string = 
 
-        let json = {
-            language = string translation.Language
-            records = 
+        let json = Object ^ Map.ofList [
+            "language", String ^ string translation.Language
+            "records",
                 translation.Records
                 |> Seq.map serializeTranslatedString
-                |> Seq.toArray
-        }
+                |> Seq.toList
+                |> Array
+        ]
 
-        JsonConvert.SerializeObject(json, Formatting.Indented)
+        json 
+        |> Json.formatWith JsonFormattingOptions.Pretty
+
         
     let createNew language originalStrings = {
         Language = language
         Records = 
             originalStrings 
             |> OriginalStrings.strings
-            |> Seq.map TranslationRecord.createNew 
+            |> Seq.map ^ uncurry TranslationRecord.createNew 
             |> Seq.toList
     }
 
@@ -168,10 +213,12 @@ module Translation =
 
         let records, unusedMap =
             (recordMap, OriginalStrings.strings strings)
-            ||> List.mapFold ^ fun recordMap string ->
+            ||> List.mapFold ^ fun recordMap (string, contexts) ->
                 match recordMap.TryFind string with
-                | Some r -> TranslationRecord.reuse r, recordMap |> Map.remove string
-                | None -> TranslationRecord.createNew string, recordMap
+                | Some existing 
+                    -> TranslationRecord.update existing contexts, recordMap |> Map.remove string
+                | None 
+                    -> TranslationRecord.createNew string contexts, recordMap
 
         let recordsAfter = 
             unusedMap 
@@ -232,7 +279,7 @@ module TranslationGroup =
             |> Seq.toList
 
         if duplicatedList <> [] 
-        then Error ^ TranslationsWithTheSameLanguage duplicatedList
+        then Result.Error ^ TranslationsWithTheSameLanguage duplicatedList
         else
 
         byLanguage 
@@ -256,7 +303,7 @@ module TranslationGroup =
         |> Map.toSeq
         |> Seq.map snd
         |> Seq.collect ^ fun translation -> translation.Records
-        |> Seq.map ^ fun record -> record.Original
+        |> Seq.map ^ fun record -> record.Original, record.Contexts
         |> OriginalStrings.create
 
     /// Add a language to a translation group and return the new translation.
@@ -269,12 +316,12 @@ module TranslationContent =
 
     let serialize (content: TranslationContent) =
         
-        let json = [|
+        let json = Array [
             for pair in content.Pairs ->
-                [| fst pair; snd pair |]
-        |]
+                Array [ String ^ fst pair; String ^ snd pair ]
+        ]
 
-        JsonConvert.SerializeObject(json, Formatting.Indented)
+        json |> Json.formatWith JsonFormattingOptions.Compact
 
     let fromTranslation (translation: Translation) : TranslationContent = 
     

@@ -69,23 +69,41 @@ type TranslatedString =
         | Unused str -> str
 
 [<Struct>]
+type LogicalContext = 
+    | LogicalContext of string
+    override this.ToString() =
+        this |> function LogicalContext context -> context
+
+[<Struct>]
 type TranslationRecord = {
     Original: string
     Translated: TranslatedString
+    Contexts: LogicalContext list
 }
 
-/// The original strings extracted. 
+/// The original strings extracted with their logical contexts. 
 /// The strings are sorted and duplicates are removed.
 [<Struct>]
 type OriginalStrings =
-    private OriginalStrings of strings: Set<string>
+    private OriginalStrings of strings: Map<string, Set<LogicalContext>>
 
 module OriginalStrings = 
-    let create strings = 
-        OriginalStrings(Set.ofSeq strings)
-    let strings (OriginalStrings(strings)) = strings |> Set.toList
-    let merge list = 
-        list 
+
+    let create (strings: (string * LogicalContext list) seq) : OriginalStrings = 
+        OriginalStrings(
+            strings 
+            |> Seq.groupBy fst
+            |> Seq.mapSnd ^ (Seq.collect snd >> Set.ofSeq)
+            |> Map.ofSeq)
+
+    let strings (OriginalStrings(strings)) : (string * LogicalContext list) list = 
+        strings 
+        |> Map.toSeq
+        |> Seq.map ^ fun (str, set) -> str, Set.toList set
+        |> Seq.toList
+
+    let merge sequence = 
+        sequence
         |> Seq.collect strings
         |> create
 

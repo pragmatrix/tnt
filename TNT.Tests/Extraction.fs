@@ -19,10 +19,16 @@ type Interface =
 let ``extract from FSharp``() =
     let path = Directory.current() |> Path.extend "TNT.Tests.dll"
     let strings = extract path
-    strings |> OriginalStrings.strings |> should equal ["duplicate"; "original"]
+    strings 
+    |> OriginalStrings.strings 
+    |> List.map fst 
+    |> should equal ["duplicate"; "original"]
 
 [<Fact>]
 let ``extract from CSharp``() = 
     let path = Directory.current() |> Path.extend "TNT.Tests.CSharp.dll"
     let strings = extract path
-    strings |> OriginalStrings.strings |> should equal ["original"]
+    strings 
+    |> OriginalStrings.strings 
+    |> List.map fst
+    |> should equal ["original"]

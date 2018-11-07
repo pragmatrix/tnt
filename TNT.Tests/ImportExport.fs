@@ -34,7 +34,9 @@ let tu original translated state = {
 let record original translated = {
     Original = original
     Translated = translated
+    Contexts = []
 }
+
 let emptyTranslations : Translation list = []
 let emptyWarnings : ImportWarning list = []
 

@@ -7,8 +7,8 @@
     <!-- Disable Paket restore under NCrunch build -->
     <PaketRestoreDisabled Condition="'$(NCrunch)' == '1'">True</PaketRestoreDisabled>
   </PropertyGroup>
-  <Import Project="..\.paket\Paket.Restore.targets" />
   <ItemGroup>
     <ProjectReference Include="..\TNT.T\TNT.T.csproj" />
   </ItemGroup>
+  <Import Project="..\.paket\Paket.Restore.targets" />
 </Project>

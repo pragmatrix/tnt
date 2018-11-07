@@ -37,6 +37,7 @@ module Sources =
                 StringExtractor.extract fullPath
         sources.Sources 
         |> Seq.map stringsFromSource
+        |> Seq.toList
         |> OriginalStrings.merge
             
 module Translation = 
