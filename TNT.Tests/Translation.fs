@@ -1,9 +1,11 @@
 ﻿module TNT.Tests.Translation
 
+open System.Text
 open TNT.Model
 open TNT.Library
 open FsUnit.Xunit
 open Xunit
+open FunToolbox.FileSystem
 
 module Counters =
 
@@ -31,4 +33,41 @@ module Counters =
             | Some tag -> string tag
         extracted |> should equal result
 
-        
+    [<Fact>]
+    let ``translation deserializes correctly``() =
+        let path = Directory.current() |> Path.extend "translation.json"
+        File.loadText Encoding.UTF8 path
+        |> Translation.deserialize
+        |> should equal {
+            Language = LanguageTag "de"
+            Records = [{
+                Original = "NewOriginal"
+                Translated = TranslatedString.New
+                Contexts = []
+            };
+            {
+                Original = "NROriginal"
+                Translated = TranslatedString.NeedsReview "NRTranslated"
+                Contexts = []
+            };
+            {
+                Original = "FOriginal"
+                Translated = TranslatedString.Final "FTranslated"
+                Contexts = []
+            };
+            {
+                Original = "UOriginal"
+                Translated = TranslatedString.Unused "UTranslated"
+                Contexts = []
+            };
+            { 
+                Original = "NROriginalEmptyContext"
+                Translated = TranslatedString.NeedsReview "NRTranslated"
+                Contexts = []
+            };
+            { 
+                Original = "NROriginalWithContext"
+                Translated = TranslatedString.NeedsReview "NRTranslated"
+                Contexts = [LogicalContext "Context"]
+            } ]
+        }

@@ -73,12 +73,7 @@ module TranslationCounters =
 module Translation =
 
     [<AutoOpen>]
-    module public SerializationTypes =
-
-        type TranslationFile = {
-            language: string
-            records: string[][]
-        }
+    module Serialization =
 
         let str = function
             | String str -> str
@@ -91,7 +86,7 @@ module Translation =
         let deserializeTranslationRecord (record: Json) = 
             match record with
             | Array arr when arr.Length >= 3 ->
-                let original = str arr.[0]
+                let original = str arr.[1]
                 let translatedString = 
                     let translated = str arr.[2]
                     match str arr.[0] with
@@ -189,8 +184,6 @@ module Translation =
         sprintf "%s%s" 
             (translation.Language.Formatted) 
             (counters.Formatted) 
-
-    let private quote str = "\"" + str + "\""
 
     let status (translation: Translation) : string = 
         Text.concat " " [

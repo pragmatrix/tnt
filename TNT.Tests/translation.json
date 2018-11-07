@@ -1,0 +1,21 @@
+﻿{
+  "language": "de",
+  "records": [
+    [ "new", "NewOriginal", "" ],
+    [ "needs-review", "NROriginal", "NRTranslated" ],
+    [ "final", "FOriginal", "FTranslated" ],
+    [ "unused", "UOriginal", "UTranslated" ],
+    [
+      "needs-review",
+      "NROriginalEmptyContext",
+      "NRTranslated",
+      []
+    ],
+    [
+      "needs-review",
+      "NROriginalWithContext",
+      "NRTranslated",
+      [ "Context" ]
+    ]
+  ]
+}
