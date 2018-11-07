@@ -75,6 +75,7 @@ module private ImportHelper =
     let importNotes (unit: TranslationUnit) : string list = 
         unit.Notes
         |> Seq.map ^ Text.trim
+        |> Seq.filter ((<>) "")
         |> Seq.filter (isContextNode >> not)
         |> Seq.toList
 
