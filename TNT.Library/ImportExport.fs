@@ -140,10 +140,6 @@ let import (project: ProjectName) (translations: Translation list) (files: File 
             | None -> (record, None), pending
             | Some unit ->
 
-            let record = { 
-                record with Notes = importNotes unit
-            }
-
             let update translatedString = 
                 match record.Translated with
                 | TranslatedString.Unused _ ->
@@ -166,6 +162,8 @@ let import (project: ProjectName) (translations: Translation list) (files: File 
                     -> update ^ TranslatedString.NeedsReview unit.Target
                 | Translated | Final 
                     -> update ^ TranslatedString.Final unit.Target
+
+            let record = { record with Notes = importNotes unit }
 
             (record, warningOpt), Map.remove original pending
 
