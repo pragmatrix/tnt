@@ -112,5 +112,8 @@ TBD
 
 ## License
 
+[MIT](LICENSE)
+
+(c) 2018 Armin Sander
 
 
