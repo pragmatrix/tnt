@@ -44,30 +44,42 @@ module Counters =
                 Original = "NewOriginal"
                 Translated = TranslatedString.New
                 Contexts = []
+                Notes = []
             };
             {
                 Original = "NROriginal"
                 Translated = TranslatedString.NeedsReview "NRTranslated"
                 Contexts = []
+                Notes = []
             };
             {
                 Original = "FOriginal"
                 Translated = TranslatedString.Final "FTranslated"
                 Contexts = []
+                Notes = []
             };
             {
                 Original = "UOriginal"
                 Translated = TranslatedString.Unused "UTranslated"
                 Contexts = []
+                Notes = []
             };
             { 
                 Original = "NROriginalEmptyContext"
                 Translated = TranslatedString.NeedsReview "NRTranslated"
                 Contexts = []
+                Notes = []
             };
             { 
                 Original = "NROriginalWithContext"
                 Translated = TranslatedString.NeedsReview "NRTranslated"
                 Contexts = [LogicalContext "Context"]
+                Notes = []
+            };
+            { 
+                Original = "NROriginalWithNotes"
+                Translated = TranslatedString.NeedsReview "NRTranslated"
+                Contexts = []
+                Notes = [ "Note 1"; "Note 2" ]
             } ]
         }

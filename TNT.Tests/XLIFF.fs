@@ -8,7 +8,12 @@ open TNT.Model
 open FsUnit.Xunit
 open Xunit
 
-let record original translated = { Original = original; Translated = translated; Contexts = [] }
+let record original translated = { 
+    Original = original
+    Translated = translated
+    Contexts = [] 
+    Notes = []
+}
 
 let translation = { 
     Language = LanguageTag("de-DE")
@@ -17,6 +22,12 @@ let translation = {
         record "Auto" ^ TranslatedString.NeedsReview "Automatically Translated"
         record "Reviewed" ^ TranslatedString.Final "Reviewed"
         record "Unused" ^ TranslatedString.Unused "Unused"
+        {
+            Original = "WithContextAndNotes"
+            Translated = TranslatedString.NeedsReview "NR"
+            Contexts = [ LogicalContext "C1"; LogicalContext "C2" ]
+            Notes = [ "Note 1"; "Note 2"]
+        }
     ]
 }
 
@@ -30,6 +41,7 @@ let sourceLanguage = LanguageTag("en-US")
 
 [<Fact>]
 let ``generates XLIFF``() = 
+
     let generated = 
         ImportExport.export projectName sourceLanguage translation
         |> List.singleton
@@ -37,9 +49,10 @@ let ``generates XLIFF``() =
         |> string
         |> fun str -> str.Trim()
 
-
     let fn = Directory.current() |> Path.extendF (Filename "export01.xlf")
     
+    printfn "Generated:\n%s" generated
+
     let generated = linesOf generated
     generated
     |> should equal (File.loadText Encoding.UTF8 fn |> fun str -> str.Trim() |> linesOf)
@@ -57,14 +70,27 @@ let ``imports XLIFF``() =
         TranslationUnits = [ {
             Source = "New"
             Target = "Neu"
-            State = Translated 
+            State = Translated
+            Notes = []
         } ; {
             Source = "Auto";
             Target = "Automatische Uebersetzung";
             State = Final
+            Notes = []
         } ; {
             Source = "Reviewed"
             Target = "Reviewed"
             State = Final
+            Notes = []
+        } ; {
+            Source = "WithContextAndNotes"
+            Target = "NR"
+            State = NeedsReview
+            Notes = [
+                "Context: C1"
+                "Context: C2"
+                "Note 1"
+                "Note 2"
+            ]
         } ]
     } ]

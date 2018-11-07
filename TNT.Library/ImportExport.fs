@@ -3,23 +3,33 @@
 open TNT.Model
 open TNT.Library.XLIFF
 
+let [<Literal>] ContextPrefix = "Context:"
+
 /// Convert a translations to a file.
 let export (project: ProjectName) (sourceLanguage: LanguageTag) (translation: Translation)  : File =
 
     let toUnit (record: TranslationRecord) =
 
+        let contextNotes = 
+            record.Contexts
+            |> List.map ^ fun context -> ContextPrefix + " " + string context
+
         // note that not all records can be exported into XIFF files.
         record.Translated
         |> function
-        | TranslatedString.New -> Some (New, "")
-        | TranslatedString.NeedsReview str -> Some (NeedsReview, str)
-        | TranslatedString.Final str -> Some (Final, str)
-        | TranslatedString.Unused _ -> None
-        |> Option.map ^ fun (state, str) ->
-        {
+        | TranslatedString.New 
+            -> Some (New, "")
+        | TranslatedString.NeedsReview str 
+            -> Some (NeedsReview, str)
+        | TranslatedString.Final str 
+            -> Some (Final, str)
+        | TranslatedString.Unused _ 
+            -> None
+        |> Option.map ^ fun (state, str) -> {
             Source = record.Original
             Target = str
             State = state
+            Notes = contextNotes @ record.Notes
         }
 
     let toFile (translation: Translation) = {
@@ -55,6 +65,18 @@ type ImportWarning =
             -> sprintf "%s ignored translation of a record marked new: '%s'" language.Formatted record.Original
         | IgnoredNewReset(language, (record, _)) 
             -> sprintf "%s ignored translation to state new, even though it wasn't new anymore: '%s'" language.Formatted record.Original
+
+[<AutoOpen>]
+module private ImportHelper =
+
+    let isContextNode (str: string) = 
+        str.startsWith ContextPrefix
+    
+    let importNotes (unit: TranslationUnit) : string list = 
+        unit.Notes
+        |> Seq.map ^ Text.trim
+        |> Seq.filter (isContextNode >> not)
+        |> Seq.toList
 
 /// Import a number of translations and return the translations that changed.
 let import (project: ProjectName) (translations: Translation list) (files: File list) 
@@ -116,6 +138,10 @@ let import (project: ProjectName) (translations: Translation list) (files: File 
             match pending.TryFind original with
             | None -> (record, None), pending
             | Some unit ->
+
+            let record = { 
+                record with Notes = importNotes unit
+            }
 
             let update translatedString = 
                 match record.Translated with

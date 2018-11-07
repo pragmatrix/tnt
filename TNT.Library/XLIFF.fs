@@ -34,6 +34,7 @@ type TranslationUnit = {
     Source: string
     Target: string
     State: TargetState
+    Notes: string list
 }
 
 type File = {
@@ -100,15 +101,17 @@ let generateV12 (files: File list) : XLIFFV12 =
                 e "group" [
                     yield a "id" (Hash.ofString ^ string file.Name)
                     for unit in file.TranslationUnits -> e "trans-unit" [
-                        a "id" (Hash.ofString unit.Source)
+                        yield a "id" (Hash.ofString unit.Source)
                         // this resource should be translated.
-                        a "translate" "yes"
-                        preserveSpace
-                        e "source" [ XText(unit.Source) ]
-                        e "target" [
+                        yield a "translate" "yes"
+                        yield preserveSpace
+                        yield e "source" [ XText(unit.Source) ]
+                        yield e "target" [
                             a "state" (string unit.State) 
                             XText(unit.Target) 
                         ]
+                        for note in unit.Notes ->
+                            e "note" [ XText note ]
                     ]
                 ]
             ]
@@ -142,10 +145,13 @@ type XElement with
                 attributeName element.Name.LocalName (element.PosInfo)
 
     member element.oneNested (name: string) : XElement =
-        let nested = element.Elements(nsName name) |> Seq.toArray
+        let nested = element.Nested name
         if nested.Length <> 1 then   
             failwithf "%s: expect exactly one element '%s' under '%s'" element.PosInfo name element.Name.LocalName
         nested.[0]
+
+    member element.Nested (name: string) : XElement list = 
+        element.Elements(nsName name) |> Seq.toList
 
     member element.Text : string = 
         element.Nodes()
@@ -189,7 +195,11 @@ let parseV12 (XLIFFV12 xliff) : File list =
             |> file.Descendants
             |> Seq.filter ^ shouldTranslate
             |> Seq.map ^ fun tu ->
-                let source, target = tu.oneNested "source", tu.oneNested "target"
+                let source, target, notes = 
+                    tu.oneNested "source", 
+                    tu.oneNested "target",
+                    tu.Nested "note" |> List.map ^ fun e -> e.Text
+
                 target.getValue "state"
                 |> TargetState.tryParse
                 |> function
@@ -199,6 +209,7 @@ let parseV12 (XLIFFV12 xliff) : File list =
                         Source = source.Text
                         Target = target.Text
                         State = state
+                        Notes = notes
                     }
             |> Seq.toList
 

@@ -16,6 +16,13 @@
       "NROriginalWithContext",
       "NRTranslated",
       [ "Context" ]
+    ],
+    [
+      "needs-review",
+      "NROriginalWithNotes",
+      "NRTranslated",
+      [ ],
+      [ "Note 1", "Note 2" ]
     ]
   ]
 }

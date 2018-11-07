@@ -18,6 +18,14 @@
           <source>Reviewed</source>
           <target state="final">Reviewed</target>
         </trans-unit>
+        <trans-unit id="5157a31beeff177ed2be9fdcb4dfca508b7ffece4f0ac36d1a228679dc4d" translate="yes" xml:space="preserve">
+          <source>WithContextAndNotes</source>
+          <target state="needs-review-translation">NR</target>
+          <note priority="2">Context: C1</note>
+          <note priority="2">Context: C2</note>
+          <note priority="2">Note 1</note>
+          <note priority="2">Note 2</note>
+        </trans-unit>
       </group>
     </body>
   </file>

@@ -79,6 +79,7 @@ type TranslationRecord = {
     Original: string
     Translated: TranslatedString
     Contexts: LogicalContext list
+    Notes: string list
 }
 
 /// The original strings extracted with their logical contexts. 

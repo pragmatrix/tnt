@@ -14,6 +14,7 @@ module TranslationRecord =
         Original = original; 
         Translated = TranslatedString.New 
         Contexts = contexts
+        Notes = []
     }
 
     let unuse (record: TranslationRecord) : TranslationRecord option = 
@@ -102,13 +103,23 @@ module Translation =
                     | Array arr 
                         -> arr |> List.map (str >> LogicalContext)
                     | unexpected 
-                        -> failwithf "expected an array of strings at the third position inside a language record, seen: %A" unexpected
+                        -> failwithf "expected an array of strings at the fourth position inside a language record, seen: %A" unexpected
+
+                let notes =
+                    if arr.Length <= 4 then [] else
+                    match arr.[4] with
+                    | Array arr
+                        -> arr |> List.map str
+                    | unexpected
+                        -> failwithf "expected an array of strings at the fifth position inside a language record, seen: %A" unexpected
 
                 {
                     Original = original
                     Translated = translatedString
                     Contexts = contexts
+                    Notes = notes
                 }
+
             | unexpected ->
                 failwithf 
                     "expect a translation record to be an array of at least three things, the original, the state, and the translated string, seen: %A" 
