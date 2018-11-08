@@ -279,7 +279,7 @@ let addAssembly (assemblyPath: AssemblySource rpath) : ResultCode output = outpu
         return Succeeded
     else
 
-    yield I ^ sprintf "Adding '%s' as translation source, use 'tnt fetch' to update the translation files." (string assemblyPath)
+    yield I ^ sprintf "Adding '%s' as translation source, use 'tnt extract' to update the translation files." (string assemblyPath)
 
     let sourcesPath = Directory.current() |> Path.extend Sources.path
     Sources.save sourcesPath { 
@@ -289,7 +289,7 @@ let addAssembly (assemblyPath: AssemblySource rpath) : ResultCode output = outpu
     return Succeeded
 }
 
-let fetch() = output {
+let extract() = output {
     match! loadSourcesAndGroup() with
     | Error() -> return Failed
     | Ok(sources, group) ->
