@@ -85,7 +85,7 @@ Now, when you start your application with another language configured, it should
 
 ### Command Line, Parameters, and Examples
 
-The `tnt` command line tool, uses a verb in the first position to define a specific task it should execute. The command line options coming after are either with a single character prefixed with `-` or a word prefixed with `--`. Some commands take free arguments.
+The `tnt` command line tool uses a verb in the first position to define a specific task it should execute. The command line options coming after are either with a single character prefixed with `-` or a word prefixed with `--`. Some commands take free arguments.
 
 For a list of commands use `tnt help`, and for the options of a specific task, use `tnt [task] --help`. For example `tnt init --help` shows what options `tnt init` has to offer.
 
