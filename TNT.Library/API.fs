@@ -245,22 +245,16 @@ let import (files: Path list) : ResultCode output = output {
     return Succeeded
 }
 
-let translate (languages: LanguageTag list) : ResultCode output = output {
+let translate (languages: LanguageTag selector) : ResultCode output = output {
     match! loadSourcesAndGroup() with
     | Error() -> return Failed
     | Ok(sources, group)  ->
     let toTranslate = 
-
-        let filter = 
-            if languages = [] then fun _ -> true
-            else 
-            fun (translation : Translation) -> 
-                List.contains translation.Language languages
-                || List.contains translation.Language.Primary languages
-
         group
         |> TranslationGroup.translations
-        |> List.filter filter
+        |> List.filter ^ fun translation -> 
+            Selector.isSelected translation.Language languages
+            || Selector.isSelected translation.Language.Primary languages
 
     // note: the API may fail at any time, but if it does, continuing does not make
     // sense, but the translations done before should also not get lost, so we

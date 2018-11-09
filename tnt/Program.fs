@@ -90,7 +90,10 @@ type ImportOptions = {
 
 [<Verb("translate", HelpText = "Machine translate new strings.")>]
 type TranslateOptions = {
-    [<Value(0, HelpText = "The language(s) to translate to. If none are provided, all new strings of all languages are translated.")>]
+    [<Option("all", HelpText = "Translate new strings of all languages.")>]
+    All: bool
+
+    [<Value(0, HelpText = "The language(s) to translate new strings to, use --all to translate all languages.")>]
     Languages: string seq
 }
 
@@ -233,12 +236,15 @@ let dispatch (command: obj) =
         API.import files
 
     | :? TranslateOptions as opts ->
-        let languages = 
-            opts.Languages 
-            |> Seq.map resolveLanguage
-            |> Seq.toList
 
-        API.translate languages
+        let selector = 
+            if opts.All then SelectAll else
+            opts.Languages 
+            |> Seq.map resolveLanguage 
+            |> Seq.toList
+            |> Select
+
+        API.translate selector
 
     | :? SyncOptions as opts ->
         opts.Unprocessed |> checkUnprocessed
