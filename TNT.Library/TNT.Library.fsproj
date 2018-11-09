@@ -18,6 +18,7 @@
     <Compile Include="FileSystem.fs" />
     <Compile Include="MachineTranslation.fs" />
     <Compile Include="MachineTranslation.Google.fs" />
+    <Compile Include="APIHelper.fs" />
     <Compile Include="API.fs" />
     <None Include="paket.references" />
   </ItemGroup>

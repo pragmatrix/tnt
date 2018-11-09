@@ -23,6 +23,12 @@ type AddOptions = {
     Assembly: string
 }
 
+[<Verb("remove", HelpText = "Remove an assembly from the list of sources.")>]
+type RemoveOptions = {
+    [<Option('a', "assembly", HelpText = "Relative path, sub-path, or name of the assembly file to be removed.")>]
+    Assembly: string
+}
+
 [<Verb("extract", HelpText = "Extract all strings from all sources and update the translations.")>]
 type ExtractOptions() = 
     class end
@@ -68,6 +74,7 @@ type ShowOptions = {
 let private argumentTypes = [|
     typeof<InitOptions>
     typeof<AddOptions>
+    typeof<RemoveOptions>
     typeof<ExtractOptions>
     typeof<GCOptions>
     typeof<StatusOptions>
@@ -91,7 +98,7 @@ let dispatch (command: obj) =
 
     | :? AddOptions as opts -> 
         let language = opts.Language |> Option.ofObj |> Option.map resolveLanguage
-        let assembly = opts.Assembly |> Option.ofObj |> Option.map RPath
+        let assembly = opts.Assembly |> Option.ofObj |> Option.map RPath.parse
 
         match language, assembly with
         | None, None
@@ -101,6 +108,14 @@ let dispatch (command: obj) =
             -> API.addLanguage language
         | _, Some assembly 
             -> API.addAssembly assembly
+
+    | :? RemoveOptions as opts ->
+        let assembly = opts.Assembly |> Option.ofObj |> Option.map RPath.parse
+        match assembly with
+        | None 
+            -> failwith "use --assembly to specify which assembly should be removed"
+        | Some assembly 
+            -> API.removeAssembly assembly
         
     | :? ExtractOptions ->
         API.extract()

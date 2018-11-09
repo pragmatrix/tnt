@@ -3,6 +3,43 @@
 open System.IO
 open FunToolbox.FileSystem
 
+module List = 
+    /// Return the list, and all the sub-lists possible, except the empty list.
+    /// [a;b] -> [ [a;b]; [b] ]
+    /// [a;b;c] -> [ [a;b;c]; [b;c]; [c]]
+    /// [] -> []
+    let subs l = 
+        
+        let rec subs soFar todo =
+            match todo with
+            | [] -> soFar |> List.rev
+            | _::rest -> subs (todo :: soFar) rest
+
+        l |> subs []
+
+[<AutoOpen>] 
+/// copied from FunToolbox/FileSystem.
+module private FileSystemHelpers =
+
+    let normalize (path: string) = 
+        path.Replace("\\", "/")
+
+    let isValidPathCharacter = 
+        let invalidPathChars = Path.GetInvalidPathChars()
+        fun c ->
+            invalidPathChars
+            |> Array.contains c
+            |> not
+
+    let isEmpty (str: string) = str.Length = 0
+
+    let isTrimmed (str: string) = str.Trim() = str
+
+    let isValidPath (path: string) =
+        not ^ isEmpty path
+        && isTrimmed path
+        && path |> Seq.forall isValidPathCharacter
+
 /// Absolute or relative path. Toolbox candidate.
 type ARPath =
     | AbsolutePath of Path
@@ -13,9 +50,6 @@ type ARPath =
         | RelativePath p -> p
 
 module ARPath =
-
-    let private normalize (path: string) = 
-        path.Replace("\\", "/")
 
     /// Returns an absolute path be prepending root to it if it's relative.
     let rooted (root: Path) = function
@@ -42,6 +76,7 @@ module ARPath =
 
 /// A tagged, relative path.
 type [<Struct>] 'tag rpath = 
+    private 
     | RPath of string
     override this.ToString() = 
         this |> function RPath path -> path
@@ -54,6 +89,15 @@ type 'tag filename =
 
 module RPath =
 
+    let parse (path: string) = 
+        let normalized = normalize path
+        if (not ^ isValidPath normalized) then
+            failwithf "'%s' is not a valid path" path
+        RPath normalized
+
+    let map (f: string -> string) (Path path) =
+        path |> f |> parse
+
     let extend (right: 'tag rpath) (left: _ rpath) : 'tag rpath =
         let left, right = 
             RelativePath (string left),
@@ -64,13 +108,39 @@ module RPath =
         |> RPath
 
     let inline ofFilename (fn: 'tag filename): 'tag rpath =
-        string fn |> RPath
+        string fn |> parse
 
     let inline extendF (right: 'tag filename) (path: _ rpath) : 'tag rpath = 
         path |> extend (ofFilename right)
 
     let inline at (absolute: Path) (path: _ rpath) : Path =
         absolute |> Path.extend (string path)
+
+    let parent (path: 'tag rpath) : _ rpath option = 
+        let parentPath = Path.GetDirectoryName (string path)
+        if parentPath = null then None
+        else Some ^ parse parentPath
+
+    let name (path: 'tag rpath) : string =
+        Path.GetFileName(string path)
+
+    let parts (path: 'tag rpath) : string list =
+        
+        let rec getParts (todo: 'tag rpath) (parts: string list) = 
+            let parts = name todo :: parts
+            match parent todo with
+            | Some parent -> getParts parent parts
+            | None -> parts
+
+        getParts path []
+
+    let ofParts (parts: string list) : 'tag rpath option =
+        match parts with
+        | [] -> None
+        | head::rest ->
+        (parse head, rest)
+        ||> List.fold (fun cur part -> cur |> extend (parse part))
+        |> Some
 
 module Path = 
 

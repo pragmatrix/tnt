@@ -13,7 +13,7 @@ module Sources =
             JsonValue.op_Implicit(value)
     
         let parseAssemblySource (value: JsonValue) : Source = 
-            AssemblySource(RPath(str value.["path"]))
+            AssemblySource(RPath.parse(str value.["path"]))
 
         let parseSource (value: JsonArray) : Source =
             if value.Count <> 2 then
