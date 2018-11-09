@@ -9,6 +9,9 @@ open CommandLine
 type InitOptions = {
     [<Option('l', "language", HelpText = "The source language (code ['-' region] or name), defaults to 'en-US'.")>]
     Language: string
+
+    [<Value(0)>]
+    Unprocessed: string seq
 }
 
 [<Verb("add", HelpText = "Add a new language or assembly.")>]
@@ -21,26 +24,40 @@ type AddOptions = {
 
     [<Option('a', "assembly", HelpText = "Relative path of the assembly file to be added.")>]
     Assembly: string
+
+    [<Value(0)>]
+    Unprocessed: string seq
 }
+
 
 [<Verb("remove", HelpText = "Remove an assembly from the list of sources.")>]
 type RemoveOptions = {
     [<Option('a', "assembly", HelpText = "Relative path, sub-path, or name of the assembly file to be removed.")>]
     Assembly: string
+
+    [<Value(0)>]
+    Unprocessed: string seq
 }
 
 [<Verb("extract", HelpText = "Extract all strings from all sources and update the translations.")>]
-type ExtractOptions() = 
-    class end
+type ExtractOptions = {
+    [<Value(0)>]
+    Unprocessed: string seq
+}
 
 [<Verb("gc", HelpText = "Remove all unused translation records.")>]
-type GCOptions() = 
-    class end
+type GCOptions = {
+    [<Value(0)>]
+    Unprocessed: string seq
+}
 
 [<Verb("status", HelpText = "Show all the translations and their status.")>]
 type StatusOptions = { 
     [<Option('v', "verbose", HelpText = "Provide more detailed status information.")>]
     Verbose: bool
+
+    [<Value(0)>]
+    Unprocessed: string seq
 }
 
 [<Verb("export", HelpText = "Export all strings to XLIFF files.")>]
@@ -75,8 +92,10 @@ type TranslateOptions = {
 }
 
 [<Verb("sync", HelpText = "Synchronize all the translations in the '.tnt-content' directory.")>]
-type SyncOptions() = 
-    class end
+type SyncOptions = {
+    [<Value(0)>]
+    Unprocessed: string seq
+}
 
 [<Verb("show", HelpText = "Show system related information.")>]
 type ShowOptions = {
@@ -104,12 +123,18 @@ let private resolveLanguage (nameOrTag: string) : LanguageTag =
 
 let dispatch (command: obj) = 
 
+    let checkUnprocessed unprocessed = 
+        if not ^ Seq.isEmpty unprocessed then
+            failwithf "found one ore more unprocessed arguments: %s" ^ String.concat "," unprocessed
+
     match command with
     | :? InitOptions as opts ->
+        opts.Unprocessed |> checkUnprocessed
         let language = opts.Language |> Option.ofObj |> Option.map resolveLanguage
         API.init language
 
     | :? AddOptions as opts -> 
+        opts.Unprocessed |> checkUnprocessed
         let language = opts.Language |> Option.ofObj |> Option.map resolveLanguage
         let assembly = opts.Assembly |> Option.ofObj |> Option.map RPath.parse
 
@@ -123,6 +148,7 @@ let dispatch (command: obj) =
             -> API.addAssembly assembly
 
     | :? RemoveOptions as opts ->
+        opts.Unprocessed |> checkUnprocessed
         let assembly = opts.Assembly |> Option.ofObj |> Option.map RPath.parse
         match assembly with
         | None 
@@ -130,13 +156,16 @@ let dispatch (command: obj) =
         | Some assembly 
             -> API.removeAssembly assembly
         
-    | :? ExtractOptions ->
+    | :? ExtractOptions as opts ->
+        opts.Unprocessed |> checkUnprocessed
         API.extract()
 
-    | :? GCOptions ->
+    | :? GCOptions as opts ->
+        opts.Unprocessed |> checkUnprocessed
         API.gc()
 
     | :? StatusOptions as opts ->
+        opts.Unprocessed |> checkUnprocessed
         API.status opts.Verbose
 
     | :? ExportOptions as opts ->
@@ -197,8 +226,8 @@ let dispatch (command: obj) =
 
         API.translate languages
 
-    | :? SyncOptions ->
-
+    | :? SyncOptions as opts ->
+        opts.Unprocessed |> checkUnprocessed
         API.sync()
 
     | :? ShowOptions as opts ->
