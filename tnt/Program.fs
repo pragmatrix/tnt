@@ -52,13 +52,20 @@ type ExportOptions = {
     All: bool
 
     [<Option("to", HelpText = "The directory to export the XLIFF files to. Default is the current directory.")>]
-    Directory: string
+    To: string
 }
 
 [<Verb("import", HelpText = "Import XLIFF translation files and apply the changes to the translations in the current directory.")>]
 type ImportOptions = {
+
     [<Value(0, HelpText = "The directory to import the XLIFF files from. Default is the current directory.")>]
-    Directory: string
+    From: string
+
+    [<Value(0, HelpText = "The files or languages to import, use --all to import all files.")>]
+    FilesOrLanguages: string seq
+
+    [<Option("all", HelpText = "Import all .xlf or .xliff files that match the current directory's name.")>]
+    All: bool
 }
 
 [<Verb("translate", HelpText = "Machine translate new strings.")>]
@@ -141,7 +148,7 @@ let dispatch (command: obj) =
             |> Select
 
         let exportPath = 
-            opts.Directory 
+            opts.To 
             |> Option.ofObj 
             |> Option.defaultValue "."
             |> ARPath.parse
@@ -149,15 +156,38 @@ let dispatch (command: obj) =
         API.export selector exportPath 
 
     | :? ImportOptions as opts ->
+
         let importDirectory = 
             let relativeDirectory = 
-                opts.Directory 
+                opts.From 
                 |> Option.ofObj 
                 |> Option.defaultValue "."
             Directory.current() 
             |> Path.extend relativeDirectory
 
-        API.import importDirectory
+        let project = API.projectName()
+
+        let files =
+            if opts.All then
+                XLIFFFilenames.inDirectory importDirectory project
+                |> List.map ^ fun fn -> importDirectory |> Path.extendF fn
+            else
+            let resolveFile (filePathOrLanguage: string) = 
+                match XLIFF.properPath filePathOrLanguage with
+                | Some path -> path |> ARPath.at importDirectory
+                | None -> 
+                    // when a language tag or name is used, 
+                    // only .xlf files are imported and .xliff files are being ignored
+                    // and must be explicitly passed as a path.
+                    resolveLanguage filePathOrLanguage
+                    |> XLIFF.defaultFilenameForLanguage project
+                    |> Filename.at importDirectory
+
+            opts.FilesOrLanguages
+            |> Seq.map resolveFile
+            |> Seq.toList
+
+        API.import files
 
     | :? TranslateOptions as opts ->
         let languages = 

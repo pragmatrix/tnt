@@ -64,4 +64,11 @@ module XLIFF =
         Extensions
         |> List.map ^ fun ext ->
             GlobPattern(string project + "*" + ext)
+
+    /// Returns ARPath of the file if the given path is most likely a XLIFF or XLF file.
+    let properPath (path: string) : ARPath option = 
+        Extensions
+        |> Seq.tryFind path.endsWith
+        |> Option.map ^ fun _ -> ARPath.parse path
+        
     

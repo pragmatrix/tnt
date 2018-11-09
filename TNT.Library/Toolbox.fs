@@ -49,31 +49,6 @@ type ARPath =
         | AbsolutePath p -> string p
         | RelativePath p -> p
 
-module ARPath =
-
-    let parse (path: string) = 
-        if Path.IsPathRooted(path)
-        then AbsolutePath ^ Path.parse path
-        else RelativePath path
-
-    /// Returns an absolute path be prepending root to it if it's relative.
-    let rooted (root: Path) = function
-        | AbsolutePath abs -> abs
-        | RelativePath rel -> root |> Path.extend rel
-
-    let extend (right: ARPath) (left: ARPath) =
-        match left, right with
-        | RelativePath ".", right
-            -> right
-        | left, RelativePath "."
-            -> left
-        | _, AbsolutePath path 
-            -> AbsolutePath path
-        | AbsolutePath path, RelativePath rel 
-            -> AbsolutePath (path |> Path.extend rel)
-        | RelativePath parent, RelativePath rel 
-            -> RelativePath (Path.Combine(parent, rel) |> normalize)
-
 /// A tagged, relative path.
 type [<Struct>] 'tag rpath = 
     private 
@@ -99,13 +74,8 @@ module RPath =
         path |> f |> parse
 
     let extend (right: 'tag rpath) (left: _ rpath) : 'tag rpath =
-        let left, right = 
-            RelativePath (string left),
-            RelativePath (string right)
-        left 
-        |> ARPath.extend right
-        |> string
-        |> RPath
+        Path.Combine(string left, string right)
+        |> parse
 
     let inline ofFilename (fn: 'tag filename): 'tag rpath =
         string fn |> parse
@@ -134,13 +104,34 @@ module RPath =
 
         getParts path []
 
-    let ofParts (parts: string list) : 'tag rpath option =
-        match parts with
-        | [] -> None
-        | head::rest ->
-        (parse head, rest)
-        ||> List.fold (fun cur part -> cur |> extend (parse part))
-        |> Some
+    let ofParts (parts: string list) : 'tag rpath =
+        Path.Combine(List.toArray parts)
+        |> parse
+
+module ARPath =
+
+    let parse (path: string) = 
+        if Path.IsPathRooted(path)
+        then AbsolutePath ^ Path.parse path
+        else RelativePath path
+
+    /// Returns an absolute path be prepending root to it if it's relative.
+    let at (root: Path) = function
+        | AbsolutePath abs -> abs
+        | RelativePath rel -> root |> Path.extend rel
+
+    let extend (right: ARPath) (left: ARPath) =
+        match left, right with
+        | RelativePath ".", right
+            -> right
+        | left, RelativePath "."
+            -> left
+        | _, AbsolutePath path 
+            -> AbsolutePath path
+        | AbsolutePath path, RelativePath rel 
+            -> AbsolutePath (path |> Path.extend rel)
+        | RelativePath parent, RelativePath rel 
+            -> RelativePath (Path.Combine(parent, rel) |> normalize)
 
 module Path = 
 

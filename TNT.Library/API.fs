@@ -107,7 +107,7 @@ let removeAssembly (assemblyPath: AssemblySource rpath) : ResultCode output = ou
                 let pathsToCompare = 
                     RPath.parts path
                     |> List.subs
-                    |> List.choose RPath.ofParts
+                    |> List.map RPath.ofParts
                 if pathsToCompare |> List.contains assemblyPath 
                 then Some ^ AssemblySource path
                 else None
@@ -169,7 +169,7 @@ let gc() = output {
     return Succeeded
 }
 
-let private projectName() = 
+let projectName() = 
     Directory.current() 
     |> Path.name 
     |> ProjectName
@@ -194,7 +194,7 @@ let export
             let file = ImportExport.export project sources.Language translation
             path, XLIFF.generateV12 [file]
 
-    let rooted = ARPath.rooted ^ Directory.current()
+    let rooted = ARPath.at ^ Directory.current()
 
     let existingOnes = 
         exports
@@ -216,15 +216,14 @@ let export
     return Succeeded
 }
 
-let import (importDirectory: Path) : ResultCode output = output {
+let import (files: Path list) : ResultCode output = output {
     match! loadGroup() with
     | Error() ->
         return Failed
     | Ok(group) ->
     let project = projectName()
     let files = 
-        XLIFFFilenames.inDirectory importDirectory project
-        |> Seq.map ^ fun fn -> importDirectory |> Path.extendF fn
+        files
         |> Seq.map ^ File.loadText Encoding.UTF8
         |> Seq.map XLIFF.XLIFFV12
         |> Seq.collect XLIFF.parseV12
