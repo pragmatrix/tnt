@@ -58,11 +58,11 @@ type ExportOptions = {
 [<Verb("import", HelpText = "Import XLIFF translation files and apply the changes to the translations in the current directory.")>]
 type ImportOptions = {
 
-    [<Value(0, HelpText = "The directory to import the XLIFF files from. Default is the current directory.")>]
-    From: string
-
     [<Value(0, HelpText = "The files or languages to import, use --all to import all files.")>]
     FilesOrLanguages: string seq
+
+    [<Option("from", HelpText = "The directory to import the XLIFF files from. Default is the current directory.")>]
+    From: string
 
     [<Option("all", HelpText = "Import all .xlf or .xliff files that match the current directory's name.")>]
     All: bool
