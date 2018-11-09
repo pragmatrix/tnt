@@ -49,13 +49,19 @@ type XLIFF = XLIFF
 
 module XLIFF = 
 
-    let [<Literal>] Extension = ".xlf"
+    /// The supported for XLIFF files. The first one ".xlf" is the default extension
+    /// used in the exporting process.
+    let Extensions = [ ".xlf"; ".xliff" ]
+
     // VisualStudio uses the dot extension to separate the identifier from the base name.
     let [<Literal>] IdentifierSeparator = "."
 
-    let filenameForLanguage (project: ProjectName) (LanguageTag(identifier)) : XLIFF filename =
-        Filename ^ string project + IdentifierSeparator + identifier + Extension
+    /// We use theshort form.
+    let defaultFilenameForLanguage (project: ProjectName) (LanguageTag(identifier)) : XLIFF filename =
+        Filename ^ string project + IdentifierSeparator + identifier + (List.head Extensions)
 
-    let pattern (project: ProjectName) : GlobPattern =
-        GlobPattern(string project + "*" + Extension)
+    let projectPatterns (project: ProjectName) : GlobPattern list =
+        Extensions
+        |> List.map ^ fun ext ->
+            GlobPattern(string project + "*" + ext)
     

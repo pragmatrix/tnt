@@ -189,7 +189,7 @@ let export
         |> Seq.filter ^ fun translation -> 
             Selector.isSelected translation.Language languages
         |> Seq.map ^ fun translation ->
-            let filename = XLIFF.filenameForLanguage project translation.Language 
+            let filename = XLIFF.defaultFilenameForLanguage project translation.Language 
             let path = exportDirectory |> ARPath.extend ^ RelativePath (string filename)
             let file = ImportExport.export project sources.Language translation
             path, XLIFF.generateV12 [file]

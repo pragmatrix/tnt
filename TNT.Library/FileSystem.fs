@@ -112,7 +112,9 @@ module XLIFFFilenames =
     
     /// Get all the XLIFF files in the directory baseName.
     let inDirectory (directory: Path) (project: ProjectName) : XLIFF filename list =
-        Directory.EnumerateFiles (string directory, string ^ XLIFF.pattern project)
+        XLIFF.projectPatterns project
+        |> Seq.collect ^ fun pattern ->
+            Directory.EnumerateFiles (string directory, string ^ pattern)
         |> Seq.map (Path.parse >> Path.name >> Filename)
         |> Seq.toList
     
