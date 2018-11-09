@@ -294,7 +294,7 @@ module internal ShowHelper =
             |> OriginalStrings.create
             |> OriginalStrings.format
 
-        do! printProperties 1 newOriginalStrings
+        do! printIndentedStrings 1 newOriginalStrings
         return Succeeded
     }
 

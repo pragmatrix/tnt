@@ -203,3 +203,11 @@ let printProperties (initialIndentLevel: int) (properties: Property list) : unit
     for string in strings do
         yield I ^ string
 }
+
+let printIndentedStrings (initialIndentLevel: int) (strings: IndentedString list) : unit output = output {
+    let strings = 
+        strings
+        |> IndentedStrings.strings (Indent(initialIndentLevel, DefaultIndent))
+    for string in strings do
+        yield I ^ string
+}

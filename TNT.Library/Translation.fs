@@ -18,9 +18,9 @@ module OriginalStrings =
         strings 
         |> List.collect ^ fun (original, contexts) ->
             [
-                yield Format.prop "string" ^ formatString original
+                yield Format.indented 0 ^ formatString original
                 for context in contexts ->
-                    Format.prop "context" (string context)
+                    Format.indented 1 (string context)
             ]
 
 module TranslationRecord = 

@@ -17,6 +17,9 @@ module Format =
     let group name list = 
         Group(name, list)
 
+    let indented level str = 
+        IndentedString(level, str)
+
 [<Struct>]
 type Indent = Indent of firstLevel: int * indentPerLevel: string
 
