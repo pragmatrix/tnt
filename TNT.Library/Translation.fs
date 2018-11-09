@@ -2,19 +2,23 @@
 [<AutoOpen>]
 module TNT.Library.Translation
 
-open Chiron
 open TNT.Model
+open Chiron
 
 module Seq = 
     let setify seq = seq |> Seq.sort |> Seq.distinct
 
 module OriginalStrings = 
+
     let format (strings: OriginalStrings) = 
+        let formatString (str: string) =
+            str |> String |> Json.format
+
         let strings = strings |> OriginalStrings.strings
         strings 
         |> List.collect ^ fun (original, contexts) ->
             [
-                yield Format.prop "string" original
+                yield Format.prop "string" ^ formatString original
                 for context in contexts ->
                     Format.prop "context" (string context)
             ]
