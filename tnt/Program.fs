@@ -70,6 +70,9 @@ type ExportOptions = {
 
     [<Option("to", HelpText = "The directory to export the XLIFF files to. Default is the current directory.")>]
     To: string
+
+    [<Option("for", HelpText = "Enable specific XLIFF tool support. --for mat enables support for the Multilingual App Toolkit.")>]
+    For: string
 }
 
 [<Verb("import", HelpText = "Import XLIFF translation files and apply the changes to the translations in the current directory.")>]
@@ -182,7 +185,13 @@ let dispatch (command: obj) =
             |> Option.defaultValue "."
             |> ARPath.parse
 
-        API.export selector exportPath 
+        let exportProfile = 
+            opts.For
+            |> Option.ofObj
+            |> Option.map XLIFF.ExportProfile.parse
+            |> Option.defaultValue XLIFF.Generic
+
+        API.export selector exportPath exportProfile
 
     | :? ImportOptions as opts ->
 

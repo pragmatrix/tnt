@@ -177,6 +177,7 @@ let projectName() =
 let export 
     (languages: LanguageTag selector)
     (exportDirectory: ARPath) 
+    (profile: XLIFF.ExportProfile)
     : ResultCode output = output {
     match! loadSourcesAndGroup() with
     | Error() ->
@@ -192,7 +193,7 @@ let export
             let filename = XLIFF.defaultFilenameForLanguage project translation.Language 
             let path = exportDirectory |> ARPath.extend ^ RelativePath (string filename)
             let file = ImportExport.export project sources.Language translation
-            path, XLIFF.generateV12 [file]
+            path, XLIFF.generateV12 profile [file]
 
     let rooted = ARPath.at ^ Directory.current()
 

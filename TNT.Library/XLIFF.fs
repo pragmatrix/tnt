@@ -6,6 +6,20 @@ open System.Xml.Linq
 open System.Security.Cryptography
 open System.Xml
 
+type ExportProfile =
+    | Generic
+    | MultilingualAppToolkit
+    member this.RequiresGroups = 
+        match this with
+        | Generic -> false
+        | MultilingualAppToolkit -> true
+
+module ExportProfile =
+    let parse profileName = function
+        | "generic" -> Generic
+        | "mat" -> MultilingualAppToolkit
+        | unexpected -> failwithf "unexpected XLIFF tool profile name: '%s'" unexpected
+
 /// The state of a translation. 
 /// Note: Multilingual app toolkit supports 
 /// "new", "need-review-translation", "translated", and "final".
@@ -70,7 +84,7 @@ module private X =
     let name str = XName.op_Implicit str
 
 /// Generate XLIFF version 1.2
-let generateV12 (files: File list) : XLIFFV12 =
+let generateV12 (profile: ExportProfile) (files: File list) : XLIFFV12 =
 
     let en (name: string) (ns: string) (nested: obj list) = 
         XElement(X.ns ns + name, nested)
@@ -81,7 +95,7 @@ let generateV12 (files: File list) : XLIFFV12 =
     let a (name: string) (value: obj) =
         XAttribute(X.name name, value)
     
-    let l = List.map box
+    let l (l: 'a list) = List.map box l
 
     let preserveSpace = 
         XAttribute(XNamespace.Xml + "space", "preserve")
@@ -96,10 +110,7 @@ let generateV12 (files: File list) : XLIFFV12 =
                 a "datatype" SourceFileDatatype
             ]
             yield e "body" [
-                // Although optional, Multilingual App Toolkit for Windows requires <group> for loading
-                // _and_ the id attribute for saving the xliff properly.
-                e "group" [
-                    yield a "id" (Hash.ofString ^ string file.Name)
+                let units = l [
                     for unit in file.TranslationUnits -> e "trans-unit" [
                         yield a "id" (Hash.ofString unit.Source)
                         // this resource should be translated.
@@ -114,6 +125,16 @@ let generateV12 (files: File list) : XLIFFV12 =
                             e "note" [ XText note ]
                     ]
                 ]
+
+                if profile.RequiresGroups then
+                    // Although optional, Multilingual App Toolkit for Windows requires <group> for loading
+                    // _and_ the id attribute for saving the xliff properly.
+                    yield e "group" [
+                        yield a "id" (Hash.ofString ^ string file.Name)
+                        yield! units
+                    ]
+                else
+                    yield! units
             ]
         ]
     ]
