@@ -175,6 +175,7 @@ let private projectName() =
     |> ProjectName
 
 let export 
+    (languages: LanguageTag selector)
     (exportDirectory: ARPath) 
     : ResultCode output = output {
     match! loadSourcesAndGroup() with
@@ -182,12 +183,13 @@ let export
         return Failed
     | Ok(sources, group) ->
     let project = projectName()
-    let allExports = 
+    let exports = 
         group
         |> TranslationGroup.translations
+        |> Seq.filter ^ fun translation -> 
+            Selector.isSelected translation.Language languages
         |> Seq.map ^ fun translation ->
-            let filename = 
-                XLIFF.filenameForLanguage project translation.Language 
+            let filename = XLIFF.filenameForLanguage project translation.Language 
             let path = exportDirectory |> ARPath.extend ^ RelativePath (string filename)
             let file = ImportExport.export project sources.Language translation
             path, XLIFF.generateV12 [file]
@@ -195,7 +197,7 @@ let export
     let rooted = ARPath.rooted ^ Directory.current()
 
     let existingOnes = 
-        allExports
+        exports
         |> Seq.map fst
         |> Seq.filter ^ fun path -> File.exists (rooted path)
         |> Seq.toList
@@ -207,7 +209,7 @@ let export
         return Failed
     else
 
-    for (file, content) in allExports do
+    for (file, content) in exports do
         yield I ^ sprintf "Exporting translation to '%s'" (string file)
         File.saveText Encoding.UTF8 (string content) (rooted file)
 

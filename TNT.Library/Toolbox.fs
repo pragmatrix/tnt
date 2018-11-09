@@ -51,6 +51,11 @@ type ARPath =
 
 module ARPath =
 
+    let parse (path: string) = 
+        if Path.IsPathRooted(path)
+        then AbsolutePath ^ Path.parse path
+        else RelativePath path
+
     /// Returns an absolute path be prepending root to it if it's relative.
     let rooted (root: Path) = function
         | AbsolutePath abs -> abs
@@ -68,11 +73,6 @@ module ARPath =
             -> AbsolutePath (path |> Path.extend rel)
         | RelativePath parent, RelativePath rel 
             -> RelativePath (Path.Combine(parent, rel) |> normalize)
-
-    let ofString (path: string) = 
-        if Path.IsPathRooted(path)
-        then AbsolutePath ^ Path.parse path
-        else RelativePath path
 
 /// A tagged, relative path.
 type [<Struct>] 'tag rpath = 
@@ -157,3 +157,19 @@ module Filename =
 
     let inline at (path: Path) (fn: 'tag filename) : Path = 
         path |> Path.extend (toPath fn)
+
+type 'a selector = 
+    | SelectAll
+    | Select of 'a list
+
+module Selector = 
+
+    let isSelected (item: 'a) = function
+        | SelectAll -> true
+        | Select specific -> List.contains item specific
+
+    /// Selects from an existing list of items. 
+    /// Splits the list of existing items in a selected and the not-seleted items.
+    let select (existing: 'a list) (selector: 'a selector) = 
+        existing 
+        |> List.partition ^ fun item -> isSelected item selector

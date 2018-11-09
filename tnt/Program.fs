@@ -43,9 +43,15 @@ type StatusOptions = {
     Verbose: bool
 }
 
-[<Verb("export", HelpText = "Export all strings from all translations to an XLIFF file.")>]
+[<Verb("export", HelpText = "Export all strings to XLIFF files.")>]
 type ExportOptions = {
-    [<Value(0, HelpText = "The directory to export the XLIFF files to. Default is the current directory.")>]
+    [<Value(0, HelpText = "The language(s) to export, use --all to export all languages.")>]
+    Languages: string seq
+
+    [<Option("all", HelpText = "Export all languages.")>]
+    All: bool
+
+    [<Option("to", HelpText = "The directory to export the XLIFF files to. Default is the current directory.")>]
     Directory: string
 }
 
@@ -127,13 +133,20 @@ let dispatch (command: obj) =
         API.status opts.Verbose
 
     | :? ExportOptions as opts ->
+        let selector = 
+            if opts.All then SelectAll else
+            opts.Languages 
+            |> Seq.map resolveLanguage 
+            |> Seq.toList
+            |> Select
+
         let exportPath = 
             opts.Directory 
             |> Option.ofObj 
             |> Option.defaultValue "."
-            |> ARPath.ofString
+            |> ARPath.parse
 
-        API.export exportPath
+        API.export selector exportPath 
 
     | :? ImportOptions as opts ->
         let importDirectory = 
