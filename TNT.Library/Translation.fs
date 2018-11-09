@@ -338,7 +338,7 @@ module TranslationContent =
                 Array [ String ^ fst pair; String ^ snd pair ]
         ]
 
-        json |> Json.formatWith JsonFormattingOptions.Compact
+        json |> Json.formatWith JsonFormattingOptions.Pretty
 
     let fromTranslation (translation: Translation) : TranslationContent = 
     
