@@ -45,7 +45,7 @@ let ``generates XLIFF``() =
     let generated = 
         ImportExport.export projectName sourceLanguage translation
         |> List.singleton
-        |> generateV12
+        |> generateV12 ExportProfile.MultilingualAppToolkit
         |> string
         |> fun str -> str.Trim()
 

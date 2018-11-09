@@ -15,7 +15,7 @@ type ExportProfile =
         | MultilingualAppToolkit -> true
 
 module ExportProfile =
-    let parse profileName = function
+    let parse = function
         | "generic" -> Generic
         | "mat" -> MultilingualAppToolkit
         | unexpected -> failwithf "unexpected XLIFF tool profile name: '%s'" unexpected
