@@ -8,6 +8,17 @@ open TNT.Model
 module Seq = 
     let setify seq = seq |> Seq.sort |> Seq.distinct
 
+module OriginalStrings = 
+    let format (strings: OriginalStrings) = 
+        let strings = strings |> OriginalStrings.strings
+        strings 
+        |> List.collect ^ fun (original, contexts) ->
+            [
+                yield Format.prop "string" original
+                for context in contexts ->
+                    Format.prop "context" (string context)
+            ]
+
 module TranslationRecord = 
 
     let createNew original contexts = { 

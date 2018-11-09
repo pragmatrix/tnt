@@ -281,14 +281,62 @@ let sync (): ResultCode output = output {
     return Succeeded
 }
 
+[<AutoOpen>]
+module internal ShowHelper =
+
+    let showOriginalStringsWithContext title recordFilter : ResultCode output = output {
+        match! loadGroup() with
+        | Error() -> return Failed
+        | Ok(group) ->
+        yield I ^ title
+
+        let newOriginalStrings = 
+            group
+            |> TranslationGroup.translations
+            |> Seq.collect ^ fun t -> t.Records
+            |> Seq.filter recordFilter
+            |> Seq.map ^ fun r -> r.Original, r.Contexts
+            |> OriginalStrings.create
+            |> OriginalStrings.format
+
+        do! printProperties 1 newOriginalStrings
+        return Succeeded
+    }
+
+    let showNew() : ResultCode output = 
+        showOriginalStringsWithContext "New strings:"
+            ^ fun r -> 
+                r.Translated 
+                |> function TranslatedString.New -> true | _ -> false
+
+    let showUnused() : ResultCode output = 
+        showOriginalStringsWithContext "Unused strings:"
+            ^ fun r ->
+                r.Translated
+                |> function TranslatedString.Unused _ -> true | _ -> false
+
+    let showShared() : ResultCode output = 
+        showOriginalStringsWithContext "Shared strings:"
+            ^ fun r -> 
+                match r.Contexts with
+                | [] | [_] -> false
+                | _ -> true
+
 let show (categories: string list): ResultCode output = output {
 
     for category in categories do
         match category with
         | "languages" -> 
-            yield I ^ "supported languages:"
+            yield I ^ "Supported languages:"
             for { Tag = tag; EnglishName = name } in SystemCultures.All do
-                yield I ^ sprintf "%s %s" tag.Formatted name.Formatted
+                yield I ^ indent ^ sprintf "%s %s" tag.Formatted name.Formatted
+        | "new" ->
+            do! showNew() |> Output.ignore
+        | "unused" ->
+            do! showUnused() |> Output.ignore
+        | "shared" ->
+            do! showShared() |> Output.ignore
+        
         | unsupported -> 
             yield E ^ sprintf "unsupported category: %s" unsupported
         

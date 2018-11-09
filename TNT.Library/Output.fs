@@ -81,6 +81,8 @@ module Output =
         fun writer ->
             input |> run writer |> f
 
+    let ignore o = o |> map ignore
+
     let bind (f: 'a -> 'b output) (input: 'a output) : 'b output = 
         output.Bind(input, f)
 

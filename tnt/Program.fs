@@ -102,7 +102,12 @@ type SyncOptions = {
 
 [<Verb("show", HelpText = "Show system related information.")>]
 type ShowOptions = {
-    [<Value(0, HelpText = "The information to show, 'languages' shows the currently supported languages.")>]
+    [<Value(0, HelpText = 
+        "The information to show: " +
+        "'languages' shows the currently supported languages, " +
+        "'new' the strings that are not translated yet, " + 
+        "'unused' the strings that are not used anymore, " + 
+        "'shared' the strings that appear in multiple contexts.")>]
     Categories: string seq
 }
 
