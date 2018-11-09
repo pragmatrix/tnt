@@ -17,12 +17,15 @@ module Format =
     let group name list = 
         Group(name, list)
 
+[<Struct>]
+type Indent = Indent of firstLevel: int * indentPerLevel: string
+
 module IndentedString =
 
     let indent (IndentedString(level, str)) = IndentedString(level + 1, str)
 
-    let string (indent: string) (IndentedString(level, str)) =
-        String.replicate level indent + str
+    let string (Indent(firstLevel, indent)) (IndentedString(level, str)) =
+        String.replicate (firstLevel + level) indent + str
 
 module IndentedStrings = 
 
@@ -30,7 +33,7 @@ module IndentedStrings =
         strings
         |> List.map ^ IndentedString.indent
 
-    let strings (indent: string) (strings: IndentedString list) =
+    let strings (indent: Indent) (strings: IndentedString list) =
         strings
         |> List.map ^ IndentedString.string indent
 
@@ -61,3 +64,4 @@ module Properties =
     let strings indent properties = 
         properties
         |> List.collect ^ Property.strings indent
+

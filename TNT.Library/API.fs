@@ -42,7 +42,7 @@ let status (verbose: bool) : ResultCode output = output {
     | Ok(sources, group) ->
 
     if verbose then
-        do! printProperties 1 sources.Format
+        do! printProperties 0 sources.Format
 
     match TranslationGroup.translations group with
     | [] -> 

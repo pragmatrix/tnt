@@ -196,10 +196,10 @@ let warnIfUnsupported (language: LanguageTag) : unit output = output {
             sprintf "For a list of supported languages, enter 'tnt show languages'."
 }
 
-let printProperties (indentationLevel: int) (properties: Property list) : unit output = output {
+let printProperties (initialIndentLevel: int) (properties: Property list) : unit output = output {
     let strings = 
         properties
-        |> Properties.strings (String.replicate indentationLevel DefaultIndent)
+        |> Properties.strings (Indent(initialIndentLevel, DefaultIndent))
     for string in strings do
         yield I ^ string
 }
