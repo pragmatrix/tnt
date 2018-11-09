@@ -8,7 +8,7 @@
     <Description>Command line tool for managing translations based on strings extracted from .NET assemblies. Supports XLIFF roundtrips and machine translations.</Description>
     <Copyright>(c) 2018 Armin Sander</Copyright>
     <PackAsTool>true</PackAsTool>
-    <Version>0.41.0</Version>
+    <Version>0.42.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.fs" />
