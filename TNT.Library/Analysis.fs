@@ -2,8 +2,8 @@
 
 open System
 open System.Text.RegularExpressions
-open TNT.Model
 open Chiron
+open TNT.Model
 
 type Warning = 
     | OriginalStringEmpty
