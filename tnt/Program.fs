@@ -53,7 +53,7 @@ type GCOptions = {
 
 [<Verb("status", HelpText = "Show all the translations and their status.")>]
 type StatusOptions = { 
-    [<Option('v', "verbose", HelpText = "Provide more detailed status information.")>]
+    [<Option('v', "verbose", HelpText = "Show more detailed status information.")>]
     Verbose: bool
 
     [<Value(0)>]

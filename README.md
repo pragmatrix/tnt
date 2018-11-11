@@ -125,7 +125,13 @@ All the strings that were previously listed in the translation files but were mi
 
 #### `tnt gc`
 
+Deletes all the strings that are in the state `unused`. 
+
 #### `tnt status`
+
+Shows the status of all translations. See also [TranslationsStates](#TranslationStates).
+
+`-v`, `--verbose` in addition to the translations, shows the formatted contents of the `sources.json` file.
 
 #### `tnt export`
 
@@ -137,6 +143,30 @@ All the strings that were previously listed in the translation files but were mi
 
 #### `tnt show`
 
+Shows various infomations about the .NET supported languages or interesting details of the translations.
+
+##### `tnt show languages`
+
+Shows the currently supported languages of the .NET framework tnt runs in. The output lists all the support the language tags and the language names.
+
+##### `tnt show new`
+
+Shows the strings and their contexts that are not translated yet.
+
+##### `tnt show unused`
+
+Shows the strings and their contexts that are not used.
+
+##### `tnt show shared`
+
+Shows the strings and their contexts that were found at more than one context.
+
+##### `tnt show warnings` 
+
+Shows the strings and their contexts that are in the state `needs-review` and contain analysis warnings.
+
+The details `new`, `unused`, `shared`, and `warnings` can be restricted to show information about specific translations only. Use `-l` or `--language` to restrict their scope. If no language is specified, all languages are considered.
+
 #### `tnt help`
 
 #### `tnt version`
@@ -147,13 +177,14 @@ A translation state define the state of a single string's translation. In the tr
 
 - `new`, `n`  
   A string yet untranslated.
-
 - `needs-review`, `n`  
   Either machine translated, or imported from XLIFF indicating that a string is not final.
 - `final`, `f`  
   Strings imported from XLIFF that were marked "translated" or "final".
 - `unused`, `u`  
   A previously translated string that is missing from the list of sources after a recent `tnt extract`.
+
+In addition to the state, the `w` counter shows the number of analysis warnings. To list the strings that contain warnings, use `tnt show warnings`.
 
 ### Directory `.tnt` 
 
