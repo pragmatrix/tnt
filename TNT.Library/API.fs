@@ -352,12 +352,12 @@ module internal ShowHelper =
             for language, records in translations do
                 yield I ^ sprintf "%s Warnings:" language.Formatted
                 for record, warnings in records do
-                    do! printProperties 1 (TranslationRecord.format record)
                     let warningProperties = 
                         warnings 
                         |> List.map ^ fun warning ->
                             Format.prop "warning" (string warning)
                     do! printProperties 1 (warningProperties)
+                    do! printProperties 2 (TranslationRecord.format record)
 
         return Succeeded
     }
