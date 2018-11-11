@@ -165,7 +165,9 @@ Shows the strings and their contexts that were found at more than one context.
 
 Shows the strings and their contexts that are in the state `needs-review` and contain analysis warnings.
 
-The details `new`, `unused`, `shared`, and `warnings` can be restricted to show information about specific translations only. Use `-l` or `--language` to restrict their scope. If no language is specified, all languages are considered.
+The details `new` and `warnings` can be restricted to show information of specific translations only. Use `-l` or `--language` to restrict their scope. If no language is specified, all languages are considered.
+
+> `unused` and `shared` depend on the extraction process only and do not directly relate to a specific language, so restricting their scope does not make sense.
 
 #### `tnt help`
 

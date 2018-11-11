@@ -69,6 +69,13 @@ type TranslatedString =
         | Final str
         | Unused str -> str
 
+    member this.State =
+        this |> function
+        | New -> "new"
+        | NeedsReview _ -> "needs-review"
+        | Final _ -> "final"
+        | Unused _ -> "unused"
+
 [<Struct>]
 type LogicalContext = 
     | LogicalContext of string
@@ -134,6 +141,7 @@ type TranslationGroup = TranslationGroup of Map<LanguageTag, Translation>
 type TranslationCounters = {
     New: int
     NeedsReview: int
+    Warnings: int
     Final: int
     Unused: int
 } with
@@ -141,8 +149,9 @@ type TranslationCounters = {
         [
             "n", this.New
             "r", this.NeedsReview
+            "w", this.Warnings
             "f", this.Final
-            "u", this.Unused 
+            "u", this.Unused
         ]
         |> Seq.filter ^ fun (_, v) -> v <> 0
         |> Seq.map ^ fun (indicator, v) -> string v + indicator

@@ -103,15 +103,18 @@ type SyncOptions = {
     Unprocessed: string seq
 }
 
-[<Verb("show", HelpText = "Show system related information.")>]
+[<Verb("show", HelpText = "Show system related or detail information.")>]
 type ShowOptions = {
-    [<Value(0, HelpText = 
-        "The information to show: " +
+    [<Value(0, Min = 1, HelpText = 
+        "The detail to show: " +
         "'languages' shows the currently supported languages, " +
         "'new' the strings that are not translated yet, " + 
         "'unused' the strings that are not used anymore, " + 
         "'shared' the strings that appear in multiple contexts.")>]
-    Categories: string seq
+    Details: string seq
+
+    [<Option('l', "language", HelpText = "Language (code ['-' region] or name) that restricts the detail's scope.")>]
+    Languages: string seq
 }
 
 let private argumentTypes = [|
@@ -252,7 +255,17 @@ let dispatch (command: obj) =
 
     | :? ShowOptions as opts ->
 
-        API.show (opts.Categories |> Seq.toList)
+        let selector = 
+            let languages =
+                opts.Languages
+                |> Seq.toList
+            if languages = [] then SelectAll else
+            languages 
+            |> Seq.map resolveLanguage 
+            |> Seq.toList
+            |> Select
+
+        API.show selector (opts.Details |> Seq.toList)
 
     | x -> failwithf "internal error: %A" x
 

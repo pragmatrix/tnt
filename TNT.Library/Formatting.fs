@@ -36,9 +36,10 @@ module IndentedStrings =
         strings
         |> List.map ^ IndentedString.indent
 
-    let strings (indent: Indent) (strings: IndentedString list) =
+    let strings (indent: Indent) (strings: IndentedString seq) =
         strings
-        |> List.map ^ IndentedString.string indent
+        |> Seq.map ^ IndentedString.string indent
+        |> Seq.toList
 
 module Property =
 

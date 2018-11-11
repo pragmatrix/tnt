@@ -174,6 +174,12 @@ let projectName() =
     |> Path.name 
     |> ProjectName
 
+let private selectTranslations (languages: LanguageTag selector) (translations: Translation seq) : Translation seq =
+    translations
+    |> Seq.filter ^ fun translation -> 
+        Selector.isSelected translation.Language languages
+        || Selector.isSelected translation.Language.Primary languages
+
 let export 
     (languages: LanguageTag selector)
     (exportDirectory: ARPath) 
@@ -187,9 +193,7 @@ let export
     let exports = 
         group
         |> TranslationGroup.translations
-        |> Seq.filter ^ fun translation -> 
-            Selector.isSelected translation.Language languages
-            || Selector.isSelected translation.Language.Primary languages
+        |> selectTranslations languages
         |> Seq.map ^ fun translation ->
             let filename = XLIFF.defaultFilenameForLanguage project translation.Language 
             let path = exportDirectory |> ARPath.extend ^ RelativePath (string filename)
@@ -252,9 +256,8 @@ let translate (languages: LanguageTag selector) : ResultCode output = output {
     let toTranslate = 
         group
         |> TranslationGroup.translations
-        |> List.filter ^ fun translation -> 
-            Selector.isSelected translation.Language languages
-            || Selector.isSelected translation.Language.Primary languages
+        |> selectTranslations languages
+        |> Seq.toList
 
     // note: the API may fail at any time, but if it does, continuing does not make
     // sense, but the translations done before should also not get lost, so we
@@ -279,59 +282,103 @@ let sync (): ResultCode output = output {
 [<AutoOpen>]
 module internal ShowHelper =
 
-    let showOriginalStringsWithContext title recordFilter : ResultCode output = output {
+    let showOriginalStringsWithContext languages context recordFilter : ResultCode output = output {
         match! loadGroup() with
         | Error() -> return Failed
         | Ok(group) ->
-        yield I ^ title
 
-        let newOriginalStrings = 
+        let filteredOriginalStrings = 
             group
             |> TranslationGroup.translations
+            |> selectTranslations languages
             |> Seq.collect ^ fun t -> t.Records
             |> Seq.filter recordFilter
             |> Seq.map ^ fun r -> r.Original, r.Contexts
             |> OriginalStrings.create
             |> OriginalStrings.format
+            |> List.toArray
 
-        do! printIndentedStrings 1 newOriginalStrings
-        return Succeeded
+        match filteredOriginalStrings with
+        | [||] ->
+            yield I ^ sprintf "No %s" context
+            return Succeeded
+        | strings ->
+            yield I ^ sprintf "%d %s:" strings.Length context
+            do! printIndentedStrings 1 strings
+            return Succeeded
     }
 
-    let showNew() : ResultCode output = 
-        showOriginalStringsWithContext "New strings:"
+    let showNew languages : ResultCode output = 
+        showOriginalStringsWithContext languages "new strings"
             ^ fun r -> 
                 r.Translated 
                 |> function TranslatedString.New -> true | _ -> false
 
-    let showUnused() : ResultCode output = 
-        showOriginalStringsWithContext "Unused strings:"
+    let showUnused languages : ResultCode output = 
+        showOriginalStringsWithContext languages "unused strings"
             ^ fun r ->
                 r.Translated
                 |> function TranslatedString.Unused _ -> true | _ -> false
 
-    let showShared() : ResultCode output = 
-        showOriginalStringsWithContext "Shared strings:"
+    let showShared languages : ResultCode output = 
+        showOriginalStringsWithContext languages "shared strings"
             ^ fun r -> 
                 match r.Contexts with
                 | [] | [_] -> false
                 | _ -> true
 
-let show (categories: string list): ResultCode output = output {
+    let showWarnings languages : ResultCode output = output {
+        match! loadGroup() with
+        | Error() -> return Failed
+        | Ok(group) ->
+        
+        let translationsWithWarnings = 
+            group
+            |> TranslationGroup.translations
+            |> selectTranslations languages
+            |> Seq.map ^ fun translation ->
+                translation.Language,
+                translation.Records
+                |> List.choose ^ fun record -> 
+                    match Analysis.analyzeRecord record with
+                    | [] -> None
+                    | warnings -> Some (record, warnings)
+            |> Seq.toList
 
-    for category in categories do
-        match category with
+        match translationsWithWarnings with
+        | [] -> 
+            yield I ^ "No Warnings"
+        | translations ->
+            for language, records in translations do
+                yield I ^ sprintf "%s Warnings:" language.Formatted
+                for record, warnings in records do
+                    do! printProperties 1 (TranslationRecord.format record)
+                    let warningProperties = 
+                        warnings 
+                        |> List.map ^ fun warning ->
+                            Format.prop "warning" (string warning)
+                    do! printProperties 1 (warningProperties)
+
+        return Succeeded
+    }
+
+let show (languages: LanguageTag selector) (details: string list): ResultCode output = output {
+
+    for detail in details do
+        match detail with
         | "languages" -> 
             yield I ^ "Supported languages:"
             for { Tag = tag; EnglishName = name } in SystemCultures.All do
                 yield I ^ indent ^ sprintf "%s %s" tag.Formatted name.Formatted
-        | "new" ->
-            do! showNew() |> Output.ignore
         | "unused" ->
-            do! showUnused() |> Output.ignore
+            do! showUnused languages |> Output.ignore
         | "shared" ->
-            do! showShared() |> Output.ignore
-        
+            do! showShared languages |> Output.ignore
+        | "new" ->
+            do! showNew languages |> Output.ignore
+        | "warnings" ->
+            do! showWarnings languages |> Output.ignore
+
         | unsupported -> 
             yield E ^ sprintf "unsupported category: %s" unsupported
         

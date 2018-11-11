@@ -204,7 +204,7 @@ let printProperties (initialIndentLevel: int) (properties: Property list) : unit
         yield I ^ string
 }
 
-let printIndentedStrings (initialIndentLevel: int) (strings: IndentedString list) : unit output = output {
+let printIndentedStrings (initialIndentLevel: int) (strings: IndentedString seq) : unit output = output {
     let strings = 
         strings
         |> IndentedStrings.strings (Indent(initialIndentLevel, DefaultIndent))

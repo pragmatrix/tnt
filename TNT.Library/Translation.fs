@@ -5,14 +5,18 @@ module TNT.Library.Translation
 open TNT.Model
 open Chiron
 
+[<AutoOpen>]
+module internal Helper =
+
+    let formatString (str: string) =
+        str |> String |> Json.format
+
 module Seq = 
     let setify seq = seq |> Seq.sort |> Seq.distinct
 
 module OriginalStrings = 
 
     let format (strings: OriginalStrings) = 
-        let formatString (str: string) =
-            str |> String |> Json.format
 
         let strings = strings |> OriginalStrings.strings
         strings 
@@ -56,33 +60,49 @@ module TranslationRecord =
                 Contexts = newContexts
             }
 
+    let format (record: TranslationRecord) = [
+        yield Format.prop "state" record.Translated.State
+        yield Format.prop "original" (formatString record.Original)
+        yield Format.prop "translated" (formatString ^ string record.Translated)
+        for context in record.Contexts do
+            yield Format.prop "context" (string context)
+        for note in record.Notes do
+            yield Format.prop "note" note
+    ]
+
 module TranslationCounters =
 
-    let zero = { New = 0; NeedsReview = 0; Final = 0; Unused = 0 }
+    let zero = { New = 0; NeedsReview = 0; Warnings = 0; Final = 0; Unused = 0 }
     
     let combine (l: TranslationCounters) (r: TranslationCounters) = {
         New = l.New + r.New
         NeedsReview = l.NeedsReview + r.NeedsReview
+        Warnings = l.Warnings + r.Warnings
         Final = l.Final + r.Final
         Unused = l.Unused + r.Unused
     }
 
     let ofTranslation (translation: Translation) : TranslationCounters = 
     
-        let ``new``, needsReview, final, unused = 
-            { New = 1; NeedsReview = 0; Final = 0; Unused = 0 },
-            { New = 0; NeedsReview = 1; Final = 0; Unused = 0 },
-            { New = 0; NeedsReview = 0; Final = 1; Unused = 0 },
-            { New = 0; NeedsReview = 0; Final = 0; Unused = 1 }
+        let ``new``, needsReview, final, unused, needsReviewWithWarning = 
+            { zero with New = 1 },
+            { zero with NeedsReview = 1 },
+            { zero with Final = 1 },
+            { zero with Unused = 1 },
+            { zero with NeedsReview = 1; Warnings = 1 }
 
-        let statusOf = function
+        let statusOf (record: TranslationRecord) =
+            match record.Translated with
             | TranslatedString.New -> ``new``
-            | TranslatedString.NeedsReview _ -> needsReview
+            | TranslatedString.NeedsReview _ -> 
+                if Analysis.analyzeRecord record = []
+                then needsReview
+                else needsReviewWithWarning
             | TranslatedString.Final _ -> final
             | TranslatedString.Unused _ -> unused
 
         translation.Records
-        |> Seq.map ^ fun r -> statusOf r.Translated
+        |> Seq.map statusOf
         |> Seq.fold combine zero
 
 [<CR(ModuleSuffix)>]
