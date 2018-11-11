@@ -9,6 +9,7 @@ type Warning =
     | OriginalStringEmpty
     | NoTranslation
     | DifferentNumberOfLines of linesNumbers: (int * int)
+    // | DifferentWhitespaceLine of line: int * (string * string)
     | DifferentWhitespaceLeft of line: int * indents: (string * string)
     | DifferentWhitespaceRight of line: int * indents: (string * string)
     /// Note that the placeholders are compared in sorted order. Which means that
@@ -27,6 +28,9 @@ type Warning =
             -> "no translation"
         | DifferentNumberOfLines(lo, lt) 
             -> sprintf "number of lines differ: %d -> %d" lo lt
+        // | DifferentWhitespaceLine(l, (ol, tl))
+        //      -> sprintf "empty line %d differs in whitespace content: %s -> %s"
+        //          l (formatString ol) (formatString tl)
         | DifferentWhitespaceLeft(l, (io, it))
             -> sprintf "whitespace on the left differs in line %d: %s -> %s" 
                 l (formatString io) (formatString it)
@@ -41,17 +45,18 @@ type Warning =
 [<AutoOpen>]
 module internal Helper = 
 
-    /// Support string.Format placeholders only, because F# placeholders are not suited
-    /// for translations, because their position must stay the same.
-    /// (we could verify that, too I guess).
-    let [<Literal>] PlaceholderPattern = @"{\d+(,[+-]?\d+)?(:.+)?}"
-
-    let PlaceholderRegex = new Regex(PlaceholderPattern, RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
-
     let lines (str: string) : int = 
         str 
         |> Seq.sumBy ^ fun c -> if c = '\n' then 1 else 0
         |> (+) 1
+
+    /// Support string.Format placeholders only, because F# placeholders are not suited
+    /// for translations, because their position must stay the same.
+    /// (we could verify that, too I guess).
+    /// Note (?: introduced a non-capturing group).
+    let [<Literal>] PlaceholderPattern = @"{\d+(?:,[+-]?\d+)?(?::[^\n{}]+)?}"
+
+    let PlaceholderRegex = new Regex(PlaceholderPattern, RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
 
     let placeholders (str: string) : string list =
         PlaceholderRegex.Matches(str)

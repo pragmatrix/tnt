@@ -9,6 +9,7 @@
     <Compile Include="XLIFF.fs" />
     <Compile Include="ImportExport.fs" />
     <Compile Include="Translation.fs" />
+    <Compile Include="Analysis.fs" />
     <Content Include="translation.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
