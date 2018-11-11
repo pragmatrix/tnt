@@ -38,15 +38,15 @@ type Warning =
                 (o |> String.concat ",")
                 (t |> String.concat ",")
 
-/// We support string.Format placeholders only, because F# placeholders are not suited
-/// for translations, because their position must be the same 
-/// (we could verify that, too I guess).
-let [<Literal>] PlaceholderPattern = @"{\d+(,[+-]?\d+)?(:.+)?}"
-
-let PlaceholderRegex = new Regex(PlaceholderPattern, RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
-
 [<AutoOpen>]
 module internal Helper = 
+
+    /// Support string.Format placeholders only, because F# placeholders are not suited
+    /// for translations, because their position must stay the same.
+    /// (we could verify that, too I guess).
+    let [<Literal>] PlaceholderPattern = @"{\d+(,[+-]?\d+)?(:.+)?}"
+
+    let PlaceholderRegex = new Regex(PlaceholderPattern, RegexOptions.Compiled ||| RegexOptions.CultureInvariant)
 
     let lines (str: string) : int = 
         str 
