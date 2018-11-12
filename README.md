@@ -2,9 +2,9 @@
 
 A command line tool for managing translations based on strings extracted from .NET assemblies. Supports XLIFF roundtrips and machine translations.
 
-Born out of my rejection of .NET resources files and their annoying identifiers pulluting all the code. 
+Born out of my rejection of .NET resources files and their annoying identifiers polluting all the code.
 
-Then, over a 140 commits later, `tnt` seems to get somehat useful. All the interesting decisions that had to be made, the experience to program in F#, and how good machine translations can be today, were worth every commit and the many hours put in.
+Then, a number of commits later, `tnt` seems to get somehat useful. All the interesting decisions that had to be made, the experience to program in F#, and how good machine translations can be today, were worth every commit and the many hours put in.
 
 ## Installation & Update
 
