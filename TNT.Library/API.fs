@@ -340,7 +340,7 @@ module internal ShowHelper =
                 translation.Language,
                 translation.Records
                 |> List.choose ^ fun record -> 
-                    match Analysis.analyzeRecord record with
+                    match Verification.verifyRecord record with
                     | [] -> None
                     | warnings -> Some (record, warnings)
             |> Seq.toList

@@ -95,7 +95,7 @@ module TranslationCounters =
             match record.Translated with
             | TranslatedString.New -> ``new``
             | TranslatedString.NeedsReview _ -> 
-                if Analysis.analyzeRecord record = []
+                if Verification.verifyRecord record = []
                 then needsReview
                 else needsReviewWithWarning
             | TranslatedString.Final _ -> final

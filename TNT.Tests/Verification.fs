@@ -1,6 +1,6 @@
 ﻿module TNT.Tests.Analysis
 
-open TNT.Library.Analysis.Helper
+open TNT.Library.Verification.Helper
 
 open FsUnit.Xunit
 open Xunit

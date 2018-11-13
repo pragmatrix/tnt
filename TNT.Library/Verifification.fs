@@ -1,4 +1,4 @@
-﻿module TNT.Library.Analysis
+﻿module TNT.Library.Verification
 
 open System
 open System.Text.RegularExpressions
@@ -66,7 +66,7 @@ module internal Helper =
             m.Value
         |> Seq.toList
 
-    let analyzePlaceholders (original: string, translated: string) : Warning list = [
+    let verifyPlacholders (original: string, translated: string) : Warning list = [
         let original, translated = 
             List.sort ^ placeholders original,
             List.sort ^ placeholders translated
@@ -88,7 +88,7 @@ module internal Helper =
         |> Seq.toArray
         |> System.String
 
-    let analyzeWhitespaceLeft (lineNumber: int) (originalLine: string, translatedLine: string): Warning list = [
+    let verifyWhitespaceLeft (lineNumber: int) (originalLine: string, translatedLine: string): Warning list = [
         let wsO, wsT = 
             whitespaceLeft originalLine, 
             whitespaceLeft translatedLine
@@ -96,7 +96,7 @@ module internal Helper =
             yield DifferentWhitespaceLeft(lineNumber, (wsO, wsT))
     ]
 
-    let analyzeWhitespaceRight (lineNumber: int) (originalLine: string, translatedLine: string): Warning list = [
+    let verifyWhitespaceRight (lineNumber: int) (originalLine: string, translatedLine: string): Warning list = [
         let wsO, wsT = 
             whitespaceRight originalLine, 
             whitespaceRight translatedLine
@@ -104,7 +104,7 @@ module internal Helper =
             yield DifferentWhitespaceRight(lineNumber, (wsO, wsT))
     ]
 
-let analyzeTranslation (original: string, translated: string) : Warning list = [
+let verifyTranslation (original: string, translated: string) : Warning list = [
     match () with
     | _ when original.Trim() = "" -> 
         yield OriginalStringEmpty
@@ -112,7 +112,7 @@ let analyzeTranslation (original: string, translated: string) : Warning list = [
         yield NoTranslation
     | _ ->
 
-    yield! analyzePlaceholders (original, translated)
+    yield! verifyPlacholders (original, translated)
 
     let oLines, tLines = original.Split '\n', translated.Split '\n'
     if oLines.Length <> tLines.Length then
@@ -121,12 +121,12 @@ let analyzeTranslation (original: string, translated: string) : Warning list = [
         let lines = Array.zip oLines tLines
         for lineNumber in 1..lines.Length do
             let linePair = lines.[lineNumber-1]
-            yield! analyzeWhitespaceLeft lineNumber linePair
-            yield! analyzeWhitespaceRight lineNumber linePair
+            yield! verifyWhitespaceLeft lineNumber linePair
+            yield! verifyWhitespaceRight lineNumber linePair
 ]
 
-let analyzeRecord (record: TranslationRecord) : Warning list =
+let verifyRecord (record: TranslationRecord) : Warning list =
     match record.Translated with
     | TranslatedString.NeedsReview translated 
-        -> analyzeTranslation (record.Original, translated)
+        -> verifyTranslation (record.Original, translated)
     | _ -> []
