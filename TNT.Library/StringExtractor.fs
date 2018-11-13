@@ -37,7 +37,12 @@ module ExtractionErrors =
     let format (errors: ExtractionErrors) = 
         errors
         |> List.map ^ fun (e, context) ->
-            Format.group (string context.Physical) [
+            let title = 
+                match context.Physical with
+                | Some physical -> string physical
+                | None -> "[no location available, please build your project with debug symbols enabled]"
+
+            Format.group title [
                 Format.prop "error" (string e)
                 Format.prop "context" (string context.Logical)
             ]
