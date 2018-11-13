@@ -16,18 +16,21 @@ type ExtractionError =
             "Failed to extract the string before .t(), please be sure that the string is a literal"
 
 [<Struct>]
-type PhysicalContext = 
-    | PhysicalContext of methodName: string
+type PhysicalLocation = 
+    | PhysicalLocation of filename: string * lineColumn: (int * int)
     override this.ToString() = 
-        this |> function PhysicalContext methodName -> methodName
-
+        this 
+        |> function 
+            PhysicalLocation(filename, (line, column)) 
+            -> sprintf "%s(%d,%d)" filename line column
+            
 [<Struct>]
-type ExtractionContext = {
+type ExtractionPoint = {
     Logical: LogicalContext
-    Physical: PhysicalContext option
+    Physical: PhysicalLocation option
 }
 
-type ExtractionErrors = (ExtractionError * ExtractionContext) list
+type ExtractionErrors = (ExtractionError * ExtractionPoint) list
 
 module ExtractionErrors = 
 
@@ -47,8 +50,26 @@ module internal Helper =
         "System.String TNT.FSharp.Extensions::String.get_t(System.String)"
     |]
 
-    let extractFromInstructions (instructions : Instruction seq) 
-        : Result<string, ExtractionError> seq = 
+
+    let resolvePhysicalLocation 
+        (methodDefinition: MethodDefinition) 
+        (instruction: Instruction) : PhysicalLocation option = 
+
+        match methodDefinition.DebugInformation with
+        | null -> None
+        | debugInfo when debugInfo.HasSequencePoints ->
+            let instructionOffset = instruction.Offset
+            debugInfo.SequencePoints 
+            |> Seq.tryFindBack ^ fun sp -> 
+                sp.Offset <= instructionOffset
+            |> Option.map ^ fun sp -> 
+                PhysicalLocation(sp.Document.Url, (sp.StartLine, sp.StartColumn))
+        | _ -> None
+
+    let extractFromInstructions 
+        (methodDefinition: MethodDefinition)
+        (instructions : Instruction seq) 
+        : (Result<string, ExtractionError> * PhysicalLocation option) seq = 
 
         let isTranslationCall (instruction: Instruction) = 
             match instruction.OpCode with
@@ -61,14 +82,14 @@ module internal Helper =
 
         instructions
         |> Seq.rev
-        |> Seq.choose ^ fun instruction -> 
+        |> Seq.filter ^ fun inst -> inst.Previous <> null && isTranslationCall inst
+        |> Seq.map ^ fun instruction -> 
             let prevInst = instruction.Previous
-            if isTranslationCall instruction && prevInst <> null then
-                match prevInst.OpCode with
-                | op when op = OpCodes.Ldstr 
-                    -> Some ^ Ok ^ string prevInst.Operand
-                | _ -> Some ^ Error NoStringBeforeInvocationOfT
-            else None
+            let physicalLocation = resolvePhysicalLocation methodDefinition instruction
+            match prevInst.OpCode with
+            | op when op = OpCodes.Ldstr 
+                -> Ok ^ string prevInst.Operand, physicalLocation
+            | _ -> Error NoStringBeforeInvocationOfT, physicalLocation
 
     let logicalContext (typeDefinition: TypeDefinition) : LogicalContext =
 
@@ -92,33 +113,18 @@ module internal Helper =
         |> String.concat "."
         |> LogicalContext
 
-    let physicalContext (methodDefinition: MethodDefinition) : PhysicalContext option =
-        let body = methodDefinition.Body
-        if  methodDefinition.DebugInformation <> null
-            && methodDefinition.DebugInformation.HasSequencePoints
-            && body.Instructions.Count > 0 
-            && body.Instructions.[0] <> null then
-            let sp = methodDefinition.DebugInformation.GetSequencePoint(body.Instructions.[0])
-            if sp <> null && sp.Document <> null then
-                Some ^ PhysicalContext sp.Document.Url
-            else 
-                None
-        else None
-
-    let errorContext (methodDefinition: MethodDefinition) : ExtractionContext = {
-        Logical = logicalContext methodDefinition.DeclaringType
-        Physical = physicalContext methodDefinition
-    }
-
 let extract (path: Path) : OriginalStrings * ExtractionErrors = 
 
     let assemblyDefinition = 
-        AssemblyDefinition.ReadAssembly(
-            string path, ReaderParameters(ReadSymbols = true))
+        AssemblyDefinition.ReadAssembly(string path, 
+            ReaderParameters(
+                // don't throw an exception, when symbols can not be resolved.
+                SymbolReaderProvider = DefaultSymbolReaderProvider(false)
+            ))
 
     let rec extractFromType 
         (typeDefinition: TypeDefinition) 
-        : (Result<string, ExtractionError> * ExtractionContext) seq = seq {
+        : (Result<string, ExtractionError> * ExtractionPoint) seq = seq {
         yield!
             typeDefinition.NestedTypes
             |> Seq.collect ^ fun nestedTypeDefinition ->
@@ -129,10 +135,13 @@ let extract (path: Path) : OriginalStrings * ExtractionErrors =
                 let body = methodDefinition.Body
                 // body may be null for abstract / interface methods.
                 if body = null then Seq.empty else
-                let errorContext = errorContext methodDefinition
+                let logicalContext = logicalContext typeDefinition
                 body.Instructions 
-                |> extractFromInstructions
-                |> Seq.map ^ fun result -> result, errorContext
+                |> extractFromInstructions methodDefinition
+                |> Seq.map ^ fun (result, location) -> result, {
+                    Logical = logicalContext
+                    Physical = location
+                }
     }
 
     let stringsAndErrors = 
@@ -149,7 +158,6 @@ let extract (path: Path) : OriginalStrings * ExtractionErrors =
                 match r with
                 | Ok(str) -> Some (str, List.singleton context.Logical)
                 | Error _ -> None
-
 
     let errors =
         stringsAndErrors

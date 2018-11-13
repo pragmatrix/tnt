@@ -37,8 +37,13 @@ let ``extract from CSharp``() =
         ]
 
 [<Fact>]
-let ``extraction may cause errors``() = 
+let ``extraction may cause errors and retrieves a physical context``() = 
     let path = Directory.current() |> Path.extend "TNT.Tests.CSharp.dll"
     let _, errors = extract path
-    errors.Length
-    |> should equal 1
+    errors |> printfn "%A"
+    match errors with
+    | [] -> failwith "failed, no error"
+    | [_, context] ->
+        context.Physical.IsSome |> should be True
+    | _ -> failwith "too many errors, expect one"
+
