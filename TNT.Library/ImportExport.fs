@@ -3,6 +3,7 @@
 open TNT.Model
 open TNT.Library.XLIFF
 
+let [<Literal>] WarningPrefix = "Warning:"
 let [<Literal>] ContextPrefix = "Context:"
 
 /// Convert a translations to a file.
@@ -14,22 +15,30 @@ let export (project: ProjectName) (sourceLanguage: LanguageTag) (translation: Tr
             record.Contexts
             |> List.map ^ fun context -> ContextPrefix + " " + string context
 
+        let warningNotes (warnings: Verification.Warning list) = 
+            warnings
+            |> List.map ^ fun warning -> WarningPrefix + " " + string warning
+
         // note that not all records can be exported into XIFF files.
         record.Translated
         |> function
         | TranslatedString.New 
-            -> Some (New, "")
+            -> Some (New, "", [])
         | TranslatedString.NeedsReview str 
-            -> Some (NeedsReview, str)
+            -> Some (NeedsReview, str, warningNotes ^ Verification.verifyRecord record)
         | TranslatedString.Final str 
-            -> Some (Final, str)
+            -> Some (Final, str, [])
         | TranslatedString.Unused _ 
             -> None
-        |> Option.map ^ fun (state, str) -> {
+        |> Option.map ^ fun (state, str, warningNotes) -> {
             Source = record.Original
             Target = str
             State = state
-            Notes = contextNotes @ record.Notes
+            Notes = List.collect id [
+                warningNotes
+                contextNotes
+                record.Notes
+            ]
         }
 
     let toFile (translation: Translation) = {
@@ -44,14 +53,17 @@ let export (project: ProjectName) (sourceLanguage: LanguageTag) (translation: Tr
 [<AutoOpen>]
 module internal ImportHelper =
 
-    let isContextNode (str: string) = 
-        str.startsWith ContextPrefix
+    let IgnorableNotePrefixes = [| ContextPrefix; WarningPrefix |]
+
+    let ignoreNote (str: string) = 
+        IgnorableNotePrefixes
+        |> Array.exists str.startsWith
     
     let importNotes (unit: TranslationUnit) : string list = 
         unit.Notes
         |> Seq.map ^ Text.trim
-        |> Seq.filter ((<>) "")
-        |> Seq.filter (isContextNode >> not)
+        |> Seq.filter ^ (<>) ""
+        |> Seq.filter ^ (not << ignoreNote)
         |> Seq.toList
 
     module Text = 
