@@ -12,7 +12,7 @@
     <Compile Include="Paths.fs" />
     <Compile Include="SystemCultures.fs" />
     <Compile Include="Sources.fs" />
-    <Compile Include="Verifification.fs" />
+    <Compile Include="Verification.fs" />
     <Compile Include="Translation.fs" />
     <Compile Include="XLIFF.fs" />
     <Compile Include="ImportExport.fs" />

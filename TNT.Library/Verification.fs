@@ -9,7 +9,9 @@ type Warning =
     | OriginalStringEmpty
     | NoTranslation
     | DifferentNumberOfLines of linesNumbers: (int * int)
-    // | DifferentWhitespaceLine of line: int * (string * string)
+    | DifferentWhitespaceLine of line: int * (string * string)
+    | OriginalLineIsEmpty of line: int * (string * string)
+    | TranslatedLineIsEmpty of line: int * (string * string)
     | DifferentWhitespaceLeft of line: int * indents: (string * string)
     | DifferentWhitespaceRight of line: int * indents: (string * string)
     /// Note that the placeholders are compared in sorted order. Which means that
@@ -28,9 +30,15 @@ type Warning =
             -> "no translation"
         | DifferentNumberOfLines(lo, lt) 
             -> sprintf "number of lines differ: %d -> %d" lo lt
-        // | DifferentWhitespaceLine(l, (ol, tl))
-        //      -> sprintf "empty line %d differs in whitespace content: %s -> %s"
-        //          l (formatString ol) (formatString tl)
+        | DifferentWhitespaceLine(l, (ol, tl))
+            -> sprintf "empty line %d differs in whitespace: %s -> %s"
+                l (formatString ol) (formatString tl)
+        | OriginalLineIsEmpty(l, (ol, tl))
+            -> sprintf "original line %d is empty: %s -> %s"
+                l (formatString ol) (formatString tl)
+        | TranslatedLineIsEmpty(l, (ol, tl))
+            -> sprintf "translated line %d is empty: %s -> %s"
+                l (formatString ol) (formatString tl)
         | DifferentWhitespaceLeft(l, (io, it))
             -> sprintf "whitespace on the left differs in line %d: %s -> %s" 
                 l (formatString io) (formatString it)
@@ -44,6 +52,9 @@ type Warning =
 
 [<AutoOpen>]
 module internal Helper = 
+
+    let isEmptyTrimmed (str: string) = 
+        str |> Seq.forall Char.IsWhiteSpace
 
     let lines (str: string) : int = 
         str 
@@ -88,6 +99,11 @@ module internal Helper =
         |> Seq.toArray
         |> System.String
 
+    let verifyWhitespace (lineNumber: int) (originalLine: string, translatedLine: string): Warning list = [
+        if originalLine <> translatedLine then
+            yield DifferentWhitespaceLine(lineNumber, (originalLine, translatedLine))
+    ]
+
     let verifyWhitespaceLeft (lineNumber: int) (originalLine: string, translatedLine: string): Warning list = [
         let wsO, wsT = 
             whitespaceLeft originalLine, 
@@ -121,8 +137,16 @@ let verifyTranslation (original: string, translated: string) : Warning list = [
         let lines = Array.zip oLines tLines
         for lineNumber in 1..lines.Length do
             let linePair = lines.[lineNumber-1]
-            yield! verifyWhitespaceLeft lineNumber linePair
-            yield! verifyWhitespaceRight lineNumber linePair
+            match T2.map isEmptyTrimmed isEmptyTrimmed linePair with
+            | true, true ->
+                yield! verifyWhitespace lineNumber linePair
+            | true, false ->
+                yield OriginalLineIsEmpty(lineNumber, linePair)
+            | false, true ->
+                yield TranslatedLineIsEmpty(lineNumber, linePair)
+            | false, false ->
+                yield! verifyWhitespaceLeft lineNumber linePair
+                yield! verifyWhitespaceRight lineNumber linePair
 ]
 
 let verifyRecord (record: TranslationRecord) : Warning list =
