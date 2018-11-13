@@ -139,7 +139,7 @@ let extract() = withSourcesAndGroup ^ fun sources group -> output {
     do! commitTranslations "updated" updated
 
     if errors <> [] then
-        yield W ^ "Some .t() invocations failed to extract text:"
+        yield W ^ ".t() extractions failed:"
         do! printProperties 1 ^ StringExtractor.ExtractionErrors.format errors
 
     return Ok()
