@@ -9,10 +9,6 @@ open TNT.Library.Output
 open TNT.Library.MachineTranslation
 open TNT.Library.APIHelper
 
-type ResultCode =
-    | Failed
-    | Succeeded
-
 /// Initialize TNT.
 let init (language: LanguageTag option) = output {
     let path = Directory.current() |> Path.extend Sources.path 
@@ -33,13 +29,11 @@ let init (language: LanguageTag option) = output {
             Sources.save path { sources with Language = l }
         | _ -> ()
 
-    return Succeeded
+    return Ok()
 }
 
-let status (verbose: bool) : ResultCode output = output {
-    match! loadSourcesAndGroup() with
-    | Error() -> return Failed
-    | Ok(sources, group) ->
+let status (verbose: bool) = 
+    withSourcesAndGroup ^ fun sources group -> output {
 
     if verbose then
         do! printProperties 0 sources.Format
@@ -51,14 +45,12 @@ let status (verbose: bool) : ResultCode output = output {
         for translation in translations do
             yield I ^ Translation.status translation
 
-    return Succeeded
+    return Ok()
 }
 
 /// Add a new language.
-let addLanguage (language: LanguageTag) = output {
-    match! loadGroup() with
-    | Error() -> return Failed
-    | Ok(group) ->
+let addLanguage (language: LanguageTag) = 
+    withGroup ^ fun group -> output {
 
     do! warnIfUnsupported language
 
@@ -68,21 +60,19 @@ let addLanguage (language: LanguageTag) = output {
         |> Option.toList
         
     do! commitTranslations "added" translations
-    return Succeeded
+    return Ok()
 }
 
 /// Add a new assembly.
-let addAssembly (assemblyPath: AssemblySource rpath) : ResultCode output = output {
-    match! loadSources() with
-    | Error() -> return Failed
-    | Ok(sources) ->
+let addAssembly (assemblyPath: AssemblySource rpath) = 
+    withSources ^ fun sources -> output {
 
     let assemblySource = AssemblySource(assemblyPath)
 
     if sources.Sources.Contains assemblySource 
     then
         yield I ^ sprintf "Assembly '%s' is already listed as a translation source." (string assemblyPath)
-        return Succeeded
+        return Ok()
     else
 
     yield I ^ sprintf "Adding '%s' as translation source, use 'tnt extract' to update the translation files." (string assemblyPath)
@@ -92,13 +82,11 @@ let addAssembly (assemblyPath: AssemblySource rpath) : ResultCode output = outpu
         sources with 
             Sources = Set.add assemblySource sources.Sources 
     }
-    return Succeeded
+    return Ok()
 }
 
-let removeAssembly (assemblyPath: AssemblySource rpath) : ResultCode output = output {
-    match! loadSources() with
-    | Error() -> return Failed
-    | Ok(sources) ->
+let removeAssembly (assemblyPath: AssemblySource rpath) = 
+    withSources ^ fun sources -> output {
 
     let matches = 
         sources.Sources
@@ -116,7 +104,7 @@ let removeAssembly (assemblyPath: AssemblySource rpath) : ResultCode output = ou
     match matches with
     | [] ->
         yield E ^ "found no assembly"
-        return Failed
+        return Error()
 
     | [source] ->
         yield I ^ sprintf "removing source:"
@@ -129,19 +117,16 @@ let removeAssembly (assemblyPath: AssemblySource rpath) : ResultCode output = ou
         let sourcesPath = Directory.current() |> Path.extend Sources.path
         newSources |> Sources.save sourcesPath
 
-        return Succeeded
+        return Ok()
 
     | moreThanOne ->
         yield E ^ "found more than one source that matches the relative path of the assembly:"
         for path in moreThanOne do
             yield E ^ indent ^ string path
-        return Failed
+        return Error()
 }
 
-let extract() = output {
-    match! loadSourcesAndGroup() with
-    | Error() -> return Failed
-    | Ok(sources, group) ->
+let extract() = withSourcesAndGroup ^ fun sources group -> output {
 
     let newStrings = 
         sources 
@@ -152,13 +137,10 @@ let extract() = output {
         |> List.choose ^ Translation.update newStrings
 
     do! commitTranslations "updated" updated
-    return Succeeded
+    return Ok()
 }
 
-let gc() = output {
-    match! loadGroup() with
-    | Error() -> return Failed
-    | Ok(group) ->
+let gc() = withGroup ^ fun group -> output {
 
     let collected = 
         group 
@@ -166,7 +148,7 @@ let gc() = output {
         |> List.choose Translation.gc
 
     do! commitTranslations "garbage collected" collected
-    return Succeeded
+    return Ok()
 }
 
 let projectName() = 
@@ -183,12 +165,9 @@ let private selectTranslations (languages: LanguageTag selector) (translations: 
 let export 
     (languages: LanguageTag selector)
     (exportDirectory: ARPath) 
-    (profile: XLIFF.ExportProfile)
-    : ResultCode output = output {
-    match! loadSourcesAndGroup() with
-    | Error() ->
-        return Failed
-    | Ok(sources, group) ->
+    (profile: XLIFF.ExportProfile) =
+    withSourcesAndGroup ^ fun sources group -> output {
+
     let project = projectName()
     let exports = 
         group
@@ -212,21 +191,18 @@ let export
         yield E ^ sprintf "One or more exported files already exists, please remove them:"
         for existingFile in existingOnes do
             yield E ^ indent ^ string existingFile
-        return Failed
+        return Error()
     else
 
     for (file, content) in exports do
         yield I ^ sprintf "Exporting translation to '%s'" (string file)
         File.saveText Encoding.UTF8 (string content) (rooted file)
 
-    return Succeeded
+    return Ok()
 }
 
-let import (files: Path list) : ResultCode output = output {
-    match! loadGroup() with
-    | Error() ->
-        return Failed
-    | Ok(group) ->
+let import (files: Path list) = withGroup ^ fun group -> output {
+
     let project = projectName()
     let files = 
         files
@@ -246,13 +222,12 @@ let import (files: Path list) : ResultCode output = output {
             yield W ^ indent ^ string warning
 
     do! commitTranslations "changed by import" translations
-    return Succeeded
+    return Ok()
 }
 
-let translate (languages: LanguageTag selector) : ResultCode output = output {
-    match! loadSourcesAndGroup() with
-    | Error() -> return Failed
-    | Ok(sources, group)  ->
+let translate (languages: LanguageTag selector) = 
+    withSourcesAndGroup ^ fun sources group -> output {
+
     let toTranslate = 
         group
         |> TranslationGroup.translations
@@ -271,21 +246,19 @@ let translate (languages: LanguageTag selector) : ResultCode output = output {
             do! commitTranslations "translated" [translation]
         | _ -> ()
 
-    return Succeeded
+    return Ok()
 }
 
-let sync (): ResultCode output = output {
+let sync() = output {
     do! syncAllContent()
-    return Succeeded
+    return Ok()
 }
 
 [<AutoOpen>]
 module internal ShowHelper =
 
-    let showOriginalStringsWithContext languages context recordFilter : ResultCode output = output {
-        match! loadGroup() with
-        | Error() -> return Failed
-        | Ok(group) ->
+    let showOriginalStringsWithContext languages context recordFilter = 
+        withGroup ^ fun group -> output {
 
         let filteredOriginalStrings = 
             group
@@ -301,36 +274,33 @@ module internal ShowHelper =
         match filteredOriginalStrings with
         | [||] ->
             yield I ^ sprintf "No %s" context
-            return Succeeded
+            return Ok()
         | strings ->
             yield I ^ sprintf "%d %s:" strings.Length context
             do! printIndentedStrings 1 strings
-            return Succeeded
+            return Ok()
     }
 
-    let showNew languages : ResultCode output = 
+    let showNew languages = 
         showOriginalStringsWithContext languages "new strings"
             ^ fun r -> 
                 r.Translated 
                 |> function TranslatedString.New -> true | _ -> false
 
-    let showUnused languages : ResultCode output = 
+    let showUnused languages = 
         showOriginalStringsWithContext languages "unused strings"
             ^ fun r ->
                 r.Translated
                 |> function TranslatedString.Unused _ -> true | _ -> false
 
-    let showShared languages : ResultCode output = 
+    let showShared languages = 
         showOriginalStringsWithContext languages "shared strings"
             ^ fun r -> 
                 match r.Contexts with
                 | [] | [_] -> false
                 | _ -> true
 
-    let showWarnings languages : ResultCode output = output {
-        match! loadGroup() with
-        | Error() -> return Failed
-        | Ok(group) ->
+    let showWarnings languages = withGroup ^ fun group -> output {
         
         let translationsWithWarnings = 
             group
@@ -359,10 +329,10 @@ module internal ShowHelper =
                     do! printProperties 1 (warningProperties)
                     do! printProperties 2 (TranslationRecord.format record)
 
-        return Succeeded
+        return Ok()
     }
 
-let show (languages: LanguageTag selector) (details: string list): ResultCode output = output {
+let show (languages: LanguageTag selector) (details: string list) = output {
 
     for detail in details do
         match detail with
@@ -382,7 +352,7 @@ let show (languages: LanguageTag selector) (details: string list): ResultCode ou
         | unsupported -> 
             yield E ^ sprintf "unsupported category: %s" unsupported
         
-    return Succeeded
+    return Ok()
 }
 
 [<assembly:InternalsVisibleTo("TNT.Tests")>]

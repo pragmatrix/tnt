@@ -22,30 +22,27 @@ let tryLoadSources(): Sources option output = output {
     else return None
 }
 
-let loadSources() : Result<Sources, unit> output = output {
+let withSources (cont: Sources -> _ output) = output {
     match! tryLoadSources() with
-    | Some sources -> return Ok sources
+    | Some sources -> return! cont sources
     | None ->
         yield E ^ sprintf "Can't load '%O', use 'tnt init' to create it." Sources.path
         return Error()
 }
 
-let loadSourcesAndGroup() : Result<Sources * TranslationGroup, unit> output = output {
-    match! loadSources() with
-    | Error() -> return Error()
-    | Ok sources ->
+let withSourcesAndGroup (cont : Sources -> TranslationGroup -> _ output) =
+    withSources ^ fun sources -> output {
     let currentDirectory = Directory.current()
     match TranslationGroup.load currentDirectory with
     | Error(error) ->
         yield! TranslationGroup.errorString error
         return Error()
     | Ok(group) ->
-        return Ok(sources, group)
+        return! cont sources group
 }
 
-let loadGroup() =
-    loadSourcesAndGroup()
-    |> Output.map ^ Result.map snd
+let withGroup (cont: TranslationGroup -> _ output) =
+    withSourcesAndGroup ^ fun _ group -> cont group
 
 let translationsDirectory() = 
     Directory.current()

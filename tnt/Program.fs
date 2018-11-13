@@ -279,8 +279,8 @@ let protectedMain args =
         dispatch command.Value
         |> Output.run Console.WriteLine
         |> function
-        | API.Failed -> failed
-        | API.Succeeded -> ok
+            | Ok() -> ok
+            | Error() -> failed
 
     | :? CommandLine.NotParsed<obj> ->
         failed
