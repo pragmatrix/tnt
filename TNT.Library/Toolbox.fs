@@ -88,7 +88,8 @@ module RPath =
 
     let parent (path: 'tag rpath) : _ rpath option = 
         let parentPath = Path.GetDirectoryName (string path)
-        if parentPath = null then None
+        // null: root path, empty: no directory information.
+        if parentPath = null || parentPath = "" then None
         else Some ^ parse parentPath
 
     let name (path: 'tag rpath) : string =
