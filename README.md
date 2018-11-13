@@ -58,20 +58,34 @@ Now enter `tnt extract`. This command extracts the strings and creates the langu
 
 `tnt` itself does not support interactive translations [yet](https://github.com/pragmatrix/tnt/issues/46). Of course you can edit the translation files, but `tnt` can help you in two other ways:
 
+#### Machine Translations
+
 First. `tnt` supports Google machine translations, which I do recommend as a starting point for every new translation. For the machine translation I tried, the results needed minimal changes and Google's API positioned .NET placeholders like `{0}` as expected. I don't know if your experience will be the same, but with `tnt translate` you can try your luck with Google Cloud Translation API.
 
 > To use Google Cloud Translation API, follow the steps 1. to 3. in [Quickstart](https://cloud.google.com/translate/docs/quickstart), and then invoke `tnt translate`, which will machine translate all your new strings.
 
+#### XLIFF Roundtrips
+
 Second, it supports the traditional translation roundrip that is comprised of exporting the translation files to the [XLIFF][XLIFF] format, using an XLIFF tool to edit them, and importing the changes back. With `tnt export`,  XLIFF files can be generated and sent to translators, who can then use their favorite tool (like the [Multilingual App Toolkit](https://developer.microsoft.com/en-us/windows/develop/multilingual-app-toolkit, for example)) to translate these strings and send them back. `tnt import` will then take care of the reintegration into the matching translation files.
 
-> Although `tnt` tries hard to do its best, `tnt import` is one of the commands unexpected things may happen. So be sure to put the `.tnt/` under revision control.
+> Although `tnt` tries hard to do its best, `tnt import` is one of the commands unexpected things may happen. So be sure to put the `.tnt/` directory under revision control.
+
+#### Translation Verification
+
+In addition to translation support, `tnt` supports a number of simple verifications it applies to the translations. `tnt` verifies
+
+- if the same .NET placeholders (for example `{0}`) reappear in the translated text.
+- if the number of lines match.
+- if the indents match.
+
+`tnt` verifies only the translations that are in the state `needs-review` (state `r` for short). If one of these verification failes, `tnt status` adds them to the warning (`w`) counter. To show them in detail, use `tnt show warnings`.
 
 
 ### Deployment & Translation Loading
 
-`tnt` automatically creates and maintains a second directory named `.tnt-content/` where it puts the translation files in that the final application uses.
+`tnt` automatically creates and maintains a second directory named `.tnt-content/` where it puts the translation files in meant to be loaded by your application.
 
-> This directory *does not need* to be under revision control, because it can be regenerated from the translation files with `tnt sync`. Basically, these files are *distilled* translation files for each language optimized for your application to pick them up.
+> These files *do not need* to be under revision control, because they can be regenerated from the translation files with `tnt sync`. Basically, they are *distilled* translation files for each language optimized for your application to pick them up.
 >
 > The format of these files might change in the future and so should not be relied on.
 
@@ -163,7 +177,7 @@ Shows the strings and their contexts that were found at more than one context.
 
 ##### `tnt show warnings` 
 
-Shows the strings and their contexts that are in the state `needs-review` and contain analysis warnings.
+Shows the strings and their contexts that are in the state `needs-review` and have one or more verification warnings.
 
 The details `new` and `warnings` can be restricted to show information of specific translations only. Use `-l` or `--language` to restrict their scope. If no language is specified, all languages are considered.
 
