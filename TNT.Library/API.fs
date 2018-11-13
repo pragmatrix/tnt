@@ -128,7 +128,7 @@ let removeAssembly (assemblyPath: AssemblySource rpath) =
 
 let extract() = withSourcesAndGroup ^ fun sources group -> output {
 
-    let newStrings = 
+    let newStrings, errors = 
         sources 
         |> Sources.extractOriginalStrings (Directory.current()) 
 
@@ -137,6 +137,11 @@ let extract() = withSourcesAndGroup ^ fun sources group -> output {
         |> List.choose ^ Translation.update newStrings
 
     do! commitTranslations "updated" updated
+
+    if errors <> [] then
+        yield W ^ "Text extraction wasn't always possible:"
+        do! printProperties 1 ^ StringExtractor.ExtractionErrors.format errors
+
     return Ok()
 }
 

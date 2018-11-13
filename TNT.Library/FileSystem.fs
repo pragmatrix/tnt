@@ -29,16 +29,26 @@ module Sources =
         |> fun content -> File.saveText Encoding.UTF8 content path
 
     /// Extract all original strings from all sources.
-    let extractOriginalStrings (baseDirectory: Path) (sources: Sources) : OriginalStrings = 
-        let stringsFromSource (source: Source) : OriginalStrings = 
+    let extractOriginalStrings (baseDirectory: Path) (sources: Sources) 
+        : OriginalStrings * StringExtractor.ExtractionErrors = 
+        let stringsFromSource (source: Source) : OriginalStrings * StringExtractor.ExtractionErrors = 
             match source with
             | AssemblySource path -> 
                 let fullPath = baseDirectory |> Path.extend path
                 StringExtractor.extract fullPath
-        sources.Sources 
-        |> Seq.map stringsFromSource
-        |> Seq.toList
+        
+        let stringsAndErrors = 
+            sources.Sources 
+            |> Seq.map stringsFromSource
+            |> Seq.toList
+        
+        stringsAndErrors
+        |> List.map fst
         |> OriginalStrings.merge
+        ,
+        stringsAndErrors
+        |> List.collect snd
+
             
 module Translation = 
     

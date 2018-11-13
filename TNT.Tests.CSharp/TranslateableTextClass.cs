@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace TNT.Tests.CSharp
 {
@@ -11,5 +12,15 @@ namespace TNT.Tests.CSharp
     public class CompilerGeneratedTextClass
     {
         public static readonly string TranslateMe = "originalCG".t();
+    }
+
+    public class ExtractionError
+    {
+        public static readonly string TranslateMe = mkStr();
+
+        static string mkStr()
+        {
+            return ("" + new Random().Next()).t();
+        }
     }
 }

@@ -7,15 +7,48 @@ open Mono.Cecil
 open Mono.Cecil.Cil
 open TNT.Model
 
+[<Struct>]
+type ExtractionError = 
+    | NoStringBeforeInvocationOfT
+    override this.ToString() =
+        match this with
+        | NoStringBeforeInvocationOfT -> 
+            "Failed to extract the string before .t(), please be sure that the string is a literal"
+
+[<Struct>]
+type PhysicalContext = 
+    | PhysicalContext of methodName: string
+    override this.ToString() = 
+        this |> function PhysicalContext methodName -> methodName
+
+[<Struct>]
+type ExtractionContext = {
+    Logical: LogicalContext
+    Physical: PhysicalContext option
+}
+
+type ExtractionErrors = (ExtractionError * ExtractionContext) list
+
+module ExtractionErrors = 
+
+    let format (errors: ExtractionErrors) = 
+        errors
+        |> List.map ^ fun (e, context) ->
+            Format.group (string context.Physical) [
+                Format.prop "error" (string e)
+                Format.prop "context" (string context.Logical)
+            ]
+    
 [<AutoOpen>]
-module private Private = 
+module internal Helper = 
 
     let TFunctions = [|
         "System.String TNT.Extensions::t(System.String)"
         "System.String TNT.FSharp.Extensions::String.get_t(System.String)"
     |]
 
-    let extractFromInstructions (instructions : Instruction seq) : string seq = 
+    let extractFromInstructions (instructions : Instruction seq) 
+        : Result<string, ExtractionError> seq = 
 
         let isTranslationCall (instruction: Instruction) = 
             match instruction.OpCode with
@@ -27,41 +60,65 @@ module private Private =
             | _ -> false
 
         instructions
+        |> Seq.rev
         |> Seq.choose ^ fun instruction -> 
-            match instruction.OpCode with
-            | op when op = OpCodes.Ldstr 
-                && instruction.Next <> null 
-                && isTranslationCall instruction.Next
-                -> Some ^ string instruction.Operand
-            | _ -> None
+            let prevInst = instruction.Previous
+            if isTranslationCall instruction && prevInst <> null then
+                match prevInst.OpCode with
+                | op when op = OpCodes.Ldstr 
+                    -> Some ^ Ok ^ string prevInst.Operand
+                | _ -> Some ^ Error NoStringBeforeInvocationOfT
+            else None
 
-let private logicalContext (typeDefinition: TypeDefinition) : LogicalContext =
+    let logicalContext (typeDefinition: TypeDefinition) : LogicalContext =
 
-    let rec buildContext (typeDefinition: TypeDefinition) (soFar: string list) = 
+        let rec buildContext (typeDefinition: TypeDefinition) (soFar: string list) = 
 
-        let isCompilerGenerated = 
-            typeDefinition.HasCustomAttributes 
-            && (typeDefinition.CustomAttributes 
-                |> Seq.exists ^ fun attr -> attr.AttributeType.Name = "CompilerGeneratedAttribute")
+            let isCompilerGenerated = 
+                typeDefinition.HasCustomAttributes 
+                && (typeDefinition.CustomAttributes 
+                    |> Seq.exists ^ fun attr -> attr.AttributeType.Name = "CompilerGeneratedAttribute")
         
-        let soFar = 
-            if isCompilerGenerated
-            then soFar
-            else typeDefinition.Name :: soFar
+            let soFar = 
+                if isCompilerGenerated
+                then soFar
+                else typeDefinition.Name :: soFar
             
-        match typeDefinition.DeclaringType with
-        | null -> typeDefinition.Namespace :: soFar
-        | dt -> buildContext dt soFar
+            match typeDefinition.DeclaringType with
+            | null -> typeDefinition.Namespace :: soFar
+            | dt -> buildContext dt soFar
 
-    buildContext typeDefinition []
-    |> String.concat "."
-    |> LogicalContext
+        buildContext typeDefinition []
+        |> String.concat "."
+        |> LogicalContext
 
-let extract (path: Path) : OriginalStrings = 
+    let physicalContext (methodDefinition: MethodDefinition) : PhysicalContext option =
+        let body = methodDefinition.Body
+        if  methodDefinition.DebugInformation <> null
+            && methodDefinition.DebugInformation.HasSequencePoints
+            && body.Instructions.Count > 0 
+            && body.Instructions.[0] <> null then
+            let sp = methodDefinition.DebugInformation.GetSequencePoint(body.Instructions.[0])
+            if sp <> null && sp.Document <> null then
+                Some ^ PhysicalContext sp.Document.Url
+            else 
+                None
+        else None
 
-    let assemblyDefinition = AssemblyDefinition.ReadAssembly(string path)
+    let errorContext (methodDefinition: MethodDefinition) : ExtractionContext = {
+        Logical = logicalContext methodDefinition.DeclaringType
+        Physical = physicalContext methodDefinition
+    }
 
-    let rec extractFromType (typeDefinition: TypeDefinition) : (string * LogicalContext) seq = seq {
+let extract (path: Path) : OriginalStrings * ExtractionErrors = 
+
+    let assemblyDefinition = 
+        AssemblyDefinition.ReadAssembly(
+            string path, ReaderParameters(ReadSymbols = true))
+
+    let rec extractFromType 
+        (typeDefinition: TypeDefinition) 
+        : (Result<string, ExtractionError> * ExtractionContext) seq = seq {
         yield!
             typeDefinition.NestedTypes
             |> Seq.collect ^ fun nestedTypeDefinition ->
@@ -71,21 +128,38 @@ let extract (path: Path) : OriginalStrings =
             |> Seq.collect ^ fun methodDefinition ->
                 let body = methodDefinition.Body
                 // body may be null for abstract / interface methods.
-                if body <> null then
-                    let context = logicalContext typeDefinition
-                    body.Instructions 
-                    |> extractFromInstructions
-                    |> Seq.map ^ fun str -> str, context
-                else
-                    Seq.empty
+                if body = null then Seq.empty else
+                let errorContext = errorContext methodDefinition
+                body.Instructions 
+                |> extractFromInstructions
+                |> Seq.map ^ fun result -> result, errorContext
     }
 
-    assemblyDefinition.Modules
-    |> Seq.collect ^ fun moduleDefinition ->
-        moduleDefinition.Types
-        |> Seq.collect extractFromType
-    |> Seq.mapSnd List.singleton
-    |> OriginalStrings.create
+    let stringsAndErrors = 
+        assemblyDefinition.Modules
+        |> Seq.collect ^ fun moduleDefinition ->
+            moduleDefinition.Types
+            |> Seq.collect extractFromType
+            |> Seq.toList
+        |> Seq.toList
+
+    let strings =
+        stringsAndErrors
+        |> List.choose ^ fun (r, context) ->
+                match r with
+                | Ok(str) -> Some (str, List.singleton context.Logical)
+                | Error _ -> None
+
+
+    let errors =
+        stringsAndErrors
+        |> List.choose ^ fun (r, context) ->
+                match r with
+                | Error(err) -> Some (err, context)
+                | Ok _ -> None
+
+    strings |> OriginalStrings.create,
+    errors
 
     
 
