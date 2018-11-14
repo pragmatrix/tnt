@@ -15,3 +15,4 @@ nuget FunToolbox
 nuget System.Json
 nuget Chiron
 nuget Google.Cloud.Translation.V2
+nuget Microsoft.AspNetCore.Server.Kestrel
