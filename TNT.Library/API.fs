@@ -320,7 +320,7 @@ module internal ShowHelper =
 
         match translationsWithWarnings with
         | [] -> 
-            yield I ^ "No Warnings"
+            yield I ^ "No warnings"
         | translations ->
             for language, records in translations do
                 yield I ^ sprintf "%s warnings:" language.Formatted
