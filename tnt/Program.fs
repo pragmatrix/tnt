@@ -190,6 +190,9 @@ let dispatch (command: obj) =
             |> Seq.toList
             |> Select
 
+        if selector = Select [] then
+            failwith "No languages selected, use -l or --all to select one or more languages."
+
         let exportPath = 
             opts.To 
             |> Option.ofObj 
@@ -246,6 +249,9 @@ let dispatch (command: obj) =
             |> Seq.map resolveLanguage 
             |> Seq.toList
             |> Select
+
+        if selector = Select [] then
+            failwith "No languages selected, use -l or --all to select one or more languages."
 
         API.translate selector
 
