@@ -328,7 +328,7 @@ module internal ShowHelper =
                     let warningProperties = 
                         warnings 
                         |> List.map ^ fun warning ->
-                            Format.prop "warning" (string warning)
+                            Format.group (string warning) []
                     do! printProperties 1 (warningProperties)
                     do! printProperties 2 (TranslationRecord.format record)
 
