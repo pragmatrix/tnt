@@ -323,7 +323,7 @@ module internal ShowHelper =
             yield I ^ "No Warnings"
         | translations ->
             for language, records in translations do
-                yield I ^ sprintf "%s Warnings:" language.Formatted
+                yield I ^ sprintf "%s warnings:" language.Formatted
                 for record, warnings in records do
                     let warningProperties = 
                         warnings 
