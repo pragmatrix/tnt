@@ -183,7 +183,8 @@ let export
             let path = exportDirectory |> ARPath.extend ^ RelativePath (string filename)
             let file = ImportExport.export project sources.Language translation
             path, XLIFF.generateV12 profile [file]
-
+        |> Seq.toList
+    
     let rooted = ARPath.at ^ Directory.current()
 
     let existingOnes = 
