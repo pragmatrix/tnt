@@ -273,16 +273,14 @@ module internal ShowHelper =
             |> Seq.filter recordFilter
             |> Seq.map ^ fun r -> r.Original, r.Contexts
             |> OriginalStrings.create
-            |> OriginalStrings.format
-            |> List.toArray
 
-        match filteredOriginalStrings with
-        | [||] ->
+        match OriginalStrings.strings filteredOriginalStrings with
+        | [] ->
             yield I ^ sprintf "No %s" context
             return Ok()
         | strings ->
             yield I ^ sprintf "%d %s:" strings.Length context
-            do! printIndentedStrings 1 strings
+            do! printIndentedStrings 1 ^ OriginalStrings.format filteredOriginalStrings
             return Ok()
     }
 
