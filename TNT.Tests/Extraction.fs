@@ -18,7 +18,8 @@ type Interface =
 [<Fact>]
 let ``extract from FSharp``() =
     let path = Directory.current() |> Path.extend "TNT.Tests.dll"
-    let strings, _ = extract path
+    let strings, warnings = extract path
+    printfn "Warnings:\n%A" warnings
     strings 
     |> OriginalStrings.strings 
     |> List.map fst 
@@ -27,11 +28,14 @@ let ``extract from FSharp``() =
 [<Fact>]
 let ``extract from CSharp``() = 
     let path = Directory.current() |> Path.extend "TNT.Tests.CSharp.dll"
-    let strings, _ = extract path
+    let strings, warnings = extract path
+    printfn "Warnings:\n%A" warnings
     strings 
     |> OriginalStrings.strings 
     |> should equal 
         [
+            "explicit", [ LogicalContext "TNT.Tests.CSharp.Explicit" ]
+            "explicit2", [ LogicalContext "TNT.Tests.CSharp.Explicit" ]
             "original", [ LogicalContext "TNT.Tests.CSharp.TranslateableTextClass" ]
             "originalCG", [ LogicalContext "TNT.Tests.CSharp" ]
         ]

@@ -23,4 +23,12 @@ namespace TNT.Tests.CSharp
             return ("" + new Random().Next()).t();
         }
     }
+
+    public class Explicit
+    {
+        public static readonly string TranslateMe = "explicit".t("en");
+
+        public static readonly string Language = "en";
+        public static readonly string TranslateMe2 = "explicit2".t(Language + "-US");
+    }
 }

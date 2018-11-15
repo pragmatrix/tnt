@@ -51,10 +51,92 @@ module ExtractionErrors =
 module internal Helper = 
 
     let TFunctions = [|
-        "System.String TNT.Extensions::t(System.String)"
-        "System.String TNT.FSharp.Extensions::String.get_t(System.String)"
+        "System.String TNT.Extensions::t(System.String)", 1
+        "System.String TNT.Extensions::t(System.String,System.String)", 2
+        "System.String TNT.FSharp.Extensions::String.get_t(System.String)", 1
     |]
 
+    // https://github.com/jbevain/cecil/blob/eea822cad4b6f320c9e1da642fcbc0c129b00a6e/Mono.Cecil.Cil/CodeWriter.cs#L437
+
+    type IMethodSignature with
+        member this.HasImplicitThis() = this.HasThis && not this.ExplicitThis
+
+    let tryComputeStackDelta (instruction: Instruction) : int option =
+        match instruction.OpCode.FlowControl with
+        | FlowControl.Call ->
+            let method = instruction.Operand :?> IMethodSignature;
+            Seq.sum ^ seq {
+                // pop 'this' argument
+                if method.HasImplicitThis() && instruction.OpCode.Code <> Code.Newobj then
+                    yield -1
+                // pop normal arguments
+                if method.HasParameters then
+                    yield -method.Parameters.Count;
+                // pop function pointer
+                if instruction.OpCode.Code = Code.Calli then
+                    yield -1
+                // push return value
+                if method.ReturnType.MetadataType <> MetadataType.Void || instruction.OpCode.Code = Code.Newobj then
+                    yield 1
+            }
+            |> Some
+        | _ -> 
+        
+        let popDelta = 
+            match instruction.OpCode.StackBehaviourPop with
+            | StackBehaviour.Popi
+            | StackBehaviour.Popref
+            | StackBehaviour.Pop1 -> Some -1
+            | StackBehaviour.Pop1_pop1
+            | StackBehaviour.Popi_pop1
+            | StackBehaviour.Popi_popi
+            | StackBehaviour.Popi_popi8
+            | StackBehaviour.Popi_popr4
+            | StackBehaviour.Popi_popr8
+            | StackBehaviour.Popref_pop1
+            | StackBehaviour.Popref_popi -> Some -2
+            | StackBehaviour.Popi_popi_popi
+            | StackBehaviour.Popref_popi_popi
+            | StackBehaviour.Popref_popi_popi8
+            | StackBehaviour.Popref_popi_popr4
+            | StackBehaviour.Popref_popi_popr8
+            | StackBehaviour.Popref_popi_popref -> Some -3
+            | StackBehaviour.PopAll -> None
+            | _ -> Some 0
+        
+        match popDelta with
+        | None -> None
+        | Some popDelta ->
+
+        let pushDelta = 
+            match instruction.OpCode.StackBehaviourPush with
+            | StackBehaviour.Push1
+            | StackBehaviour.Pushi
+            | StackBehaviour.Pushi8
+            | StackBehaviour.Pushr4
+            | StackBehaviour.Pushr8
+            | StackBehaviour.Pushref -> Some 1
+            | StackBehaviour.Push1_push1 -> Some 2
+            | _ -> None
+
+        pushDelta |> Option.map ((+) popDelta)
+
+    /// Try to find the instruction that pushes the argument number (one based)
+    /// on the stack.
+    let tryLocateArgumentPushInstruction (arg: int) (callInstruction: Instruction) : Instruction option =
+        
+        if callInstruction.Previous = null 
+        then None else
+
+        let rec find (instruction: Instruction) (delta: int) = 
+            match tryComputeStackDelta instruction with
+            | Some d when delta + d = arg 
+                -> Some instruction
+            | Some d when instruction.Previous <> null 
+                -> find (instruction.Previous) (delta + d)
+            | _ -> None
+
+        find callInstruction.Previous 0
 
     let resolvePhysicalLocation 
         (methodDefinition: MethodDefinition) 
@@ -81,19 +163,19 @@ module internal Helper =
             | op when op = OpCodes.Call -> 
                 match instruction.Operand with
                 | :? MethodReference as md ->
-                    TFunctions |> Array.contains md.FullName
-                | _ -> false
-            | _ -> false
+                    TFunctions
+                    |> Array.tryFind (fst >> (=) md.FullName) 
+                    |> Option.map ^ T2.mapFst ^ fun _ -> instruction
+                | _ -> None
+            | _ -> None
 
         instructions
-        |> Seq.rev
-        |> Seq.filter ^ fun inst -> inst.Previous <> null && isTranslationCall inst
-        |> Seq.map ^ fun instruction -> 
-            let prevInst = instruction.Previous
-            let physicalLocation = resolvePhysicalLocation methodDefinition instruction
-            match prevInst.OpCode with
-            | op when op = OpCodes.Ldstr 
-                -> Ok ^ string prevInst.Operand, physicalLocation
+        |> Seq.choose ^ isTranslationCall
+        |> Seq.map ^ fun (callInstruction, arg) -> 
+            let physicalLocation = resolvePhysicalLocation methodDefinition callInstruction
+            match tryLocateArgumentPushInstruction arg callInstruction with
+            | Some inst when inst.OpCode = OpCodes.Ldstr 
+                -> Ok ^ string inst.Operand, physicalLocation
             | _ -> Error NoStringBeforeInvocationOfT, physicalLocation
 
     let logicalContext (typeDefinition: TypeDefinition) : LogicalContext =
