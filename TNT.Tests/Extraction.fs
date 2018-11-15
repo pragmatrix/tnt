@@ -32,13 +32,13 @@ let ``extract from CSharp``() =
     printfn "Warnings:\n%A" warnings
     strings 
     |> OriginalStrings.strings 
-    |> should equal 
-        [
-            "explicit", [ LogicalContext "TNT.Tests.CSharp.Explicit" ]
-            "explicit2", [ LogicalContext "TNT.Tests.CSharp.Explicit" ]
-            "original", [ LogicalContext "TNT.Tests.CSharp.TranslateableTextClass" ]
-            "originalCG", [ LogicalContext "TNT.Tests.CSharp" ]
-        ]
+    |> should equal [
+        "Formattable {0}", [ LogicalContext "TNT.Tests.CSharp.FormattableString" ]
+        "explicit", [ LogicalContext "TNT.Tests.CSharp.Explicit" ]
+        "explicit2", [ LogicalContext "TNT.Tests.CSharp.Explicit" ]
+        "original", [ LogicalContext "TNT.Tests.CSharp.TranslateableTextClass" ]
+        "originalCG", [ LogicalContext "TNT.Tests.CSharp" ]
+    ]
 
 [<Fact>]
 let ``extraction may cause errors and retrieves a physical context``() = 

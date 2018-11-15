@@ -1,5 +1,5 @@
 /// With Mono.Cecil we extract strings from assemblies that are 
-/// marked with functions in TNT.CSharp or TNT.FSharp.
+/// marked with functions in TNT.T.
 module TNT.Library.StringExtractor
 
 open FunToolbox.FileSystem
@@ -7,13 +7,15 @@ open Mono.Cecil
 open Mono.Cecil.Cil
 open TNT.Model
 
-[<Struct>]
 type ExtractionError = 
-    | NoStringBeforeInvocationOfT
+    | ExpectCallTo of string
+    | NoStringAtArgumentBefore of string
     override this.ToString() =
         match this with
-        | NoStringBeforeInvocationOfT -> 
-            "Failed to extract the string before .t(), please be sure that the string is a literal"
+        | ExpectCallTo name ->
+            sprintf "Failed to find a call to %s" name
+        | NoStringAtArgumentBefore name -> 
+            sprintf "Failed to extract the string before a call to %s, please be sure that the string is a literal" name
 
 [<Struct>]
 type PhysicalLocation = 
@@ -50,10 +52,19 @@ module ExtractionErrors =
 [<AutoOpen>]
 module internal Helper = 
 
+    type Command = 
+        | ExtractArgAt of int
+        | MatchCall of arg:int * name:string * Command
+
     let TFunctions = [|
-        "System.String TNT.Extensions::t(System.String)", 1
-        "System.String TNT.Extensions::t(System.String,System.String)", 2
-        "System.String TNT.FSharp.Extensions::String.get_t(System.String)", 1
+        "System.String TNT.T::t(System.String)", 
+            ExtractArgAt 1
+        "System.String TNT.T::t(System.String,System.String)", 
+            ExtractArgAt 2
+        "System.String TNT.T::t(System.FormattableString)", 
+            MatchCall (1, "System.FormattableString System.Runtime.CompilerServices.FormattableStringFactory::Create(System.String,System.Object[])",
+                ExtractArgAt 2)
+        "System.String TNT.FSharp.Extensions::String.get_t(System.String)", ExtractArgAt 1
     |]
 
     // https://github.com/jbevain/cecil/blob/eea822cad4b6f320c9e1da642fcbc0c129b00a6e/Mono.Cecil.Cil/CodeWriter.cs#L437
@@ -61,25 +72,33 @@ module internal Helper =
     type IMethodSignature with
         member this.HasImplicitThis() = this.HasThis && not this.ExplicitThis
 
-    let tryComputeStackDelta (instruction: Instruction) : int option =
+    // Try to compute the stack delta that consists of a pop part and push part. The pop part
+    // is a negative number that counts the elements that were popped from the stack.
+    // The push part is a posive number counting the elements that were pushed on the stack.
+
+    let tryComputeStackDelta (instruction: Instruction) : (int * int) option =
         match instruction.OpCode.FlowControl with
         | FlowControl.Call ->
             let method = instruction.Operand :?> IMethodSignature;
-            Seq.sum ^ seq {
+            seq {
                 // pop 'this' argument
                 if method.HasImplicitThis() && instruction.OpCode.Code <> Code.Newobj then
-                    yield -1
+                    yield -1, 0
                 // pop normal arguments
                 if method.HasParameters then
-                    yield -method.Parameters.Count;
+                    yield -method.Parameters.Count, 0
                 // pop function pointer
                 if instruction.OpCode.Code = Code.Calli then
-                    yield -1
+                    yield -1, 0
                 // push return value
                 if method.ReturnType.MetadataType <> MetadataType.Void || instruction.OpCode.Code = Code.Newobj then
-                    yield 1
+                    yield 0, 1
             }
+            |> Seq.fold 
+                (fun (pop, push) (pop', push') -> pop + pop', push + push')
+                (0,0)
             |> Some
+
         | _ -> 
         
         let popDelta = 
@@ -115,11 +134,11 @@ module internal Helper =
             | StackBehaviour.Pushi8
             | StackBehaviour.Pushr4
             | StackBehaviour.Pushr8
-            | StackBehaviour.Pushref -> Some 1
-            | StackBehaviour.Push1_push1 -> Some 2
-            | _ -> None
+            | StackBehaviour.Pushref -> 1
+            | StackBehaviour.Push1_push1 -> 2
+            | _ -> 0
 
-        pushDelta |> Option.map ((+) popDelta)
+        Some (popDelta, pushDelta)
 
     /// Try to find the instruction that pushes the argument number (one based)
     /// on the stack.
@@ -130,10 +149,10 @@ module internal Helper =
 
         let rec find (instruction: Instruction) (delta: int) = 
             match tryComputeStackDelta instruction with
-            | Some d when delta + d = arg 
+            | Some (_, push) when delta + push = arg 
                 -> Some instruction
-            | Some d when instruction.Previous <> null 
-                -> find (instruction.Previous) (delta + d)
+            | Some (pop, push) when instruction.Previous <> null 
+                -> find (instruction.Previous) (delta + pop + push)
             | _ -> None
 
         find callInstruction.Previous 0
@@ -153,30 +172,46 @@ module internal Helper =
                 PhysicalLocation(sp.Document.Url, (sp.StartLine, sp.StartColumn))
         | _ -> None
 
+    let inline (|CallToMethod|_|) (instruction: Instruction) : MethodReference option = 
+        match instruction.OpCode with
+        | op when op = OpCodes.Call ->
+            match instruction.Operand with
+            | :? MethodReference as md -> Some md
+            | _ -> None
+        | _ -> None
+        
     let extractFromInstructions 
         (methodDefinition: MethodDefinition)
         (instructions : Instruction seq) 
         : (Result<string, ExtractionError> * PhysicalLocation option) seq = 
 
         let isTranslationCall (instruction: Instruction) = 
-            match instruction.OpCode with
-            | op when op = OpCodes.Call -> 
-                match instruction.Operand with
-                | :? MethodReference as md ->
-                    TFunctions
-                    |> Array.tryFind (fst >> (=) md.FullName) 
-                    |> Option.map ^ T2.mapFst ^ fun _ -> instruction
-                | _ -> None
+            match instruction with
+            | CallToMethod md ->
+                TFunctions
+                |> Array.tryFind (fst >> (=) md.FullName) 
+                |> Option.map ^ T2.mapFst ^ fun name -> instruction, name
             | _ -> None
 
         instructions
         |> Seq.choose ^ isTranslationCall
-        |> Seq.map ^ fun (callInstruction, arg) -> 
+        |> Seq.map ^ fun ((callInstruction, name), command) -> 
             let physicalLocation = resolvePhysicalLocation methodDefinition callInstruction
-            match tryLocateArgumentPushInstruction arg callInstruction with
-            | Some inst when inst.OpCode = OpCodes.Ldstr 
-                -> Ok ^ string inst.Operand, physicalLocation
-            | _ -> Error NoStringBeforeInvocationOfT, physicalLocation
+            
+            let rec interpret (callInstruction, name) = function
+                | ExtractArgAt arg ->
+                    match tryLocateArgumentPushInstruction arg callInstruction with
+                    | Some inst when inst.OpCode = OpCodes.Ldstr 
+                        -> Ok ^ string inst.Operand
+                    | _ -> Error ^ NoStringAtArgumentBefore name
+                | MatchCall (arg, name, command) ->
+                    match tryLocateArgumentPushInstruction arg callInstruction with
+                    | Some ((CallToMethod md) as inst) when md.FullName = name
+                        -> interpret (inst, name) command
+                    | _ -> Error ^ ExpectCallTo name
+
+            interpret (callInstruction, name) command, physicalLocation
+
 
     let logicalContext (typeDefinition: TypeDefinition) : LogicalContext =
 

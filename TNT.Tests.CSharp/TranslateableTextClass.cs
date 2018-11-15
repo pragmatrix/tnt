@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
+using static TNT.T;
 
 namespace TNT.Tests.CSharp
 {
@@ -31,4 +32,11 @@ namespace TNT.Tests.CSharp
         public static readonly string Language = "en";
         public static readonly string TranslateMe2 = "explicit2".t(Language + "-US");
     }
+
+    public class FormattableString
+    {
+        public static readonly string String = "String";
+        public static readonly string TranslateMe = t($"Formattable {String}");
+    }
+
 }

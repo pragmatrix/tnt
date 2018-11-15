@@ -1,9 +1,10 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 
 namespace TNT
 {
-    public static class Extensions
+    public static class T
     {
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static string t(this string original)
@@ -39,5 +40,10 @@ namespace TNT
 
         static readonly object Section = new object();
         static readonly Dictionary<string, Dictionary<string, string>> SpecificTranslations = new Dictionary<string, Dictionary<string, string>>();
+
+        public static string t(FormattableString str)
+        {
+            return str.ToString();
+        }
     }
 }
