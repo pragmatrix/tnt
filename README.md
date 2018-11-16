@@ -233,11 +233,13 @@ The details `new` and `warnings` can be restricted to show information of specif
 
 ### Methods of Extraction
 
-`tnt` extracts strings that are marked with a function that also translate them. This is the `t()` function that is located in `TNT.T` static class. There are a number of different ways to mark strings for translation:
+`tnt` extracts strings that are marked with a function that also translates them. This is the `t()` function that is located in `TNT.T` static class. 
+
+There are a number of different ways to mark strings for translation:
 
 #### Simple Strings
 
-Constant and literal strings can be marked appending `.t()` to them. When the `t()` function is called, the string gets translated and returned. To use of `t()`, add `using TNT;` to the top of your C# source file.
+Constant and literal strings can be marked appending `.t()` to them. When the `t()` function is called, the string gets translated and returned. To use `t()`, add `using TNT;` to the top of your C# source file.
 
 Examples:
 
