@@ -111,6 +111,10 @@ Initializes the `.tnt/` directory in the current directory. This is always the f
 
 > `tnt init -l [language]` can be used to change the source language later on.
 
+Examples:
+
+`tnt init -l en-US` initializes `.tnt/` directory and sets the source language to `en-US`.
+
 #### `tnt add`
 
 Adds a new assembly to the list of sources, or a new language to the list of translations.
@@ -119,23 +123,27 @@ Adds a new assembly to the list of sources, or a new language to the list of tra
 
 `-l`, `--language` Adds a new target translation language.
 
+Examples:
+
+`tnt add -a bin/Release/netcoreapp2.1/MyAwesomApp.dll` adds the assembly to the list of sources.
+
 #### `tnt remove`
 
 Removes an assembly from the list of sources.
 
-`-a`, `--assembly` Removes an assembly. The argument provided may be the assemblies' name or a sub-path of the relative path of the assembly. As long the assembly can be identified unambiguously, it's going to be removed from the list of sources. Use `tnt status -v` to list all the sources that are currently registered.
+`-a`, `--assembly` Removes an assembly. The argument provided may be the assemblie's name or a sub-path of the assembly. As long the assembly can be identified unambiguously, it's going to be removed from the list of sources. Use `tnt status -v` to list all the sources that are currently registered.
 
-> Intentionally, `tnt` has no option for removing language files and requires you to delete the file with `rm` or your revision control's file delete method. To update the `.tnt-content/` directory use `tnt sync` after that.
+> Intentionally, `tnt` has no option for removing language files and requires you to delete the file with `rm` or your revision control's delete method. To update the `.tnt-content/` directory use `tnt sync` after that.
 
 #### `tnt extract`
 
-Extracts the strings from all sources. If a string is already listed in the translation file, nothing changes, if it's not a string with the state `new` will be added. 
+Extracts the strings from all sources. If a string is already listed in the translation file, nothing changes.
 
-All the strings that were previously listed in the translation files but were missing from the sources, will be get the state `unused`. 
+All the strings that were previously listed in the translation files but were from the sources a later time, will be set to the state `unused`. 
 
-> If strings reappear in the sources, for example by changing them back or readding a `.t()` to them, they change from the state `unused` to `needs-review`. 
+> If strings reappear in the sources, for example by changing them back or retagging them with a `.t()`, they will change from the state `unused` to `needs-review` indicating that they need further attention.
 >
-> To get rid of all `unused` strings, for example after all translations are finalized, use `tnt gc`. Also not that the translation files in `.tnt-content/` do not contain strings that are marked `unused`.
+> To get rid of all `unused` strings, for example after all translations are finalized, use `tnt gc`. Also note that the translation files in `.tnt-content/` do not provide strings marked `unused` to the application.
 
 #### `tnt gc`
 
@@ -149,11 +157,45 @@ Shows the status of all translations. See also [TranslationsStates](#Translation
 
 #### `tnt export`
 
+Export translations for use with a language translation tool.
+
+This command will export translations into one file per each language. The files are named after the project name and the language tag. Currently, the project name is defined as the current directory's name.
+
+`tnt export` will never overwrite any files. If files are already existing at the designated location's, `tnt` will print a warning and exit.
+
+Languages can be selected either by specifying `--all` or by naming them as arguments. Language names and tages are accepted.
+
+`--all` Select all existing languages to export. By default, no languages are exported.
+
+`--to` Specify the directory to where the files should be exported. The default is the current directory.
+
+`--for` Specify the tool that will used for editing the XLIFF files. Without `--for`, the XLIFF XML format is generated in a way that should be compatible with most XLIFF tools. `--for mat` will generate XLIFF that is compatible with the Multilingual App Toolkit.
+
+> The [Multilingual App Toolkit needs](https://multilingualapptoolkit.uservoice.com/forums/231158-general/suggestions/10172562-fix-crash-when-opening-xliff-file-without-group) the `<trans-unit>` elements to be surrounded with a `<group>` element, otherwise it will fail opening the files. 
+>
+> `tnt` supports this as an option, because other tools may fail if they encounter `<group>` elements.
+
+Examples:
+
+`tnt export German` exports an XILFF file named after the current directory and the language to the current directory.
+
+`tnt export en` exports all translations that begin with `en`.
+
+`tnt export --all --for mat` exports all translations for the use with the Multilingual App Toolkit.
+
 #### `tnt import`
+
+Imports XLIFF files.
 
 #### `tnt translate`
 
+Translates new strings.
+
 #### `tnt sync`
+
+Regenerates the `.tnt-content/` directory and its files. Usually `tnt` automatically takes care of updating the final translation files, but in case of errors or if the `.tnt-content/` does not exist at all, it may be useful to be sure that the final translations match the translations in the `.tnt/` directory.
+
+> If you decide not to check in the `.tnt-content/` directory, `tnt sync` should be part of your build process.
 
 #### `tnt show`
 
