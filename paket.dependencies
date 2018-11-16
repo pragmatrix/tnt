@@ -1,4 +1,4 @@
-version 5.188.1
+version 5.189.0
 
 source https://www.nuget.org/api/v2/
 source https://www.myget.org/F/pragmatrix/api/v3/index.json
