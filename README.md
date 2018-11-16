@@ -270,7 +270,7 @@ A translation state define the state of a single string's translation. In the tr
 
 - `new`, `n`  
   A string yet untranslated.
-- `needs-review`, `n`  
+- `needs-review`, `r`  
   Either machine translated, or imported from XLIFF indicating that a string is not final.
 - `final`, `f`  
   Strings imported from XLIFF that were marked "translated" or "final".
