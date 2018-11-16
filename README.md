@@ -40,29 +40,31 @@ All sources are listed in the `.tnt/sources.json` file and can be added by invok
 
 ### Language & Assembly Extraction
 
-`tnt` extracts tagged strings from .NET assemblies. For C#, each string that needs to be translated must appended with an extension method invocation `.t()` that does two things. First, it tags the string that comes before it, and second, `t()` translates the string if there is a suitable translation file available (I'll come to that later). 
+`tnt` extracts marked strings from .NET assemblies. For C#, each string that needs to be translated must appended with an extension method invocation `.t()` that does two things. First, it marks the string that comes before it, and second, `t()` translates the string if there is a suitable translation file available.
 
-To make the `.t()` function available to your projects, add the [TNT.T][TNT.T] NuGet package to your project and add a `using TNT;` on top of the files you wish to tag strings with. Lucky owners of Resharper may just type in `.t()` after a string and add the `using TNT;` by pressing ALT+Enter.
+> For more extraction options take a look at [Methods of Extraction](#methods-of-extraction).
 
-Before the extraction, you need to add at least one target language to the project. Add one, say "Spanisch" with `tnt add -l Spanish`. 
+To make the `.t()` function available to your projects, add the [TNT.T][TNT.T] NuGet package to your project and add a `using TNT;` on top of the files you wish to mark translatable strings with. Lucky owners of Resharper may just type in `.t()` after a string and add the `using TNT;` by pressing ALT+Enter. 
 
-> You can either use language names or language tags, if you are not sure what languages are supported, `tnt` can show you a list of all supported .NET language tags and language names with `tnt show languages`. 
+Before extracting, you need to add at least one target language to the project. Add one, say "Spanisch" with `tnt add -l Spanish`. 
 
-Now enter `tnt extract`. This command extracts the strings and creates the language files in `.tnt/translation-[tag].json`. `tnt` will show what's being done and will print a status for each translation file that.
+> You can use either language names or language tags. If you are not sure what languages are supported, use `tnt show languages` to show a list of all supported .NET language tags and language names.
 
-> The status output consists of the language's tag, its counters, its language name, and the filename of the translation file.
+Now enter `tnt extract`. This command extracts the strings and creates the language files in `.tnt/translation-[tag].json`. `tnt` will show what's being done and will output a status for each translation file.
 
-> Of particular interest are the counters, these count the states the individual strings are in. If you extracted, say 5 strings and haven't translated them yet, you'll see here a `[5n]`. Later counters for additional states will appear. If you are interested now, skip to [TranslationStates](#TranslationStates) for more information.
+> The status consists of the language's tag, its counters, its language name, and the filename of the translation file.
+
+> Of particular interest are the counters, these count the states the individual strings are in. If you extracted, say 5 strings and haven't translated them yet, you'll see here a `[5n]`. Later, counters for additional states will appear. If you are interested, [TranslationStates](#TranslationStates) explains all the states and counters.
 
 ### Translating Strings
 
-`tnt` itself does not support interactive translations [yet](https://github.com/pragmatrix/tnt/issues/46). Of course you can edit the translation files, but `tnt` can help you in two other ways:
+`tnt` itself does not support interactive translations [yet](https://github.com/pragmatrix/tnt/issues/46). Of course you can edit the translation files, but `tnt` can help you in other ways:
 
 #### Machine Translations
 
-First. `tnt` supports Google machine translations, which I do recommend as a starting point for every new translation. For the machine translation I tried, the results needed minimal changes and Google's API positioned .NET placeholders like `{0}` as expected. I don't know if your experience will be the same, but with `tnt translate` you can try your luck with Google Cloud Translation API.
+First. `tnt` supports Google machine translations, which I do recommend as a starting point for every new translation. For the machine translations I tried, the results needed minimal changes and Google's API positioned .NET placeholders like `{0}` as expected. I don't know if the experience will be the same for your translations, but with `tnt translate` you can try your luck with Google Cloud Translation API.
 
-> To use Google Cloud Translation API, follow the steps 1. to 3. in [Quickstart](https://cloud.google.com/translate/docs/quickstart), and then invoke `tnt translate`, which will machine translate all your new strings.
+> To use Google Cloud Translation API, follow the steps 1. to 3. in [Quickstart](https://cloud.google.com/translate/docs/quickstart), and then invoke `tnt translate` to translate all new strings.
 
 #### XLIFF Roundtrips
 
@@ -141,7 +143,7 @@ Extracts the strings from all sources. If a string is already listed in the tran
 
 All the strings that were previously listed in the translation files but were from the sources a later time, will be set to the state `unused`. 
 
-> If strings reappear in the sources, for example by changing them back or retagging them with a `.t()`, they will change from the state `unused` to `needs-review` indicating that they need further attention.
+> If strings reappear in the sources, for example by changing them back or marking them with a `.t()` again, they will change from the state `unused` to `needs-review` indicating the need for further attention.
 >
 > To get rid of all `unused` strings, for example after all translations are finalized, use `tnt gc`. Also note that the translation files in `.tnt-content/` do not provide strings marked `unused` to the application.
 
@@ -163,7 +165,7 @@ This command will export translations into one file per each language. The files
 
 `tnt export` will never overwrite any files. If files are already existing at the designated location's, `tnt` will print a warning and exit.
 
-Languages can be selected either by specifying `--all` or by naming them as arguments. Language names and tages are accepted.
+Languages can be selected either by specifying `--all` or by naming them as arguments. Language names and tags are accepted.
 
 `--all` Select all existing languages to export. By default, no languages are exported.
 
@@ -228,6 +230,39 @@ The details `new` and `warnings` can be restricted to show information of specif
 #### `tnt help`
 
 #### `tnt version`
+
+### Methods of Extraction
+
+`tnt` extracts strings that are marked with a function that also translate them. This is the `t()` function that is located in `TNT.T` static class. There are a number of different ways to mark strings for translation:
+
+#### Simple Strings
+
+Constant and literal strings can be marked appending `.t()` to them. When the `t()` function is called, the string gets translated and returned. To use of `t()`, add `using TNT;` to the top of your C# source file.
+
+Examples:
+
+`"Hello World".t()`
+
+`string.Format("Hello {0}".t(), userName)`
+
+#### String Interpolation
+
+C# 6 [introduced string interpolation](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/tokens/interpolated) by prefixing a string with `$`. To mark an interpolated string as translatable, the `t()` function is used, but - for technical reason - not as an extension method. Bringing the static `TNT.T` class into scope mitigates that:
+
+```csharp
+// bring the static t() method into scope.
+using static TNT.T;
+... 
+... t($"Hello {World}") ...
+```
+
+> Note that the extracted string will result into `Hello {0}` for the example above.
+
+#### Specific Translations
+
+If the target language should be decided ad-hoc by the application, the `t()` function can be invoked with an additional argument that specifies language tag. For example `"Hello".t("es")` will translate the string "Hello" to spanish if the translation is available.
+
+> Any extraction is done by scanning the IL code that is generated. If a `.t()` function is seen in the IL code an the extraction attempt fails, `tnt extract` will warn about that.
 
 ### TranslationStates
 
