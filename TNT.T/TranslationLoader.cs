@@ -22,11 +22,11 @@ namespace TNT
             var baseDirectory = GetEntryAssemblyDirectory();
             var translations =
                 languageTags
-                .Select(language => Path.Combine(baseDirectory, ".tnt-content/" + language + ".tnt"))
-                .Where(File.Exists)
-                .Select(path => File.ReadAllText(path, Encoding.UTF8))
-                .Select(JsonValue.Parse)
-                .SelectMany(GetTranslationPairs);
+                    .Select(language => Path.Combine(baseDirectory, ".tnt-content/" + language + ".tnt"))
+                    .Where(File.Exists)
+                    .Select(path => File.ReadAllText(path, Encoding.UTF8))
+                    .Select(JsonValue.Parse)
+                    .SelectMany(GetTranslationPairs);
 
             var table = new Dictionary<string, string>();
 
@@ -65,9 +65,10 @@ namespace TNT
 
         static (string, string)[] GetTranslationPairs(JsonValue value)
         {
-            return ((JsonArray)value)
-                    .Select(pair => ((string)pair[0], (string)pair[1]))
-                    .ToArray();
+            return ((JsonArray) value)
+                .Select(pair => ((string) pair[0], (string) pair[1]))
+                .ToArray();
         }
     }
 }
+
