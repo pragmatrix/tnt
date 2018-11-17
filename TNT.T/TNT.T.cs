@@ -41,8 +41,9 @@ namespace TNT
                 }
 
                 // no merging of languages supported for now.
-                SpecificTranslations[languageTag] = 
-                    TranslationLoader.LoadTranslation(new[] {languageTag});
+                SpecificTranslations.Add(
+                    languageTag, 
+                    TranslationLoader.LoadTranslation(new[] {languageTag}));
 
                 return t(original, languageTag);
             }
