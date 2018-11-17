@@ -43,7 +43,7 @@ namespace TNT
         }
 
         // https://stackoverflow.com/questions/52797/how-do-i-get-the-path-of-the-assembly-the-code-is-in
-        static string GetEntryAssemblyDirectory()
+        public static string GetEntryAssemblyDirectory()
         {
             var codeBase = Assembly.GetEntryAssembly().CodeBase;
             var uri = new UriBuilder(codeBase);
