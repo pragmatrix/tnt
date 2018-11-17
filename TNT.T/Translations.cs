@@ -7,16 +7,16 @@ namespace TNT
     public static class Translations
     {
         /// Returns language tags of the translations available.
-        public static string[] Available
+        public static readonly string[] Available = ResolveAvailableLanguages();
+
+        static string[] ResolveAvailableLanguages()
         {
-            get
-            {
-                var contentPath = Path.Combine(TranslationLoader.GetEntryAssemblyDirectory(), ".tnt-content");
-                return
-                    Directory.EnumerateFiles(contentPath, "*.tnt")
-                        .Select(Path.GetFileNameWithoutExtension)
-                        .ToArray();
-            }
+            var contentPath = Path.Combine(TranslationLoader.GetEntryAssemblyDirectory(), ".tnt-content");
+            return
+                Directory.EnumerateFiles(contentPath, "*.tnt")
+                    .Select(Path.GetFileNameWithoutExtension)
+                    .ToArray();
         }
     }
 }
+
