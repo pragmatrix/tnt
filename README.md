@@ -223,9 +223,9 @@ Shows the strings and their contexts that were found at more than one context.
 
 Shows the strings and their contexts that are in the state `needs-review` and have one or more verification warnings.
 
-The details `new` and `warnings` can be restricted to show information of specific translations only. Use `-l` or `--language` to restrict their scope. If no language is specified, all languages are considered.
+The details `new` and `warnings` can be restricted to show information of specific translations only. Use `-l` or `--language` to filter their output. If no language is specified, all languages are considered.
 
-> `unused` and `shared` depend on the extraction process only and do not directly relate to a specific language, so restricting their scope does not make sense.
+> The output of `unused` and `shared` depends on the extracted strings only and is therefore independent of the languages specified.
 
 #### `tnt help`
 
