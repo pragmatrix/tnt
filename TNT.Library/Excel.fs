@@ -75,9 +75,9 @@ let export (file: File) : Excel =
     Excel ^ ms.ToArray()
 
 let Exporter : Exporter<Excel> = 
-    let defaultExtension = ".xls"
+    let defaultExtension = ".xlsx"
     {
-        Extensions = [ ".xls" ]
+        Extensions = [ ".xlsx" ]
         DefaultExtension = defaultExtension
         FilenameForLanguage = fun projectName languageTag -> 
             Filename ^ (string projectName) + "-" + (string languageTag) + defaultExtension

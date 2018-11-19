@@ -43,6 +43,7 @@ module ExportFormat =
 
     let parse = function
         | "excel" 
+        | "xlsx"
         | "xls" -> Excel
         | "xliff" 
         | "xlf" -> XLIFF ^ XLIFF12
