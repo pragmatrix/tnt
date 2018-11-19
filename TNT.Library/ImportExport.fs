@@ -1,13 +1,15 @@
-﻿module TNT.Library.ImportExport
+﻿/// Format agnostic import & export implementation.
+module TNT.Library.ImportExport
 
 open TNT.Model
-open TNT.Library.XLIFF
+open TNT.Library
+open TNT.Library.ExportModel
 
 let [<Literal>] WarningPrefix = "Warning:"
 let [<Literal>] ContextPrefix = "Context:"
 
 /// Convert a translations to a file.
-let export (project: ProjectName) (sourceLanguage: LanguageTag) (translation: Translation)  : File =
+let export (project: ProjectName) (sourceLanguage: LanguageTag) (translation: Translation) : File =
 
     let toUnit (record: TranslationRecord) =
 
@@ -42,7 +44,7 @@ let export (project: ProjectName) (sourceLanguage: LanguageTag) (translation: Tr
         }
 
     let toFile (translation: Translation) = {
-        Name = string project
+        ProjectName = project
         SourceLanguage = sourceLanguage
         TargetLanguage = translation.Language
         TranslationUnits = translation.Records |> List.choose toUnit
@@ -114,14 +116,17 @@ type ImportWarning =
             -> sprintf "%s ignored translation to state new, even though it wasn't new anymore: '%s'" language.Formatted (limitText record.Original)
             
 /// Import a number of translations and return the translations that changed.
-let import (project: ProjectName) (translations: Translation list) (files: File list) 
+let import 
+    (project: ProjectName) 
+    (translations: Translation list) 
+    (files: File list) 
     : Translation list * ImportWarning list =
 
-    // find files that does not belong to us.
+    // find files that do not belong to the current project.
 
     let mismatchedNames = 
         files 
-        |> Seq.map ^ fun file -> ProjectName file.Name
+        |> Seq.map ^ fun file -> file.ProjectName
         |> Seq.filter ^ (<>) project
         |> Seq.toList
 

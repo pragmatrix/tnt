@@ -1,7 +1,7 @@
 ﻿module TNT.Tests.ImportExport
 
 open TNT.Library
-open TNT.Library.XLIFF
+open TNT.Library.ExportModel
 open TNT.Library.ImportExport
 open TNT.Model
 open FsUnit.Xunit
@@ -14,7 +14,7 @@ let inline dump v =
 let project = ProjectName("project")
 
 let file lang units = {
-    Name = string project
+    ProjectName = project
     SourceLanguage = LanguageTag "en-US"
     TargetLanguage = LanguageTag lang
     TranslationUnits = units 

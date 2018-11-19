@@ -14,6 +14,7 @@
     <Compile Include="Sources.fs" />
     <Compile Include="Verification.fs" />
     <Compile Include="Translation.fs" />
+    <Compile Include="ExportModel.fs" />
     <Compile Include="XLIFF.fs" />
     <Compile Include="ImportExport.fs" />
     <Compile Include="FileSystem.fs" />

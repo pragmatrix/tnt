@@ -1,10 +1,11 @@
 ﻿/// XLIFF export and import
 module TNT.Library.XLIFF
 
-open TNT.Model
 open System.Xml.Linq
 open System.Security.Cryptography
 open System.Xml
+open TNT.Model
+open TNT.Library.ExportModel
 
 type ExportProfile =
     | Generic
@@ -19,44 +20,6 @@ module ExportProfile =
         | "generic" -> Generic
         | "mat" -> MultilingualAppToolkit
         | unexpected -> failwithf "unexpected XLIFF tool profile name: '%s'" unexpected
-
-/// The state of a translation. 
-/// Note: Multilingual app toolkit supports 
-/// "new", "need-review-translation", "translated", and "final".
-type TargetState = 
-    | New
-    | NeedsReview
-    | Translated
-    | Final
-    override this.ToString() = 
-        match this with
-        | New -> "new"
-        | NeedsReview -> "needs-review-translation"
-        | Translated -> "translated"
-        | Final -> "final"
-
-module TargetState = 
-    
-    let tryParse = function
-        | "new" -> Ok New
-        | "needs-review-translation" -> Ok NeedsReview
-        | "translated" -> Ok Translated
-        | "final" -> Ok Final
-        | str  -> Error str
-
-type TranslationUnit = {
-    Source: string
-    Target: string
-    State: TargetState
-    Notes: string list
-}
-
-type File = {
-    Name: string
-    SourceLanguage: LanguageTag
-    TargetLanguage: LanguageTag
-    TranslationUnits: TranslationUnit list
-}
 
 type XLIFFV12 = 
     | XLIFFV12 of string
@@ -104,7 +67,7 @@ let generateV12 (profile: ExportProfile) (files: File list) : XLIFFV12 =
         yield a "version" Version
         for file in files -> e "file" [
             yield! l [
-                a "original" (string file.Name)
+                a "original" (string file.ProjectName)
                 a "source-language" (string file.SourceLanguage)
                 a "target-language" (string file.TargetLanguage)
                 a "datatype" SourceFileDatatype
@@ -130,7 +93,7 @@ let generateV12 (profile: ExportProfile) (files: File list) : XLIFFV12 =
                     // Although optional, Multilingual App Toolkit for Windows requires <group> for loading
                     // _and_ the id attribute for saving the xliff properly.
                     yield e "group" [
-                        yield a "id" (Hash.ofString ^ string file.Name)
+                        yield a "id" (Hash.ofString ^ string file.ProjectName)
                         yield! units
                     ]
                 else
@@ -197,6 +160,7 @@ let parseV12 (XLIFFV12 xliff) : File list =
     let parseFile (file: XElement) =
         let name = 
             file.getValue "original"
+            |> ProjectName
         
         let sourceLanguage = 
             file.getValue "source-language"
@@ -236,7 +200,7 @@ let parseV12 (XLIFFV12 xliff) : File list =
 
         {
             SourceLanguage = sourceLanguage
-            Name = name
+            ProjectName = name
             TargetLanguage = targetLanguage
             TranslationUnits = units
         }

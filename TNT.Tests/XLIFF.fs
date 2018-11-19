@@ -2,9 +2,10 @@
 
 open System.Text
 open FunToolbox.FileSystem
-open TNT.Library
-open TNT.Library.XLIFF
 open TNT.Model
+open TNT.Library
+open TNT.Library.ExportModel
+open TNT.Library.XLIFF
 open FsUnit.Xunit
 open Xunit
 
@@ -64,7 +65,7 @@ let ``imports XLIFF``() =
     let parsed = parseV12 xliff
     parsed 
     |> should equal [ {
-        Name = string projectName
+        ProjectName = projectName
         SourceLanguage = sourceLanguage
         TargetLanguage = LanguageTag "de-DE"
         TranslationUnits = [ {
