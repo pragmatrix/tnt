@@ -1,25 +1,29 @@
 ﻿/// XLIFF export and import
 module TNT.Library.XLIFF
 
+open System.IO
+open System.Text
+open System.Xml
 open System.Xml.Linq
 open System.Security.Cryptography
-open System.Xml
+open FunToolbox.FileSystem
 open TNT.Model
 open TNT.Library.ExportModel
 
-type ExportProfile =
-    | Generic
-    | MultilingualAppToolkit
-    member this.RequiresGroups = 
-        match this with
-        | Generic -> false
-        | MultilingualAppToolkit -> true
+// Tag related to XLIFF
+[<Struct>]
+type XLIFF = XLIFF
 
-module ExportProfile =
-    let parse = function
-        | "generic" -> Generic
-        | "mat" -> MultilingualAppToolkit
-        | unexpected -> failwithf "unexpected XLIFF tool profile name: '%s'" unexpected
+/// The supported for XLIFF files. The first one ".xlf" is the default extension
+/// used in the exporting process.
+let Extensions = [ ".xlf"; ".xliff" ]
+let DefaultExtension = Extensions |> List.head
+
+// VisualStudio uses the dot extension to separate the identifier from the base name.
+let [<Literal>] IdentifierSeparator = "."
+
+let defaultFilenameForLanguage (project: ProjectName) (LanguageTag(identifier)) : XLIFF filename =
+    Filename ^ string project + IdentifierSeparator + identifier + DefaultExtension
 
 module TargetState = 
 
@@ -69,7 +73,7 @@ module private X =
     let name str = XName.op_Implicit str
 
 /// Generate XLIFF version 1.2
-let generateV12 (profile: ExportProfile) (files: File list) : XLIFFV12 =
+let generateV12 (format: XLIFFFormat) (files: File list) : XLIFFV12 =
 
     let en (name: string) (ns: string) (nested: obj list) = 
         XElement(X.ns ns + name, nested)
@@ -116,7 +120,7 @@ let generateV12 (profile: ExportProfile) (files: File list) : XLIFFV12 =
                     ]
                 ]
 
-                if profile.RequiresGroups then
+                if format.RequiresGroups then
                     // Although optional, Multilingual App Toolkit for Windows requires <group> for loading
                     // _and_ the id attribute for saving the xliff properly.
                     yield e "group" [
@@ -238,3 +242,30 @@ let parseV12 (XLIFFV12 xliff) : File list =
     |> Seq.map parseFile
     |> Seq.toList
     
+let exporter (format: XLIFFFormat) = {
+    Extensions = Extensions
+    DefaultExtension = DefaultExtension
+    FilenameForLanguage = defaultFilenameForLanguage
+    ExportToPath = fun path file ->
+        let (XLIFFV12 generated) = generateV12 format [file]
+        File.saveText Encoding.UTF8 generated path
+}
+
+let projectPatterns (project: ProjectName) : GlobPattern list =
+    Extensions
+    |> List.map ^ fun ext ->
+        GlobPattern(string project + "*" + ext)
+
+/// Returns ARPath of the file if the given path is most likely a XLIFF or XLF file.
+let properPath (path: string) : ARPath option = 
+    Extensions
+    |> Seq.tryFind path.endsWith
+    |> Option.map ^ fun _ -> ARPath.parse path
+        
+/// Get all the XLIFF files in the directory baseName.
+let filesInDirectory (directory: Path) (project: ProjectName) : XLIFF filename list =
+    projectPatterns project
+    |> Seq.collect ^ fun pattern ->
+        Directory.EnumerateFiles (string directory, string ^ pattern)
+    |> Seq.map (Path.parse >> Path.name >> Filename)
+    |> Seq.toList

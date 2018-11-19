@@ -2,6 +2,7 @@
 open TNT.Model
 open TNT.Library
 open TNT.Library.Output
+open TNT.Library.ExportModel
 open FunToolbox.FileSystem
 open CommandLine
 
@@ -71,7 +72,7 @@ type ExportOptions = {
     [<Option("to", HelpText = "The directory to export the XLIFF files to. Default is the current directory.")>]
     To: string
 
-    [<Option("for", HelpText = "Enable specific XLIFF tool support. --for mat enables support for the Multilingual App Toolkit.")>]
+    [<Option("format", HelpText = "Export format (default 'excel'). Use 'xliff' for an xliff version 1.2 editor, 'xliff-mat' for the Multilingual App Toolkit.")>]
     For: string
 }
 
@@ -202,8 +203,8 @@ let dispatch (command: obj) =
         let exportProfile = 
             opts.For
             |> Option.ofObj
-            |> Option.map XLIFF.ExportProfile.parse
-            |> Option.defaultValue XLIFF.Generic
+            |> Option.map ExportFormat.parse
+            |> Option.defaultValue ExportFormat.Excel
 
         API.export selector exportPath exportProfile
 
@@ -221,7 +222,7 @@ let dispatch (command: obj) =
 
         let files =
             if opts.All then
-                XLIFFFilenames.inDirectory importDirectory project
+                XLIFF.filesInDirectory importDirectory project
                 |> List.map ^ fun fn -> importDirectory |> Path.extendF fn
             else
             let resolveFile (filePathOrLanguage: string) = 

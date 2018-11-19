@@ -5,6 +5,7 @@ open System.Runtime.CompilerServices
 open FunToolbox.FileSystem
 open TNT.Model
 open TNT.Library
+open TNT.Library.ExportModel
 open TNT.Library.Output
 open TNT.Library.MachineTranslation
 open TNT.Library.APIHelper
@@ -167,22 +168,23 @@ let private selectTranslations (languages: LanguageTag selector) (translations: 
         Selector.isSelected translation.Language languages
         || Selector.isSelected translation.Language.Primary languages
 
-let export 
+let private exportWith
     (languages: LanguageTag selector)
-    (exportDirectory: ARPath) 
-    (profile: XLIFF.ExportProfile) =
+    (exportDirectory: ARPath)
+    (exporter: Exporter<'format>) =
     withSourcesAndGroup ^ fun sources group -> output {
 
     let project = projectName()
+
     let exports = 
         group
         |> TranslationGroup.translations
         |> selectTranslations languages
         |> Seq.map ^ fun translation ->
-            let filename = XLIFF.defaultFilenameForLanguage project translation.Language 
+            let filename = exporter.FilenameForLanguage project translation.Language 
             let path = exportDirectory |> ARPath.extend ^ RelativePath (string filename)
             let file = ImportExport.export project sources.Language translation
-            path, XLIFF.generateV12 profile [file]
+            path, file
         |> Seq.toList
     
     let rooted = ARPath.at ^ Directory.current()
@@ -202,10 +204,23 @@ let export
 
     for (file, content) in exports do
         yield I ^ sprintf "Exporting translation to '%s'" (string file)
-        File.saveText Encoding.UTF8 (string content) (rooted file)
+        content |> exporter.ExportToPath (rooted file)
 
     return Ok()
 }
+
+let export 
+    (languages: LanguageTag selector)
+    (exportDirectory: ARPath) 
+    (format: ExportFormat) =
+
+    let exportWith exporter = exportWith languages exportDirectory exporter
+
+    match format with
+    | XLIFF format -> 
+        exportWith ^ XLIFF.exporter format
+    | Excel -> 
+        exportWith Excel.Exporter
 
 let import (files: Path list) = withGroup ^ fun group -> output {
 
