@@ -29,6 +29,8 @@ let tu original translated state = {
     Source = original
     Target = translated
     State = state
+    Warnings = []
+    Contexts = []
     Notes = []
 }
 
@@ -172,7 +174,9 @@ let ``context get ignored and notes get overwritten by import``() =
         Source = "source"
         Target = "target"
         State = NeedsReview 
-        Notes = [ "Context:LC2"; "   Context: LC3 "; "Note 1"; "Note 2" ]
+        Warnings = []
+        Contexts = [ "LC2" ; "LC3" ]
+        Notes = [ "Note 1"; "Note 2" ]
     } ]
     
     import [currentTranslation] [importFile]

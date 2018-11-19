@@ -21,6 +21,21 @@ module ExportProfile =
         | "mat" -> MultilingualAppToolkit
         | unexpected -> failwithf "unexpected XLIFF tool profile name: '%s'" unexpected
 
+module TargetState = 
+
+    let toString = function
+        | New -> "new"
+        | NeedsReview -> "needs-review-translation"
+        | Translated -> "translated"
+        | Final -> "final"
+
+    let tryParse = function
+        | "new" -> Ok New
+        | "needs-review-translation" -> Ok NeedsReview
+        | "translated" -> Ok Translated
+        | "final" -> Ok Final
+        | str  -> Error str
+
 type XLIFFV12 = 
     | XLIFFV12 of string
     override this.ToString() = 
@@ -29,6 +44,13 @@ type XLIFFV12 =
 let [<Literal>] Version = "1.2"
 let [<Literal>] Namespace = "urn:oasis:names:tc:xliff:document:1.2"
 let [<Literal>] SourceFileDatatype = "x-net-assembly"
+let [<Literal>] WarningPrefix = "Warning:"
+let [<Literal>] ContextPrefix = "Context:"
+let IgnorableNotePrefixes = [| ContextPrefix; WarningPrefix |]
+
+let private canNoteBeIgnored (note: string) = 
+    IgnorableNotePrefixes 
+    |> Array.exists ^ fun prefix -> note.startsWith prefix
 
 module private Hash =
     open System.Text
@@ -81,10 +103,15 @@ let generateV12 (profile: ExportProfile) (files: File list) : XLIFFV12 =
                         yield preserveSpace
                         yield e "source" [ XText(unit.Source) ]
                         yield e "target" [
-                            a "state" (string unit.State) 
+                            a "state" (TargetState.toString unit.State) 
                             XText(unit.Target) 
                         ]
-                        for note in unit.Notes ->
+                        let allNotes = List.collect id [
+                            unit.Warnings |> List.map ^ fun str -> WarningPrefix + " " + str
+                            unit.Contexts |> List.map ^ fun str -> ContextPrefix + " " + str
+                            unit.Notes
+                        ]
+                        for note in allNotes ->
                             e "note" [ XText note ]
                     ]
                 ]
@@ -194,7 +221,9 @@ let parseV12 (XLIFFV12 xliff) : File list =
                         Source = source.Text
                         Target = target.Text
                         State = state
-                        Notes = notes
+                        Warnings = []
+                        Contexts = []
+                        Notes = notes |> List.filter (not << canNoteBeIgnored)
                     }
             |> Seq.toList
 

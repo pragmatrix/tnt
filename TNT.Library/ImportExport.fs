@@ -5,21 +5,10 @@ open TNT.Model
 open TNT.Library
 open TNT.Library.ExportModel
 
-let [<Literal>] WarningPrefix = "Warning:"
-let [<Literal>] ContextPrefix = "Context:"
-
 /// Convert a translations to a file.
 let export (project: ProjectName) (sourceLanguage: LanguageTag) (translation: Translation) : File =
 
     let toUnit (record: TranslationRecord) =
-
-        let contextNotes = 
-            record.Contexts
-            |> List.map ^ fun context -> ContextPrefix + " " + string context
-
-        let warningNotes (warnings: Verification.Warning list) = 
-            warnings
-            |> List.map ^ fun warning -> WarningPrefix + " " + string warning
 
         // note that not all records can be exported into XIFF files.
         record.Translated
@@ -27,20 +16,18 @@ let export (project: ProjectName) (sourceLanguage: LanguageTag) (translation: Tr
         | TranslatedString.New 
             -> Some (New, "", [])
         | TranslatedString.NeedsReview str 
-            -> Some (NeedsReview, str, warningNotes ^ Verification.verifyRecord record)
+            -> Some (NeedsReview, str, Verification.verifyRecord record)
         | TranslatedString.Final str 
             -> Some (Final, str, [])
         | TranslatedString.Unused _ 
             -> None
-        |> Option.map ^ fun (state, str, warningNotes) -> {
+        |> Option.map ^ fun (state, str, warnings) -> {
             Source = record.Original
             Target = str
             State = state
-            Notes = List.collect id [
-                warningNotes
-                contextNotes
-                record.Notes
-            ]
+            Warnings = warnings |> List.map string
+            Contexts = record.Contexts |> List.map string
+            Notes = record.Notes
         }
 
     let toFile (translation: Translation) = {
@@ -54,18 +41,11 @@ let export (project: ProjectName) (sourceLanguage: LanguageTag) (translation: Tr
 
 [<AutoOpen>]
 module internal ImportHelper =
-
-    let IgnorableNotePrefixes = [| ContextPrefix; WarningPrefix |]
-
-    let ignoreNote (str: string) = 
-        IgnorableNotePrefixes
-        |> Array.exists str.startsWith
     
     let importNotes (unit: TranslationUnit) : string list = 
         unit.Notes
         |> Seq.map ^ Text.trim
         |> Seq.filter ^ (<>) ""
-        |> Seq.filter ^ (not << ignoreNote)
         |> Seq.toList
 
     module Text = 

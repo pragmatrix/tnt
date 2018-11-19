@@ -4,33 +4,18 @@ module TNT.Library.ExportModel
 open TNT.Model
 
 /// The state of a translation. 
-/// Note: Multilingual app toolkit supports 
-/// "new", "need-review-translation", "translated", and "final".
 type TargetState = 
     | New
     | NeedsReview
     | Translated
     | Final
-    override this.ToString() = 
-        match this with
-        | New -> "new"
-        | NeedsReview -> "needs-review-translation"
-        | Translated -> "translated"
-        | Final -> "final"
-
-module TargetState = 
-    
-    let tryParse = function
-        | "new" -> Ok New
-        | "needs-review-translation" -> Ok NeedsReview
-        | "translated" -> Ok Translated
-        | "final" -> Ok Final
-        | str  -> Error str
 
 type TranslationUnit = {
     Source: string
     Target: string
     State: TargetState
+    Warnings: string list
+    Contexts: string list
     Notes: string list
 }
 
