@@ -4,7 +4,7 @@ A command line tool for managing translations based on strings extracted from .N
 
 ## Why?
 
-I did not like to use resource identifiers for strings and then one thing lead to another.
+I did not like to use resource identifiers and then one thing lead to another.
 
 ## Installation & Update
 
