@@ -12,10 +12,33 @@ version:
 
 push=.paket/paket push --url https://www.myget.org/F/pragmatrix/api/v2/package --api-key ${MYGETAPIKEY} 
 
+.PHONY: install
+install: pack update-tnt-local
+	
+.PHONY: publish-and-update
+publish-and-update: publish update-tnt-wait
+
+.PHONY: publish
+publish: pack
+	${push} tmp/tnt-cli.*.nupkg
+	${push} tmp/TNT.T.*.nupkg
+
+.PHONY: pack
+pack:
+	mkdir -p tmp
+	rm -f tmp/*.nupkg
+	dotnet clean -c Release
+	cd tnt        && rm -rf obj bin && dotnet pack -c Release -o ../tmp
+	cd TNT.T && rm -rf obj bin && dotnet pack -c Release -o ../tmp
+
 .PHONY: install-tnt
 install-tnt:
 	dotnet tool install -g --add-source https://www.myget.org/F/pragmatrix/api/v3/index.json tnt-cli 
 
+
+.PHONY: update-tnt-local
+update-tnt-local:
+	dotnet tool update -g --configfile local-nuget.config tnt-cli
 
 .PHONY: update-tnt
 update-tnt:
@@ -26,17 +49,3 @@ update-tnt:
 update-tnt-wait:
 	until make update-tnt | grep -m 1 "version '${version}'"; do (echo "waiting for version ${version} to appear..."; sleep 1); done
 
-.PHONY: publish
-publish:
-	mkdir -p tmp
-	rm -f tmp/*.nupkg
-	dotnet clean -c Release
-	cd tnt        && rm -rf obj bin && dotnet pack -c Release -o ../tmp
-	# cd TNT.FSharp && rm -rf obj bin && dotnet pack -c Release -o ../tmp
-	cd TNT.T && rm -rf obj bin && dotnet pack -c Release -o ../tmp
-	${push} tmp/tnt-cli.*.nupkg
-	# ${push} tmp/TNT.FSharp.*.nupkg
-	${push} tmp/TNT.T.*.nupkg
-
-.PHONY: publish-and-update
-publish-and-update: publish update-tnt-wait
