@@ -2,9 +2,9 @@
 
 A command line tool for managing translations based on strings extracted from .NET assemblies. Supports XLIFF roundtrips and machine translations.
 
-Born out of my rejection of .NET resources files and their annoying identifiers polluting all the code.
+## Why?
 
-Then, a number of commits later, `tnt` seems to get somehat useful. All the interesting decisions that had to be made, the experience to program in F#, and how good machine translations can be today, were worth every commit and the many hours put in.
+I did not like to use resource identifiers for strings and then one thing lead to another.
 
 ## Installation & Update
 
@@ -24,37 +24,37 @@ dotnet tool update tnt-cli -g --add-source https://www.myget.org/F/pragmatrix/ap
 
 ### Projects & Initialization & Subdirectories
 
-`tnt` likes to work in a project's directory, preferable the directory of your application's primary project. Change into this directory an initialize `tnt` with `tnt init`. This creates the subdirectory `.tnt/` and the file `.tnt/sources.json`. The `.tnt/` directory contains all the _important_ files `tnt` is managing for you, specifically the list of sources and the translation files. 
+`tnt` works in a project's directory, preferable the directory of your application's primary project. Change into this directory an initialize it with `tnt init`, which creates the subdirectory `.tnt/` and the file `.tnt/sources.json`. The `.tnt/` directory contains all the _important_ files `tnt` is managing for you, these are the list of sources and the translation files.
 
-> The `.tnt/` directory should be checked in into your repository. `tnt` may sometimes act somewhat unforgiving and does not offer an undo option, so this is not a recommendation. If you want to use `tnt`, check in the `.tnt/` directory and all its contents.
+> The `.tnt/` directory is meant to be checked in into your repository. Note that `tnt` may sometimes act somewhat unforgiving and does not offer an undo option, so this is not a recommendation.
 
-> `tnt init` creates a default source language `en-US`, the language your original strings are in. If your original string are in a different language, you can change it anytime with `tnt init -l [your language tag or name]`.
+> `tnt init` sets the source language your original strings are in to `en-US` by default. If your original strings are in a different language, you can change that anytime with `tnt init -l [your language tag or name]`.
 
 ### Sources
 
-A source is something `tnt` retrieves original strings from. Currently, `tnt` supports only .NET assemblies as sources.
+A source is something `tnt` retrieves original strings from. Currently, `tnt` supports .NET assemblies as sources only.
 
-All sources are listed in the `.tnt/sources.json` file and can be added by invoking `tnt add -a [relative path to the assembly]` from within your project's directory. For example `tnt add -a bin/Release/netcoreapp2.1/MyAwesomeApp.exe` would add an assembly to the list of sources.
+All sources are listed in the `.tnt/sources.json` file and can be added by entering `tnt add -a [relative path to the assembly]` from within your project's directory. For example `tnt add -a bin/Release/netcoreapp2.1/MyAwesomeApp.exe` would add an assembly to the list of sources.
 
-> `tnt` does not read or modify any of your project or other files, it only accesses the sources, you specify.
+> `tnt` does not read or modify any of your project files, it accesses only the sources you specify.
 
 ### Language & Assembly Extraction
 
-`tnt` extracts marked strings from .NET assemblies. For C#, each string that needs to be translated must appended with an extension method invocation `.t()` that does two things. First, it marks the string that comes before it, and second, `t()` translates the string if there is a suitable translation file available.
+`tnt` extracts marked strings from .NET assemblies. For C#, each string that needs to be translated must be appended with an extension method `.t()` that does two things. First, it marks the string that comes before it, and second, it translates the string if there is a suitable translation file available.
 
 > For more extraction options take a look at [Methods of Extraction](#methods-of-extraction).
 
-To make the `.t()` function available to your projects, add the [TNT.T][TNT.T] NuGet package to your project and add a `using TNT;` on top of the files you wish to mark translatable strings with. Lucky owners of Resharper may just type in `.t()` after a string and add the `using TNT;` by pressing ALT+Enter. 
+To use the `.t()` function in your projects, add the [TNT.T][TNT.T] NuGet package to your project and insert a `using TNT;` on top of the files you wish to mark strings with. Lucky owners of Resharper may just type `.t()` after a string and insert the `using TNT;` by pressing ALT+Enter. 
 
 Before extracting, you need to add at least one target language to the project. Add one, say "Spanisch" with `tnt add -l Spanish`. 
 
-> You can use either language names or language tags. If you are not sure what languages are supported, use `tnt show languages` to show a list of all supported .NET language tags and language names.
+> With `tnt add` and with several other commands, you can use either language names or language tags. If you are not sure what languages are supported, use `tnt show languages` to list all supported .NET language tags and language names.
 
-Now enter `tnt extract`. This command extracts the strings and creates the language files in `.tnt/translation-[tag].json`. `tnt` will show what's being done and will output a status for each translation file.
+Now build your project to be sure the sources are available and then enter `tnt extract`, which extracts the strings and creates language files in `.tnt/translation-[tag].json`. `tnt` will show what it does and prints a status for each translation file.
 
-> The status consists of the language's tag, its counters, its language name, and the filename of the translation file.
+> The status consists of the translation's language tag, its counters, its language name, and the filename of the translation file.
 
-> Of particular interest are the counters, these count the states the individual strings are in. If you extracted, say 5 strings and haven't translated them yet, you'll see here a `[5n]`. Later, counters for additional states will appear. If you are interested, [TranslationStates](#TranslationStates) explains all the states and counters.
+> Of particular interest are the counters that count the states the individual strings are in. If you extracted, say 5 strings, and haven't translated them yet, you'll see a `[5n]`. Later, counters for additional states will appear. If you are interested now, the section [TranslationStates](#TranslationStates) explains them all.
 
 ### Translating Strings
 
@@ -62,7 +62,7 @@ Now enter `tnt extract`. This command extracts the strings and creates the langu
 
 #### Machine Translations
 
-First. `tnt` supports Google machine translations, which I do recommend as a starting point for every new translation. For the machine translations I tried, the results needed minimal changes and Google's API positioned .NET placeholders like `{0}` as expected. I don't know if the experience will be the same for your translations, but with `tnt translate` you can try your luck with Google Cloud Translation API.
+First. `tnt` supports Google machine translations, which I can recommend as a starting point for every new string. For the English to German machine translations I tried, the results needed minimal changes and Google's translation AI positioned .NET placeholders like `{0}` at the locations expected. I don't know if the experience will be the same for your translations, but with `tnt translate` you can try your luck with Google Cloud Translation API.
 
 > To use Google Cloud Translation API, follow the steps 1. to 3. in [Quickstart](https://cloud.google.com/translate/docs/quickstart), and then invoke `tnt translate` to translate all new strings.
 
@@ -70,22 +70,22 @@ First. `tnt` supports Google machine translations, which I do recommend as a sta
 
 Second, it supports the traditional translation roundrip that is comprised of exporting the translation files to the [XLIFF][XLIFF] format, using an XLIFF tool to edit them, and importing the changes back. With `tnt export`,  XLIFF files can be generated and sent to translators, who can then use their favorite tool (like the [Multilingual App Toolkit](https://developer.microsoft.com/en-us/windows/develop/multilingual-app-toolkit, for example)) to translate these strings and send them back. `tnt import` will then take care of the reintegration into the matching translation files.
 
-> Although `tnt` tries hard to do its best, `tnt import` is one of the commands unexpected things may happen. So be sure to put the `.tnt/` directory under revision control.
+> Although `tnt` tries hard to do its best, `tnt import` is one of the commands unexpected things may happen. So be sure that the `.tnt/` directory is under revision control.
 
 #### Translation Verification
 
-In addition to translation support, `tnt` supports a number of simple verifications it applies to the translations. `tnt` verifies
+In addition to translation support, `tnt` supports a number of simple verifications it applies to the translated strings. `tnt` verifies
 
 - if the same .NET placeholders (for example `{0}`) reappear in the translated text.
 - if the number of lines match.
 - if the indents match.
 
-`tnt` verifies only the translations that are in the state `needs-review` (state `r` for short). If one of these verification failes, `tnt status` adds them to the warning (`w`) counter. To show them in detail, use `tnt show warnings`.
+`tnt` verifies the translations that are in the `needs-review` state only (state `r` for short). If one of these verification failes, `tnt status` adds them to the warning (`w`) counter. To show them in detail, use `tnt show warnings`.
 
 
 ### Deployment & Translation Loading
 
-`tnt` automatically creates and maintains a second directory named `.tnt-content/` where it puts the translation files in meant to be loaded by your application.
+`tnt` maintains a second directory named `.tnt-content/` where it puts translation files meant to be loaded by your application.
 
 > These files *do not need* to be under revision control, because they can be regenerated from the translation files with `tnt sync`. Basically, they are *distilled* translation files for each language optimized for your application to pick them up.
 >
@@ -95,7 +95,7 @@ To make the application aware of these files, add them to the project and change
 
 > After adding the files to project, you can change the build action in the properties dialog or by changing the XML element of the files from `<Compile ...` to `<Content ...`
 
-Now, when you start your application with another language configured, it should pick up the right translation file and translate the strings with the function `.t()`.
+Now, when you start your application with another language configured, it should pick up the right translation file and translate the strings marked with `.t()`.
 
 ## Reference
 
@@ -187,7 +187,15 @@ Examples:
 
 #### `tnt import`
 
-Imports XLIFF files.
+Imports XLIFF files. `tnt import` can import either specific files or languages, or files that can find in the import directory. 
+
+To import one or more languages, use `tnt import [language-or-tag]`, to import a file, use `tnt import [filename]`. To import all files that look like they were previously exported with `tnt export`, use `tnt import --all`.
+
+`--from` The directory to import the files from. The default is the current directory.
+
+`--all` Import all files that can be found in the import directory.
+
+> The importer tries to match the original strings in the import files with the ones in the language files and if a matching string is found, _will overwrite_ its translation with the one imported. So before using `tnt import`, make sure the contents of the `.tnt/` directory is commited to your revision control system.
 
 #### `tnt translate`
 
@@ -205,7 +213,7 @@ Shows various infomations about the .NET supported languages or interesting deta
 
 ##### `tnt show languages`
 
-Shows the currently supported languages of the .NET framework tnt runs in. The output lists all the support the language tags and the language names.
+Lists the currently supported language names and tags of the .NET framework `tnt` runs in.
 
 ##### `tnt show new`
 
@@ -223,9 +231,9 @@ Shows the strings and their contexts that were found at more than one context.
 
 Shows the strings and their contexts that are in the state `needs-review` and have one or more verification warnings.
 
-The details `new` and `warnings` can be restricted to show information of specific translations only. Use `-l` or `--language` to filter their output. If no language is specified, all languages are considered.
+The details `new` and `warnings` can be restricted to show information of specific translations only. Use `-l` or `--language` to filter their result. If no language is specified, all languages are considered.
 
-> The output of `unused` and `shared` depends on the extracted strings only and is therefore independent of the languages specified.
+> The results of `unused` and `shared` depend on the extracted strings only and are therefore independent of the languages specified.
 
 #### `tnt help`
 
@@ -283,18 +291,35 @@ In addition to the state, the `w` counter shows the number of analysis warnings.
 
 ### Directory `.tnt` 
 
+This is the directory where `tnt` manages the translation sources and the translation files. The directory can be created with `tnt init`.
+
 #### File `.tnt/sources.json` 
+
+This file configures the language the original strings are in and the sources from where they are extracted.
+
+Use `tnt init -l` to change the language, `tnt add` to add sources, and `tnt remove` to remove them.
 
 #### File `.tnt/translation-[tag].json` 
 
+The translation files. They contain the original strings with their translations and a state, a list of contexts, and notes for each translated string.
+
 ### Directory `.tnt-content` 
+
+These contain translation files optimized for the application to load. 
 
 #### File `.tnt-content/[tag].tnt` 
 
-## License & Copyright
+The language specific translation files. Currently, only the original and the translated strings.
 
-[MIT](LICENSE)
+`tnt` tries to keep these files up to date.
+
+`tnt sync` may be used to regenerate them in case they are missing, an error happened, or language files in the `.tnt` directory were changed.
+
+## License & Contribution & Copyright
+
+[MIT](LICENSE) 
+
+Contributions are welcome, please comply to the `.editorconfig` file.
 
 (c) 2018 Armin Sander
-
 
