@@ -1,5 +1,6 @@
 ﻿module TNT.Tests.ImportExport
 
+open FunToolbox.FileSystem
 open TNT.Library
 open TNT.Library.ExportModel
 open TNT.Library.ImportExport
@@ -154,7 +155,7 @@ let ``good case``() =
     |> should equal ([translationExpected], emptyWarnings)
 
 [<Fact>]
-let ``context get ignored and notes get overwritten by import``() = 
+let ``contexts get ignored and notes get overwritten by import``() = 
 
     let translationExpected = translation "de" [ { 
         Original = "source"
@@ -217,3 +218,28 @@ let ``trimming to a length less than the ellipsis' length`` (max: int) (expected
 
     "Hello" |> Text.trimToMaxCharacters max ".."
     |> should equal expected
+
+module Excel =
+
+    [<Fact>]
+    let ``export to file ExcelExport.xlsx works``() =
+        let tu = {
+            Source = "Source Line 1\nSource Line 2"
+            Target = "Target Line 1\nTarget Line 2"
+            State = TargetState.NeedsReview
+            Warnings = ["Warning 1"; "Warning 2"]
+            Contexts = ["Context 1"; "Context 2"]
+            Notes = ["Note1 First Line\nNote1 Second Line"; "Note 2"]
+        }
+
+        let file = file "de" [tu]
+
+        let exporter = Excel.Exporter
+        let path = 
+            Directory.current()
+            |> Path.extend (RPath.parse "c:/msys/tmp/ExcelExport.xlsx")
+
+        exporter.ExportToPath path file
+
+
+
