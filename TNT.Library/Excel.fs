@@ -19,11 +19,21 @@ module TargetState =
         | Final 
             -> "Final"
 
-    let ValidImportStates = [
+    let ValidExcelStates = [
         New
         NeedsReview
         Final
     ]
+
+    let parse = function
+        | "New" 
+            -> New
+        | "Needs Review" 
+            -> NeedsReview
+        | "Final" 
+            -> Final
+        | state 
+            -> failwithf "invalid state: '%s'" state
 
 [<AutoOpen>]
 module private Private = 
@@ -32,7 +42,7 @@ module private Private =
 
         let inline quote str = "\"" + str + "\""
 
-        TargetState.ValidImportStates
+        TargetState.ValidExcelStates
         |> Seq.map TargetState.toString
         |> String.concat ","
         |> quote
@@ -115,7 +125,8 @@ let export (file: File) : Excel =
     |> List.groupBy ^ fun tu -> TargetState.toString tu.State
     |> Seq.filter ^ fun (_, units) -> units <> []
     |> Seq.iter ^ fun (stateName, units) ->
-        setupWorksheet (string file.ProjectName + " - " + stateName) units
+        let worksheetName = string file.ProjectName + " - " + stateName
+        units |> setupWorksheet worksheetName
 
     use ms = new MemoryStream()
     wb.SaveAs(ms)
