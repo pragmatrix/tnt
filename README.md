@@ -165,13 +165,15 @@ This command will export translations into one file per each language. The files
 
 `tnt export` will never overwrite any files. If files are already existing at the designated location's, `tnt` will print a warning and exit.
 
-Languages can be selected either by specifying `--all` or by naming them as arguments. Language names and tags are accepted.
+Languages can be selected either by `-l`, or by passing them as arguments. To select all languages, use `--all`. Language names and tags are accepted.
 
 `--all` Select all existing languages to export. By default, no languages are exported.
 
 `--to` Specify the directory to where the files should be exported. The default is the current directory.
 
 `--for` Specify the tool that will used for editing the XLIFF files. Without `--for`, the XLIFF XML format is generated in a way that should be compatible with most XLIFF tools. `--for mat` will generate XLIFF that is compatible with the Multilingual App Toolkit.
+
+`-l`, `--language` Used to specify language tags or names that should be exported. Currently, this is also possible by passing them as arguments.
 
 > The [Multilingual App Toolkit needs](https://multilingualapptoolkit.uservoice.com/forums/231158-general/suggestions/10172562-fix-crash-when-opening-xliff-file-without-group) the `<trans-unit>` elements to be surrounded with a `<group>` element, otherwise it will fail opening the files. 
 >
