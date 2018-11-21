@@ -110,7 +110,7 @@ let export (file: File) : Excel =
             cell.Style.Alignment.Vertical <- XLAlignmentVerticalValues.Center
 
     // autosize columns.
-    ignore ^ ws.Columns().AdjustToContents(10., 200.)
+    ignore ^ ws.Columns().AdjustToContents(10., 100.)
     
     use ms = new MemoryStream()
     wb.SaveAs(ms)
