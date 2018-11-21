@@ -16,25 +16,23 @@ module TargetState =
         | NeedsReview 
             -> "Needs Review"
         | Translated 
-            -> "Translated"
         | Final 
             -> "Final"
 
-    let All = [
+    let ValidImportStates = [
         New
         NeedsReview
-        Translated
         Final
     ]
 
 [<AutoOpen>]
 module private Private = 
 
-    let AllStates = 
+    let StateValidationList = 
 
         let inline quote str = "\"" + str + "\""
 
-        TargetState.All
+        TargetState.ValidImportStates
         |> Seq.map TargetState.toString
         |> String.concat ","
         |> quote
@@ -83,7 +81,7 @@ let export (file: File) : Excel =
         do
             let cell = ws.Cell(row, 3)
             cell.Value <- TargetState.toString tu.State
-            cell.DataValidation.List(AllStates, true)
+            cell.DataValidation.List(StateValidationList, true)
 
             cell.Style.Alignment.Vertical <- XLAlignmentVerticalValues.Center
 
