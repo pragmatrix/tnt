@@ -191,7 +191,7 @@ let dispatch (command: obj) =
             |> Select
 
         if selector = Select [] then
-            failwith "No languages selected, use -l or --all to select one or more languages."
+            failwith "No languages selected, specify them as arguments or use --all to select all languages."
 
         let exportPath = 
             opts.To 
