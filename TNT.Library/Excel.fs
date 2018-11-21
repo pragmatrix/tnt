@@ -50,7 +50,7 @@ let export (file: File) : Excel =
     ws.Cell(1,1).Value <- sprintf "%s" (file.SourceLanguage.Formatted)
     ws.Cell(1,2).Value <- sprintf "%s" (file.TargetLanguage.Formatted)
     ws.Cell(1,3).Value <- sprintf "State"
-    ws.Cell(1,4).Value <- sprintf "Context"
+    ws.Cell(1,4).Value <- sprintf "Contexts"
     ws.Cell(1,5).Value <- sprintf "Notes"
     
     ws.Row(1).Style.Font.Bold <- true

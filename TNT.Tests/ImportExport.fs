@@ -226,7 +226,7 @@ module Excel =
         let tu = {
             Source = "Source Line 1\nSource Line 2"
             Target = "Target Line 1\nTarget Line 2"
-            State = TargetState.NeedsReview
+            State = NeedsReview
             Warnings = ["Warning 1"; "Warning 2"]
             Contexts = ["Context 1"; "Context 2"]
             Notes = ["Note1 First Line\nNote1 Second Line"; "Note 2"]
@@ -237,7 +237,7 @@ module Excel =
         let exporter = Excel.Exporter
         let path = 
             Directory.current()
-            |> Path.extend (RPath.parse "c:/msys/tmp/ExcelExport.xlsx")
+            |> Path.extend (RPath.parse "ExcelExport.xlsx")
 
         exporter.ExportToPath path file
 
