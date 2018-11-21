@@ -66,6 +66,9 @@ type ExportOptions = {
     [<Value(0, HelpText = "The language(s) to export, use --all to export all languages.")>]
     Languages: string seq
 
+    [<Option('l', "language", HelpText = "Language (code ['-' region] or name) to be exported.")>]
+    Languages2: string seq
+
     [<Option("all", HelpText = "Export all languages.")>]
     All: bool
 
@@ -186,13 +189,14 @@ let dispatch (command: obj) =
     | :? ExportOptions as opts ->
         let selector = 
             if opts.All then SelectAll else
-            opts.Languages 
+            [ opts.Languages; opts.Languages2 ]
+            |> Seq.concat
             |> Seq.map resolveLanguage 
             |> Seq.toList
             |> Select
 
         if selector = Select [] then
-            failwith "No languages selected, use -l or --all to select one or more languages."
+            failwith "No languages selected, specify them as arguments or use --all to select all languages."
 
         let exportPath = 
             opts.To 
