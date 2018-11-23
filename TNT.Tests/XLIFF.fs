@@ -72,30 +72,22 @@ let ``imports XLIFF``() =
             Source = "New"
             Target = "Neu"
             State = Translated
-            Warnings = []
-            Contexts = []
-            Notes = []
+            Notes = Some []
         } ; {
             Source = "Auto";
             Target = "Automatische Uebersetzung";
             State = Final
-            Warnings = []
-            Contexts = []
-            Notes = []
+            Notes = Some []
         } ; {
             Source = "Reviewed"
             Target = "Reviewed"
-            Warnings = []
-            Contexts = []
             State = Final
-            Notes = []
+            Notes = Some []
         } ; {
             Source = "WithContextAndNotes"
             Target = "NR"
             State = NeedsReview
-            Warnings = []
-            Contexts = []
-            Notes = [
+            Notes = Some [
                 "Note 1"
                 "Note 2"
             ]

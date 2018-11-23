@@ -3,6 +3,19 @@
 open System.IO
 open FunToolbox.FileSystem
 
+[<AutoOpen>]
+module Prelude =
+
+    /// Trimmed String conversion.
+    let (|Trimmed|) (str: string) =
+        str.Trim()
+
+    /// Match if the string has content after trimmed, and return the trimmed string.
+    let (|NotEmptyTrimmed|_|) (Trimmed trimmed) = 
+        match trimmed with
+        | "" -> None
+        | str -> Some str
+
 module List = 
     /// Return the list, and all the sub-lists possible, except the empty list.
     /// [a;b] -> [ [a;b]; [b] ]
@@ -16,6 +29,18 @@ module List =
             | _::rest -> subs (todo :: soFar) rest
 
         l |> subs []
+
+    /// Matches if all the element's sequence are equal or no elements 
+    /// are in the sequence.
+    /// Returns the element if they are.
+    let inline (|AllEqual|_|) l = 
+        match l with
+        | [] -> Some None
+        | [one] -> Some ^ Some one
+        | head::rest -> 
+            if rest |> List.forall ^ (=) head 
+            then Some ^ Some head
+            else None
 
 [<AutoOpen>] 
 /// copied from FunToolbox/FileSystem.
@@ -143,6 +168,8 @@ module Path =
         left |> extend (RPath.ofFilename right)
 
 module Filename = 
+
+    let inline map f (Filename fn) = Filename ^ f fn
 
     let inline toPath (fn: 'tag filename) : 'tag rpath = 
         RPath.ofFilename fn

@@ -1,7 +1,6 @@
 ﻿namespace TNT.Model
 
 open TNT.Library
-open System.Reflection
 
 [<AutoOpen>]
 module private Helper =

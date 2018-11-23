@@ -73,7 +73,7 @@ module private X =
     let name str = XName.op_Implicit str
 
 /// Generate XLIFF version 1.2
-let generateV12 (format: XLIFFFormat) (files: File list) : XLIFFV12 =
+let generateV12 (format: XLIFFFormat) (files: File<ExportUnit> list) : XLIFFV12 =
 
     let en (name: string) (ns: string) (nested: obj list) = 
         XElement(X.ns ns + name, nested)
@@ -174,7 +174,7 @@ type XElement with
         |> Seq.map ^ fun tn -> tn.Value
         |> String.concat ""
 
-let parseV12 (XLIFFV12 xliff) : File list = 
+let parseV12 (XLIFFV12 xliff) : File<ImportUnit> list = 
     let document = XDocument.Parse(xliff, LoadOptions.SetLineInfo)
     let root = document.Root
     do
@@ -225,15 +225,13 @@ let parseV12 (XLIFFV12 xliff) : File list =
                         Source = source.Text
                         Target = target.Text
                         State = state
-                        Warnings = []
-                        Contexts = []
-                        Notes = notes |> List.filter (not << canNoteBeIgnored)
+                        Notes = Some (notes |> List.filter (not << canNoteBeIgnored))
                     }
             |> Seq.toList
 
         {
-            SourceLanguage = sourceLanguage
             ProjectName = name
+            SourceLanguage = sourceLanguage
             TargetLanguage = targetLanguage
             TranslationUnits = units
         }
@@ -245,10 +243,16 @@ let parseV12 (XLIFFV12 xliff) : File list =
 let exporter (format: XLIFFFormat) = {
     Extensions = Extensions
     DefaultExtension = DefaultExtension
-    FilenameForLanguage = defaultFilenameForLanguage
-    ExportToPath = fun path file ->
+    FilenameForLanguage = 
+        fun project lang ->
+            defaultFilenameForLanguage project lang |> Filename.map id
+    SaveToPath = fun path file ->
         let (XLIFFV12 generated) = generateV12 format [file]
         File.saveText Encoding.UTF8 generated path
+    LoadFromPath = fun path ->
+        File.loadText Encoding.UTF8 path
+        |> XLIFFV12
+        |> parseV12
 }
 
 let projectPatterns (project: ProjectName) : GlobPattern list =

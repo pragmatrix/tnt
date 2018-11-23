@@ -4,6 +4,9 @@ module TNT.Library.ExportModel
 open TNT.Model
 open FunToolbox.FileSystem
 
+/// Generic tag for Export related Filenames
+type Export = Export
+
 /// The state of a translation. 
 type TargetState = 
     | New
@@ -11,7 +14,7 @@ type TargetState =
     | Translated
     | Final
 
-type TranslationUnit = {
+type ExportUnit = {
     Source: string
     Target: string
     State: TargetState
@@ -20,11 +23,18 @@ type TranslationUnit = {
     Notes: string list
 }
 
-type File = {
+type ImportUnit = {
+    Source: string
+    Target: string
+    State: TargetState
+    Notes: string list option
+}
+
+type File<'unit> = {
     ProjectName: ProjectName
     SourceLanguage: LanguageTag
     TargetLanguage: LanguageTag
-    TranslationUnits: TranslationUnit list
+    TranslationUnits: 'unit list
 }
 
 type XLIFFFormat = 
@@ -52,9 +62,10 @@ module ExportFormat =
         | "mat" -> XLIFF ^ XLIFF12MultilingualAppToolkit
         | unexpected -> failwithf "unexpected export format: '%s'" unexpected
 
-type Exporter<'format> = {
+type Exporter = {
     Extensions: string list
     DefaultExtension: string
-    FilenameForLanguage: ProjectName -> LanguageTag -> 'format filename
-    ExportToPath: Path -> File -> unit
+    FilenameForLanguage: ProjectName -> LanguageTag -> Export filename
+    SaveToPath: Path -> File<ExportUnit> -> unit
+    LoadFromPath: Path -> File<ImportUnit> list
 }

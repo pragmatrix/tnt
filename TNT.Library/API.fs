@@ -171,7 +171,7 @@ let private selectTranslations (languages: LanguageTag selector) (translations: 
 let private exportWith
     (languages: LanguageTag selector)
     (exportDirectory: ARPath)
-    (exporter: Exporter<'format>) =
+    (exporter: Exporter) =
     withSourcesAndGroup ^ fun sources group -> output {
 
     let project = projectName()
@@ -204,7 +204,7 @@ let private exportWith
 
     for (file, content) in exports do
         yield I ^ sprintf "Exporting translation to '%s'" (string file)
-        content |> exporter.ExportToPath (rooted file)
+        content |> exporter.SaveToPath (rooted file)
 
     return Ok()
 }
