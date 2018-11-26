@@ -65,7 +65,27 @@ module ExportFormat =
 type Exporter = {
     Extensions: string list
     DefaultExtension: string
-    FilenameForLanguage: ProjectName -> LanguageTag -> Export filename
+    DefaultFilename: ProjectName -> LanguageTag -> Export filename
     SaveToPath: Path -> File<ExportUnit> -> unit
     LoadFromPath: Path -> File<ImportUnit> list
+    FilesInDirectory: ProjectName -> Path -> Export filename list
 }
+
+module Exporters = 
+    
+    let tryfindExporterByFilename 
+        (Filename filename) 
+        (exporters: Exporter list) : Exporter option = 
+        exporters
+        |> Seq.tryFind ^ fun exporter ->
+            exporter.Extensions 
+            |> Seq.exists ^ fun ext -> filename.endsWith ext
+        
+    let allDefaultFilenames 
+        (project: ProjectName) 
+        (language: LanguageTag) 
+        (exporters: Exporter list) 
+        : (Exporter * Export filename) list =
+        exporters 
+        |> List.map ^ fun exporter -> 
+            exporter, exporter.DefaultFilename project language

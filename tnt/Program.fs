@@ -5,6 +5,7 @@ open TNT.Library.Output
 open TNT.Library.ExportModel
 open FunToolbox.FileSystem
 open CommandLine
+open TNT.Library
 
 [<Verb("init", HelpText = "Initialize the current directory. Creates the '.tnt' directory and the 'sources.json' file.")>]
 type InitOptions = {
@@ -219,26 +220,61 @@ let dispatch (command: obj) =
                 opts.From 
                 |> Option.ofObj 
                 |> Option.defaultValue "."
+                |> RPath.parse
             Directory.current() 
             |> Path.extend relativeDirectory
 
         let project = API.projectName()
 
+        let AllExporters = [ 
+            XLIFF.exporter XLIFF12
+            XLIFF.exporter XLIFF12MultilingualAppToolkit
+            Excel.Exporter
+        ]
+
         let files =
             if opts.All then
-                XLIFF.filesInDirectory importDirectory project
-                |> List.map ^ fun fn -> importDirectory |> Path.extendF fn
+                AllExporters
+                |> Seq.collect ^ fun exporter -> 
+                    exporter.FilesInDirectory project importDirectory
+                    |> Seq.map ^ fun fn -> exporter, fn
+                |> Seq.distinctBy ^ snd
+                |> Seq.map ^ fun (exporter, fn) -> 
+                    exporter, importDirectory |> Path.extendF fn
+                |> Seq.toList
             else
+
             let resolveFile (filePathOrLanguage: string) = 
-                match XLIFF.properPath filePathOrLanguage with
-                | Some path -> path |> ARPath.at importDirectory
+                // we check first by filename extension.
+                let exporter = 
+                    filePathOrLanguage 
+                    |> ARPath.tryParse 
+                    |> Option.bind ^ fun path -> 
+                        Exporters.tryfindExporterByFilename (Filename.ofARPath path) AllExporters
+                        |> Option.map ^ fun exporter -> exporter, path
+
+                match exporter with
+                | Some (exporter, path) -> exporter, path |> ARPath.at importDirectory
                 | None -> 
                     // when a language tag or name is used, 
-                    // only .xlf files are imported and .xliff files are being ignored
-                    // and must be explicitly passed as a path.
-                    resolveLanguage filePathOrLanguage
-                    |> XLIFF.defaultFilenameForLanguage project
-                    |> Filename.at importDirectory
+                    // only the files with the default extension are imported. Other files
+                    // must be explicitly provided by filename.
+                    let language = resolveLanguage filePathOrLanguage
+                    let potentialFilenames = 
+                        Exporters.allDefaultFilenames project language AllExporters
+                    let potentialFiles = 
+                        potentialFilenames
+                        |> List.mapSnd ^ Filename.at importDirectory
+                        |> List.filter (File.exists << snd)
+
+                    match potentialFiles with
+                    | [] -> 
+                        failwithf "Found no file for language %s, expected one of '%s'." 
+                            language.Formatted (potentialFilenames |> Seq.map string |> String.concat ",")
+                    | [one] -> 
+                        one
+                    | _ -> 
+                        failwithf "For more than one file for language %s found." language.Formatted
 
             opts.FilesOrLanguages
             |> Seq.map resolveFile

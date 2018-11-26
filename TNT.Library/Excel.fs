@@ -241,12 +241,18 @@ let parse (Excel excel) : File<ImportUnit> =
         }
     | _ -> failwith "Sheets contain strings from different exports."
 
+/// Get all the Excel files in the directory baseName.
+let filesInDirectory (project: ProjectName) (directory: Path) : Export filename list =
+    Directory.EnumerateFiles (string directory, string project + "-*.xlsx")
+    |> Seq.map (Path.parse >> Path.name >> Filename)
+    |> Seq.toList
+
 let Exporter : Exporter = 
     let defaultExtension = ".xlsx"
     {
         Extensions = [ ".xlsx" ]
         DefaultExtension = defaultExtension
-        FilenameForLanguage = fun projectName languageTag -> 
+        DefaultFilename = fun projectName languageTag -> 
             Filename ^ (string projectName) + "-" + (string languageTag) + defaultExtension
         SaveToPath = fun path file ->
             let (Excel bytes) = generate file           
@@ -256,5 +262,6 @@ let Exporter : Exporter =
             |> Excel
             |> parse
         ]
+        FilesInDirectory = filesInDirectory
     }
 

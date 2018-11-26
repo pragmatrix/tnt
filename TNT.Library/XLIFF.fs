@@ -57,7 +57,6 @@ let private canNoteBeIgnored (note: string) =
     |> Array.exists ^ fun prefix -> note.startsWith prefix
 
 module private Hash =
-    open System.Text
 
     let private sha256 = new SHA256Managed()
 
@@ -239,11 +238,24 @@ let parseV12 (XLIFFV12 xliff) : File<ImportUnit> list =
     files
     |> Seq.map parseFile
     |> Seq.toList
+
+let projectPatterns (project: ProjectName) : GlobPattern list =
+    Extensions
+    |> List.map ^ fun ext ->
+        GlobPattern(string project + "*" + ext)
+        
+/// Get all the XLIFF files in the directory baseName.
+let filesInDirectory (project: ProjectName) (directory: Path) : Export filename list =
+    projectPatterns project
+    |> Seq.collect ^ fun pattern ->
+        Directory.EnumerateFiles (string directory, string ^ pattern)
+    |> Seq.map (Path.parse >> Path.name >> Filename)
+    |> Seq.toList
     
 let exporter (format: XLIFFFormat) = {
     Extensions = Extensions
     DefaultExtension = DefaultExtension
-    FilenameForLanguage = 
+    DefaultFilename = 
         fun project lang ->
             defaultFilenameForLanguage project lang |> Filename.map id
     SaveToPath = fun path file ->
@@ -253,23 +265,6 @@ let exporter (format: XLIFFFormat) = {
         File.loadText Encoding.UTF8 path
         |> XLIFFV12
         |> parseV12
+    FilesInDirectory = filesInDirectory
 }
 
-let projectPatterns (project: ProjectName) : GlobPattern list =
-    Extensions
-    |> List.map ^ fun ext ->
-        GlobPattern(string project + "*" + ext)
-
-/// Returns ARPath of the file if the given path is most likely a XLIFF or XLF file.
-let properPath (path: string) : ARPath option = 
-    Extensions
-    |> Seq.tryFind path.endsWith
-    |> Option.map ^ fun _ -> ARPath.parse path
-        
-/// Get all the XLIFF files in the directory baseName.
-let filesInDirectory (directory: Path) (project: ProjectName) : XLIFF filename list =
-    projectPatterns project
-    |> Seq.collect ^ fun pattern ->
-        Directory.EnumerateFiles (string directory, string ^ pattern)
-    |> Seq.map (Path.parse >> Path.name >> Filename)
-    |> Seq.toList

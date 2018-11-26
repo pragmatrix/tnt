@@ -170,7 +170,7 @@ let private selectTranslations (languages: LanguageTag selector) (translations: 
 
 let private exportWith
     (languages: LanguageTag selector)
-    (exportDirectory: ARPath)
+    (exportDirectory: Export arpath)
     (exporter: Exporter) =
     withSourcesAndGroup ^ fun sources group -> output {
 
@@ -181,8 +181,8 @@ let private exportWith
         |> TranslationGroup.translations
         |> selectTranslations languages
         |> Seq.map ^ fun translation ->
-            let filename = exporter.FilenameForLanguage project translation.Language 
-            let path = exportDirectory |> ARPath.extend ^ RelativePath (string filename)
+            let filename = exporter.DefaultFilename project translation.Language 
+            let path = exportDirectory |> ARPath.extend ^ ARPath.parse ^ string filename
             let file = ImportExport.export project sources.Language translation
             path, file
         |> Seq.toList
@@ -211,7 +211,7 @@ let private exportWith
 
 let export 
     (languages: LanguageTag selector)
-    (exportDirectory: ARPath) 
+    (exportDirectory: Export arpath) 
     (format: ExportFormat) =
 
     let exportWith exporter = exportWith languages exportDirectory exporter
@@ -222,15 +222,14 @@ let export
     | Excel -> 
         exportWith Excel.Exporter
 
-let import (files: Path list) = withGroup ^ fun group -> output {
+let import (files: (Exporter * Path) list) = withGroup ^ fun group -> output {
 
     let project = projectName()
     let files = 
         files
-        |> Seq.map ^ File.loadText Encoding.UTF8
-        |> Seq.map XLIFF.XLIFFV12
-        |> Seq.collect XLIFF.parseV12
-        |> Seq.toList
+        |> List.collect ^ fun (exporter, path) ->
+            exporter.LoadFromPath path
+        
 
     let translations, warnings = 
         let translations = TranslationGroup.translations group
