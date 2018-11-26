@@ -264,7 +264,8 @@ let dispatch (command: obj) =
                         failwithf "Found no file for language %s, expected one of '%s'." 
                             language.Formatted 
                             (potentialFilenames 
-                            |> Seq.map (string << snd) 
+                            |> Seq.map (string << snd)
+                            |> Seq.distinct
                             |> String.concat ",")
                     | [one] -> 
                         one
