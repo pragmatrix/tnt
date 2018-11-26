@@ -73,7 +73,7 @@ type Exporter = {
 
 module Exporters = 
     
-    let tryfindExporterByFilename 
+    let tryResolveExporterFromFilename 
         (Filename filename) 
         (exporters: Exporter list) : Exporter option = 
         exporters

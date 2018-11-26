@@ -84,7 +84,10 @@ type ExportOptions = {
 type ImportOptions = {
 
     [<Value(0, HelpText = "The files or languages to import, use --all to import all files.")>]
-    FilesOrLanguages: string seq
+    FilenamesOrLanguages: string seq
+
+    [<Option('l', "language", HelpText = "Language (code ['-' region] or name) to be imported.")>]
+    Languages: string seq
 
     [<Option("from", HelpText = "The directory to import the XLIFF files from. Default is the current directory.")>]
     From: string
@@ -197,7 +200,7 @@ let dispatch (command: obj) =
             |> Select
 
         if selector = Select [] then
-            failwith "No languages selected, specify them as arguments or use --all to select all languages."
+            failwith "No languages selected, enter them as arguments or use --all to select all languages."
 
         let exportPath = 
             opts.To 
@@ -244,22 +247,11 @@ let dispatch (command: obj) =
                 |> Seq.toList
             else
 
-            let resolveFile (filePathOrLanguage: string) = 
-                // we check first by filename extension.
-                let exporter = 
-                    filePathOrLanguage 
-                    |> ARPath.tryParse 
-                    |> Option.bind ^ fun path -> 
-                        Exporters.tryfindExporterByFilename (Filename.ofARPath path) AllExporters
-                        |> Option.map ^ fun exporter -> exporter, path
-
-                match exporter with
-                | Some (exporter, path) -> exporter, path |> ARPath.at importDirectory
-                | None -> 
+            let resolveLanguage (language: string) =
                     // when a language tag or name is used, 
                     // only the files with the default extension are imported. Other files
                     // must be explicitly provided by filename.
-                    let language = resolveLanguage filePathOrLanguage
+                    let language = resolveLanguage language
                     let potentialFilenames = 
                         Exporters.allDefaultFilenames project language AllExporters
                     let potentialFiles = 
@@ -276,9 +268,36 @@ let dispatch (command: obj) =
                     | _ -> 
                         failwithf "For more than one file for language %s found." language.Formatted
 
-            opts.FilesOrLanguages
-            |> Seq.map resolveFile
-            |> Seq.toList
+            let resolveFileOrLanguage (filePathOrLanguage: string) = 
+                // we check first by filename extension.
+                let resolvedViaFilename = 
+                    filePathOrLanguage 
+                    |> ARPath.tryParse 
+                    |> Option.bind ^ fun path -> 
+                        Exporters.tryResolveExporterFromFilename (Filename.ofARPath path) AllExporters
+                        |> Option.map ^ fun exporter -> exporter, path
+
+                match resolvedViaFilename with
+                | Some (exporter, path) 
+                    -> exporter, path |> ARPath.at importDirectory
+                | None 
+                    -> resolveLanguage filePathOrLanguage
+
+            match Seq.toList opts.FilenamesOrLanguages, Seq.toList opts.Languages with
+            | [], [] -> failwith "No languages selected, enter them as arguments or '-l', or use --all to select all languages"
+            | filenamesOrLanguages, languages ->
+                
+                let viaArguments = 
+                    filenamesOrLanguages
+                    |> List.map resolveFileOrLanguage
+                let viaOptions = 
+                    languages
+                    |> List.map resolveLanguage
+
+                [viaArguments; viaOptions]
+                |> Seq.collect id
+                |> Seq.distinctBy snd
+                |> Seq.toList
 
         API.import files
 
