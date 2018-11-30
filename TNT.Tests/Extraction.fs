@@ -1,7 +1,7 @@
 module TNT.Tests.Extraction
 
 open FunToolbox.FileSystem
-open FsUnit.Xunit
+open FsUnit.Xunit.Typed
 open Xunit
 open TNT.Model
 open TNT.Library.StringExtractor
@@ -48,6 +48,6 @@ let ``extraction may cause errors and retrieves a physical context``() =
     match errors with
     | [] -> failwith "failed, no error"
     | [_, context] ->
-        context.Physical.IsSome |> should be True
+        context.Physical.IsSome |> should equal true
     | _ -> failwith "too many errors, expect one"
 

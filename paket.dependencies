@@ -8,7 +8,8 @@ framework: auto-detect
 
 nuget CommandLineParser.FSharp
 nuget FSharp.Core
-nuget FsUnit.xUnit
+nuget FsUnit.xUnit.Typed
+nuget Xunit
 nuget Mono.Cecil
 nuget System.ValueTuple
 nuget FunToolbox

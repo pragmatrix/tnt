@@ -5,7 +5,7 @@ open TNT.Library
 open TNT.Library.ExportModel
 open TNT.Library.ImportExport
 open TNT.Model
-open FsUnit.Xunit
+open FsUnit.Xunit.Typed
 open Xunit
 
 let inline dump v = 
@@ -252,11 +252,6 @@ module Excel =
             ProjectName = ProjectName "project";
             SourceLanguage = LanguageTag "en-US";
             TargetLanguage = LanguageTag "de";
-            TranslationUnits = [ {
-                Source = "Source Line 1\nSource Line 2";
-                Target = "Target Line 1\nTarget Line 2";
-                State = NeedsReview;
-                Notes = None;
-            } ];
+            TranslationUnits = [];
         } ]
 

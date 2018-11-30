@@ -6,7 +6,7 @@ open TNT.Model
 open TNT.Library
 open TNT.Library.ExportModel
 open TNT.Library.XLIFF
-open FsUnit.Xunit
+open FsUnit.Xunit.Typed
 open Xunit
 
 let record original translated = { 

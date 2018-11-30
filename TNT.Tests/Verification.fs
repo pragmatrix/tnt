@@ -2,7 +2,7 @@
 
 open TNT.Library.Verification.Helper
 
-open FsUnit.Xunit
+open FsUnit.Xunit.Typed
 open Xunit
 
 [<Theory>]

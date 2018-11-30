@@ -1,3 +1,4 @@
 FSharp.Core
 System.ValueTuple
-FsUnit.xUnit
+FsUnit.xUnit.Typed
+Xunit
