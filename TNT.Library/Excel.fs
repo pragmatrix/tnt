@@ -54,10 +54,13 @@ module private Private =
         " - " + stateName
 
 let [<Literal>] SourceColumn = 1
-let [<Literal>] TargetColumn = 2
-let [<Literal>] StateColumn = 3
-let [<Literal>] ContextsColumn = 4
-let [<Literal>] NotesColumn = 5
+let [<Literal>] ChangedColumn = 2
+let [<Literal>] ChangedPostfix = " (changed)"
+let [<Literal>] CurrentColumn = 3
+let [<Literal>] CurrentPostfix = " (current)"
+let [<Literal>] StateColumn = 4
+let [<Literal>] ContextsColumn = 5
+let [<Literal>] NotesColumn = 6
 
 let generate (file: File<ExportUnit>) : Excel = 
 
@@ -70,8 +73,10 @@ let generate (file: File<ExportUnit>) : Excel =
 
         ws.Cell(1, SourceColumn)
             .Value <- sprintf "%s" (file.SourceLanguage.Formatted)
-        ws.Cell(1, TargetColumn)
-            .Value <- sprintf "%s" (file.TargetLanguage.Formatted)
+        ws.Cell(1, ChangedColumn)
+            .Value <- sprintf "%s%s" (file.TargetLanguage.Formatted) ChangedPostfix
+        ws.Cell(1, CurrentColumn)
+            .Value <- sprintf "%s%s" (file.TargetLanguage.Formatted) CurrentPostfix
         ws.Cell(1, StateColumn)
             .Value <- "State"
         ws.Cell(1,ContextsColumn)
@@ -94,16 +99,25 @@ let generate (file: File<ExportUnit>) : Excel =
                 cell.Style.Alignment.WrapText <- true
                 cell.Style.Alignment.Vertical <- XLAlignmentVerticalValues.Center
 
-            // target        
+            // changed
             do
-                let cell = ws.Cell(row, TargetColumn)
+                let cell = ws.Cell(row, ChangedColumn)
+                cell.Value <- ""
+                cell.DataType <- XLDataType.Text
+                
+                cell.Style.Alignment.WrapText <- true
+                cell.Style.Alignment.Vertical <- XLAlignmentVerticalValues.Center
+
+                ignore ^ cell.Style.Protection.SetLocked(false)
+
+            // current     
+            do
+                let cell = ws.Cell(row, CurrentColumn)
                 cell.Value <- tu.Target
                 cell.DataType <- XLDataType.Text
 
                 cell.Style.Alignment.WrapText <- true
                 cell.Style.Alignment.Vertical <- XLAlignmentVerticalValues.Center
-
-                ignore ^ cell.Style.Protection.SetLocked(false)
 
             // state
             do
@@ -171,6 +185,11 @@ let parse (Excel excel) : File<ImportUnit> =
         | Regex.Match("^\[(.+)\]$") [tag] -> Some ^ LanguageTag tag
         | _ -> None
 
+    let (|EndsWith|_|) (postfix: string) (str: string) = 
+        if str.endsWith postfix 
+        then Some(str.[0..str.Length-postfix.Length-1])
+        else None
+
     let extractMetadata (ws: IXLWorksheet) : Result<SheetMetadata, string> = 
         match tryGetProjectName ws.Name with
         | None -> Error ^ sprintf "failed to extract project name from worksheet '%s'" ws.Name
@@ -186,8 +205,11 @@ let parse (Excel excel) : File<ImportUnit> =
         | Some sourceLanguage ->
 
         let targetLanguage = 
-            match ws.Cell(1, TargetColumn).TryGetValue<string>() with
-            | true, MatchLanguageTag tag -> Some ^ tag
+            match ws.Cell(1, ChangedColumn).TryGetValue<string>() with
+            | true, EndsWith ChangedPostfix tagx -> 
+                match tagx with 
+                | MatchLanguageTag tag -> Some ^ tag
+                | _ -> None
             | _ -> None
 
         match targetLanguage with
@@ -213,12 +235,15 @@ let parse (Excel excel) : File<ImportUnit> =
         { 2..Int32.MaxValue }
         |> Seq.map ^ fun row -> row, tryParseState (ws.Cell(row, StateColumn))
         |> Seq.takeWhile ^ fun (_, state) -> state <> None
-        |> Seq.map ^ fun (row, state) -> {
-            Source = ws.Cell(row, SourceColumn).GetValue<string>()
-            Target = ws.Cell(row, TargetColumn).GetValue<string>()
-            State = state.Value
-            Notes = None
-        }
+        |> Seq.choose ^ fun (row, state) -> 
+            match ws.Cell(row, ChangedColumn).GetValue<string>() with
+            | "" -> None
+            | changed -> Some {
+                    Source = ws.Cell(row, SourceColumn).GetValue<string>()
+                    Target = changed
+                    State = state.Value
+                    Notes = None
+                }
         |> Seq.toList
     
     use ms = new MemoryStream(excel)
