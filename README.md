@@ -58,19 +58,21 @@ Now build your project to be sure the sources are available and then enter `tnt 
 
 ### Translating Strings
 
-`tnt` itself does not support interactive translations [yet](https://github.com/pragmatrix/tnt/issues/46). Of course you can edit the translation files, but `tnt` can help you in other ways:
+`tnt` itself does not support interactive translations [yet](https://github.com/pragmatrix/tnt/issues/46). Of course you can edit the translation files, but `tnt` can help you in several other ways:
 
 #### Machine Translations
 
-First. `tnt` supports Google machine translations, which I can recommend as a starting point for every new string. For the English to German machine translations I tried, the results needed minimal changes and Google's translation AI positioned .NET placeholders like `{0}` at the locations expected. I don't know if the experience will be the same for your translations, but with `tnt translate` you can try your luck with Google Cloud Translation API.
+`tnt` supports Google machine translations, which I recommend as a starting point for newly extracted strings. For the English to German machine translations I tried so far, the results needed minimal changes and Google's translation algorithm positioned .NET placeholders like `{0}` at the locations expected. I don't know if the resulting quality will be the same for your translations, but with `tnt translate` you can try your luck with Google Cloud Translation API. For more information, skip to the [`tnt translate` section](#`tnt translate`)
 
-> To use Google Cloud Translation API, follow the steps 1. to 3. in [Quickstart](https://cloud.google.com/translate/docs/quickstart), and then invoke `tnt translate` to translate all new strings.
+#### Excel Roundtrips
+
+`tnt export` can export languages into a specially formatted Excel file, that can be modified by a translator and imported back with `tnt import`.
+
+> Although `tnt` tries hard to do its best, `tnt import` is one of the commands unexpected things may happen. So be sure that the `.tnt/` directory is under revision control.
 
 #### XLIFF Roundtrips
 
-Second, it supports the traditional translation roundrip that is comprised of exporting the translation files to the [XLIFF][XLIFF] format, using an XLIFF tool to edit them, and importing the changes back. With `tnt export`,  XLIFF files can be generated and sent to translators, who can then use their favorite tool (like the [Multilingual App Toolkit](https://developer.microsoft.com/en-us/windows/develop/multilingual-app-toolkit, for example)) to translate these strings and send them back. `tnt import` will then take care of the reintegration into the matching translation files.
-
-> Although `tnt` tries hard to do its best, `tnt import` is one of the commands unexpected things may happen. So be sure that the `.tnt/` directory is under revision control.
+`tnt` supports the traditional translation roundrip that is comprised of exporting the translation files to the [XLIFF][XLIFF] format, using an XLIFF tool to edit them, and importing back the changes. With `tnt export`,  XLIFF files are generated and sent to translators, who can then use their favorite tool (like the [Multilingual App Toolkit](https://developer.microsoft.com/en-us/windows/develop/multilingual-app-toolkit, for example)) to translate these strings and send them back. After that, `tnt import` is used to update the strings in the translation files.
 
 #### Translation Verification
 
@@ -191,7 +193,7 @@ Examples:
 
 Imports XLIFF files. `tnt import` can import either specific files or languages, or files that can find in the import directory. 
 
-To import one or more languages, use `tnt import [language tag or name]`, to import a file, use `tnt import [filename]`. To import all files that look like they were previously exported with `tnt export`, use `tnt import --all`.
+To import one or more languages, use `tnt import [language tag or name]`, to import a file, use `tnt import [filename]`. To import all files that look like they were previously exported with [`tnt export`](#`tnt export`), use `tnt import --all`.
 
 `--from` The directory to import the files from. The default is the current directory.
 
@@ -203,7 +205,15 @@ To import one or more languages, use `tnt import [language tag or name]`, to imp
 
 #### `tnt translate`
 
-Translates new strings.
+Machine-translates new strings. 
+
+`--all` Translates all new string of all languages.
+
+`-l`, `--language` Specifies the languages of which their new strings should be translated.
+
+> Before `tnt` can be used to translate strings, it must be configured to use a machine translation service. For now, the Google Cloud Translation API is supported only. 
+>
+> To configure `tnt` to work with the Google Cloud Translation API, follow the steps 1. to 3. in [Quickstart](https://cloud.google.com/translate/docs/quickstart) and then use `tnt translate` to translate all new strings. 
 
 #### `tnt sync`
 
@@ -233,7 +243,7 @@ Shows the strings and their contexts that were found at more than one context.
 
 ##### `tnt show warnings` 
 
-Shows the strings and their contexts that are in the state `needs-review` and have one or more verification warnings.
+Shows the strings and their contexts that are in the state [`needs-review`](#TranslationStates) and have one or more verification warnings.
 
 The details `new` and `warnings` can be restricted to show information of specific translations only. Use `-l` or `--language` to filter their result. If no language is specified, all languages are considered.
 
@@ -241,7 +251,11 @@ The details `new` and `warnings` can be restricted to show information of specif
 
 #### `tnt help`
 
+Shows useful hints about how to use the command line arguments. To show help for specific command verbs, use `tnt [command] --help`.
+
 #### `tnt version`
+
+Shows the current version of `tnt`.
 
 ### Methods of Extraction
 
@@ -261,7 +275,9 @@ Examples:
 
 #### String Interpolation
 
-C# 6 [introduced string interpolation](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/tokens/interpolated) by prefixing a string with `$`. To mark an interpolated string as translatable, the `t()` function is used, but - for technical reason - not as an extension method. Bringing the static `TNT.T` class into scope mitigates that:
+C# 6 [introduced string interpolation](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/tokens/interpolated) by prefixing a string with `$`. To mark an interpolated string as translatable, the `t()` function is used, but - for technical reason - not as an extension method. 
+
+Bringing the static `TNT.T` class into scope mitigates that:
 
 ```csharp
 // bring the static t() method into scope.
@@ -274,9 +290,9 @@ using static TNT.T;
 
 #### Specific Translations
 
-If the target language should be decided ad-hoc by the application, the `t()` function can be invoked with an additional argument that specifies language tag. For example `"Hello".t("es")` will translate the string "Hello" to spanish if the translation is available.
+If the target language should be decided ad-hoc by the application, the `t()` function can be invoked with an additional argument that specifies language tag. For example `"Hello".t("es")` will translate the string "Hello" to Spanish if the translation is available.
 
-> Any extraction is done by scanning the IL code that is generated. If a `.t()` function is seen in the IL code an the extraction attempt fails, `tnt extract` will warn about that.
+> Any extraction is done by searching through the generated IL code. If an invocation to the `.t()` function is found and the extraction attempt fails, [`tnt extract`](#`tnt extract`) will warn about that.
 
 ### TranslationStates
 
@@ -291,17 +307,17 @@ A translation state define the state of a single string's translation. In the tr
 - `unused`, `u`  
   A previously translated string that is missing from the list of sources after a recent `tnt extract`.
 
-In addition to the state, the `w` counter shows the number of analysis warnings. To list the strings that contain warnings, use `tnt show warnings`.
+In addition to the state, the `w` counter shows the number of analysis warnings. To list the strings that contain warnings, use [`tnt show warnings`](#`tnt show warnings`).
 
 ### Directory `.tnt` 
 
-This is the directory where `tnt` manages the translation sources and the translation files. The directory can be created with `tnt init`.
+This is the directory where `tnt` manages the translation sources and the translation files. The directory can be created with [`tnt init`](#`tnt init`).
 
 #### File `.tnt/sources.json` 
 
 This file configures the language the original strings are in and the sources from where they are extracted.
 
-Use `tnt init -l` to change the language, `tnt add` to add sources, and `tnt remove` to remove them.
+Use [`tnt init -l`](#`tnt init`) to change the language, [`tnt add`](#`tnt add`) to add sources, and [`tnt remove`](#`tnt remove`) to remove them.
 
 #### File `.tnt/translation-[tag].json` 
 
@@ -317,7 +333,7 @@ The language specific translation files. Currently, only the original and the tr
 
 `tnt` tries to keep these files up to date.
 
-`tnt sync` may be used to regenerate them in case they are missing, an error happened, or language files in the `.tnt` directory were changed.
+[`tnt sync`](#`tnt sync`) may be used to regenerate them in case they are missing, an error happened, or language files in the `.tnt` directory were changed.
 
 ## License & Contribution & Copyright
 
