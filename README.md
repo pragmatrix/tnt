@@ -193,13 +193,15 @@ Examples:
 
 Imports XLIFF files. `tnt import` can import either specific files or languages, or files that can find in the import directory. 
 
-To import one or more languages, use `tnt import [language-or-tag]`, to import a file, use `tnt import [filename]`. To import all files that look like they were previously exported with [`tnt export`](#`tnt export`), use `tnt import --all`.
+To import one or more languages, use `tnt import [language tag or name]`, to import a file, use `tnt import [filename]`. To import all files that look like they were previously exported with [`tnt export`](#`tnt export`), use `tnt import --all`.
 
 `--from` The directory to import the files from. The default is the current directory.
 
 `--all` Import all files that can be found in the import directory.
 
-> The importer tries to match the original strings in the import files with the ones in the language files and if a matching string is found, _will overwrite_ its translation with the one imported. So before using `tnt import`, make sure the contents of the `.tnt/` directory is commited to your revision control system.
+`-l`, `--language` Specify additional language tags or names to import. This option provides an alternative to passing the languages as arguments.
+
+> The importer matches the original strings in the files to import with the ones in the language files, and if a matching string is found, _will overwrite_ its translation with the one imported. So before using `tnt import`, make sure the contents of the `.tnt/` directory is commited to your revision control system.
 
 #### `tnt translate`
 

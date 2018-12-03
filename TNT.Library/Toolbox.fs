@@ -3,6 +3,19 @@
 open System.IO
 open FunToolbox.FileSystem
 
+[<AutoOpen>]
+module Prelude =
+
+    /// Trimmed String conversion.
+    let (|Trimmed|) (str: string) =
+        str.Trim()
+
+    /// Match if the string has content after trimmed, and return the trimmed string.
+    let (|NotEmptyTrimmed|_|) (Trimmed trimmed) = 
+        match trimmed with
+        | "" -> None
+        | str -> Some str
+
 module List = 
     /// Return the list, and all the sub-lists possible, except the empty list.
     /// [a;b] -> [ [a;b]; [b] ]
@@ -17,9 +30,31 @@ module List =
 
         l |> subs []
 
+    /// Matches if all the element's sequence are equal or no elements 
+    /// are in the sequence.
+    /// Returns the element if they are.
+    let inline (|AllEqual|_|) l = 
+        match l with
+        | [] -> Some None
+        | [one] -> Some ^ Some one
+        | head::rest -> 
+            if rest |> List.forall ^ (=) head 
+            then Some ^ Some head
+            else None
+
+module Result = 
+
+    let toOption = function
+        | Ok r -> Some r
+        | Error _ -> None
+
 [<AutoOpen>] 
 /// copied from FunToolbox/FileSystem.
 module private FileSystemHelpers =
+
+    let isEmpty (str: string) = str.Length = 0
+
+    let isTrimmed (str: string) = str.Trim() = str
 
     let normalize (path: string) = 
         path.Replace("\\", "/")
@@ -31,23 +66,24 @@ module private FileSystemHelpers =
             |> Array.contains c
             |> not
 
-    let isEmpty (str: string) = str.Length = 0
+    let (|ValidPath|_|) (path: string) =
+        if not ^ isEmpty path
+            && isTrimmed path
+            && path |> Seq.forall isValidPathCharacter 
+            then Some path else None
 
-    let isTrimmed (str: string) = str.Trim() = str
+    let isValidNameCharacter =
+        let invalidNameChars = Path.GetInvalidFileNameChars()
+        fun c ->
+            invalidNameChars
+            |> Array.contains c
+            |> not
 
-    let isValidPath (path: string) =
-        not ^ isEmpty path
-        && isTrimmed path
-        && path |> Seq.forall isValidPathCharacter
-
-/// Absolute or relative path. Toolbox candidate.
-type ARPath =
-    | AbsolutePath of Path
-    | RelativePath of string
-    override this.ToString() = 
-        match this with
-        | AbsolutePath p -> string p
-        | RelativePath p -> p
+    let (|ValidFilename|_|) (name: string) =
+        if not ^ isEmpty name
+            && isTrimmed name
+            && name |> Seq.forall isValidNameCharacter 
+            then Some name else None
 
 /// A tagged, relative path.
 type [<Struct>] 'tag rpath = 
@@ -56,19 +92,30 @@ type [<Struct>] 'tag rpath =
     override this.ToString() = 
         this |> function RPath path -> path
 
+/// Absolute or relative path. Toolbox candidate.
+type 'tag arpath =
+    private
+    | AbsolutePath of Path
+    | RelativePath of 'tag rpath
+    override this.ToString() = 
+        match this with
+        | AbsolutePath p -> string p
+        | RelativePath p -> string p
+
 /// A filename tagged with a phantom type.
 type 'tag filename = 
     | Filename of string
     override this.ToString() = 
         this |> function Filename fn -> fn
 
+
 module RPath =
 
     let parse (path: string) = 
         let normalized = normalize path
-        if (not ^ isValidPath normalized) then
-            failwithf "'%s' is not a valid path" path
-        RPath normalized
+        match normalized with
+        | ValidPath path -> RPath path
+        | _ -> failwithf "'%s' is not a valid path" path
 
     let map (f: string -> string) (Path path) =
         path |> f |> parse
@@ -111,28 +158,38 @@ module RPath =
 
 module ARPath =
 
+    let tryParse (path: string) = 
+        let path = path |> normalize
+        match path with
+        | ValidPath path ->
+            Some ^ 
+                if Path.IsPathRooted(path)
+                then AbsolutePath ^ Path.parse path
+                else RelativePath ^ RPath.parse path
+        | _ -> None
+
     let parse (path: string) = 
-        if Path.IsPathRooted(path)
-        then AbsolutePath ^ Path.parse path
-        else RelativePath path
+        match tryParse path with
+        | Some path -> path
+        | None -> failwithf "'%s' is an invalid absolute or relative path" path
 
     /// Returns an absolute path be prepending root to it if it's relative.
     let at (root: Path) = function
         | AbsolutePath abs -> abs
-        | RelativePath rel -> root |> Path.extend rel
+        | RelativePath (RPath rel) -> root |> Path.extend rel
 
-    let extend (right: ARPath) (left: ARPath) =
+    let extend (right: 'tag arpath) (left: _ arpath) : 'tag arpath =
         match left, right with
-        | RelativePath ".", right
+        | RelativePath (RPath "."), right
             -> right
-        | left, RelativePath "."
+        | left, RelativePath (RPath ".")
             -> left
         | _, AbsolutePath path 
             -> AbsolutePath path
         | AbsolutePath path, RelativePath rel 
-            -> AbsolutePath (path |> Path.extend rel)
-        | RelativePath parent, RelativePath rel 
-            -> RelativePath (Path.Combine(parent, rel) |> normalize)
+            -> AbsolutePath (path |> Path.extend (string rel))
+        | RelativePath (RPath parent), RelativePath (RPath rel)
+            -> RelativePath ^ RPath.parse ^ normalize ^ Path.Combine(parent, rel)
 
 module Path = 
 
@@ -144,11 +201,26 @@ module Path =
 
 module Filename = 
 
+    let tryParse = function
+        | ValidFilename fn -> Ok ^ Filename fn
+        | fn -> Error ^ sprintf "'%s' is not a valid filename" fn
+
+    let parse str = 
+        match tryParse str with
+        | Ok fn -> fn
+        | Error e -> failwith e
+
+    let inline map f (Filename fn) = Filename ^ f fn
+
     let inline toPath (fn: 'tag filename) : 'tag rpath = 
         RPath.ofFilename fn
 
     let inline at (path: Path) (fn: 'tag filename) : Path = 
         path |> Path.extend (toPath fn)
+
+    let inline ofARPath (path: 'tag arpath) : 'tag filename =
+        Path.GetFileName(string path)
+        |> parse
 
 type 'a selector = 
     | SelectAll

@@ -16,6 +16,7 @@
     <Compile Include="Translation.fs" />
     <Compile Include="ExportModel.fs" />
     <Compile Include="XLIFF.fs" />
+    <Compile Include="Excel.fs" />
     <Compile Include="ImportExport.fs" />
     <Compile Include="FileSystem.fs" />
     <Compile Include="MachineTranslation.fs" />

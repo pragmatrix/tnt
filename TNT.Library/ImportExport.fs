@@ -6,7 +6,10 @@ open TNT.Library
 open TNT.Library.ExportModel
 
 /// Convert a translations to a file.
-let export (project: ProjectName) (sourceLanguage: LanguageTag) (translation: Translation) : File =
+let export 
+    (project: ProjectName) 
+    (sourceLanguage: LanguageTag) 
+    (translation: Translation) : File<ExportUnit> =
 
     let toUnit (record: TranslationRecord) =
 
@@ -42,8 +45,8 @@ let export (project: ProjectName) (sourceLanguage: LanguageTag) (translation: Tr
 [<AutoOpen>]
 module internal ImportHelper =
     
-    let importNotes (unit: TranslationUnit) : string list = 
-        unit.Notes
+    let importNotes (notes: string list) : string list = 
+        notes
         |> Seq.map ^ Text.trim
         |> Seq.filter ^ (<>) ""
         |> Seq.toList
@@ -74,10 +77,10 @@ type ImportWarning =
     | ProjectMismatch of ProjectName * ProjectName
     | DuplicateImports of LanguageTag
     | TranslationNotFound of LanguageTag
-    | OriginalStringNotFound of LanguageTag * TranslationUnit
+    | OriginalStringNotFound of LanguageTag * ImportUnit
     | UnusedTranslationChanged of LanguageTag * (TranslationRecord * TranslationRecord)
-    | IgnoredNewWithTranslation of LanguageTag * (TranslationRecord * TranslationUnit)
-    | IgnoredNewReset of LanguageTag * (TranslationRecord * TranslationUnit)
+    | IgnoredNewWithTranslation of LanguageTag * (TranslationRecord * ImportUnit)
+    | IgnoredNewReset of LanguageTag * (TranslationRecord * ImportUnit)
     override this.ToString() =
         match this with
         | ProjectMismatch(wrong, expected)
@@ -99,7 +102,7 @@ type ImportWarning =
 let import 
     (project: ProjectName) 
     (translations: Translation list) 
-    (files: File list) 
+    (files: File<ImportUnit> list) 
     : Translation list * ImportWarning list =
 
     // find files that do not belong to the current project.
@@ -140,7 +143,7 @@ let import
 
     /// Import one file, and return the translation that changed.
     let tryImportFile
-        (file: File) 
+        (file: File<ImportUnit>) 
         : Translation option * ImportWarning list =
         
         let language = file.TargetLanguage
@@ -150,8 +153,8 @@ let import
         | Some translation ->
 
         let updateRecord 
-            (pending: Map<string, TranslationUnit>) (record: TranslationRecord) 
-            : (TranslationRecord * ImportWarning option) * Map<string, TranslationUnit> =
+            (pending: Map<string, ImportUnit>) (record: TranslationRecord) 
+            : (TranslationRecord * ImportWarning option) * Map<string, ImportUnit> =
 
             let original = record.Original
             
@@ -182,7 +185,12 @@ let import
                 | Translated | Final 
                     -> update ^ TranslatedString.Final unit.Target
 
-            let record = { record with Notes = importNotes unit }
+            let record = 
+                match unit.Notes with
+                | Some notes
+                    -> { record with Notes = importNotes notes }
+                | None 
+                    -> record
 
             (record, warningOpt), Map.remove original pending
 

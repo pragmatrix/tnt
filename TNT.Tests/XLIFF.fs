@@ -6,7 +6,7 @@ open TNT.Model
 open TNT.Library
 open TNT.Library.ExportModel
 open TNT.Library.XLIFF
-open FsUnit.Xunit
+open FsUnit.Xunit.Typed
 open Xunit
 
 let record original translated = { 
@@ -46,7 +46,7 @@ let ``generates XLIFF``() =
     let generated = 
         ImportExport.export projectName sourceLanguage translation
         |> List.singleton
-        |> generateV12 ExportProfile.MultilingualAppToolkit
+        |> generateV12 XLIFF12MultilingualAppToolkit
         |> string
         |> fun str -> str.Trim()
 
@@ -72,30 +72,22 @@ let ``imports XLIFF``() =
             Source = "New"
             Target = "Neu"
             State = Translated
-            Warnings = []
-            Contexts = []
-            Notes = []
+            Notes = Some []
         } ; {
             Source = "Auto";
             Target = "Automatische Uebersetzung";
             State = Final
-            Warnings = []
-            Contexts = []
-            Notes = []
+            Notes = Some []
         } ; {
             Source = "Reviewed"
             Target = "Reviewed"
-            Warnings = []
-            Contexts = []
             State = Final
-            Notes = []
+            Notes = Some []
         } ; {
             Source = "WithContextAndNotes"
             Target = "NR"
             State = NeedsReview
-            Warnings = []
-            Contexts = []
-            Notes = [
+            Notes = Some [
                 "Note 1"
                 "Note 2"
             ]

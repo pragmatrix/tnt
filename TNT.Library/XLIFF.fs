@@ -1,25 +1,29 @@
 ﻿/// XLIFF export and import
 module TNT.Library.XLIFF
 
+open System.IO
+open System.Text
+open System.Xml
 open System.Xml.Linq
 open System.Security.Cryptography
-open System.Xml
+open FunToolbox.FileSystem
 open TNT.Model
 open TNT.Library.ExportModel
 
-type ExportProfile =
-    | Generic
-    | MultilingualAppToolkit
-    member this.RequiresGroups = 
-        match this with
-        | Generic -> false
-        | MultilingualAppToolkit -> true
+// Tag related to XLIFF
+[<Struct>]
+type XLIFF = XLIFF
 
-module ExportProfile =
-    let parse = function
-        | "generic" -> Generic
-        | "mat" -> MultilingualAppToolkit
-        | unexpected -> failwithf "unexpected XLIFF tool profile name: '%s'" unexpected
+/// The supported for XLIFF files. The first one ".xlf" is the default extension
+/// used in the exporting process.
+let Extensions = [ ".xlf"; ".xliff" ]
+let DefaultExtension = Extensions |> List.head
+
+// VisualStudio uses the dot extension to separate the identifier from the base name.
+let [<Literal>] IdentifierSeparator = "."
+
+let defaultFilenameForLanguage (project: ProjectName) (LanguageTag(identifier)) : XLIFF filename =
+    Filename ^ string project + IdentifierSeparator + identifier + DefaultExtension
 
 module TargetState = 
 
@@ -53,7 +57,6 @@ let private canNoteBeIgnored (note: string) =
     |> Array.exists ^ fun prefix -> note.startsWith prefix
 
 module private Hash =
-    open System.Text
 
     let private sha256 = new SHA256Managed()
 
@@ -69,7 +72,7 @@ module private X =
     let name str = XName.op_Implicit str
 
 /// Generate XLIFF version 1.2
-let generateV12 (profile: ExportProfile) (files: File list) : XLIFFV12 =
+let generateV12 (format: XLIFFFormat) (files: File<ExportUnit> list) : XLIFFV12 =
 
     let en (name: string) (ns: string) (nested: obj list) = 
         XElement(X.ns ns + name, nested)
@@ -116,7 +119,7 @@ let generateV12 (profile: ExportProfile) (files: File list) : XLIFFV12 =
                     ]
                 ]
 
-                if profile.RequiresGroups then
+                if format.RequiresGroups then
                     // Although optional, Multilingual App Toolkit for Windows requires <group> for loading
                     // _and_ the id attribute for saving the xliff properly.
                     yield e "group" [
@@ -170,7 +173,7 @@ type XElement with
         |> Seq.map ^ fun tn -> tn.Value
         |> String.concat ""
 
-let parseV12 (XLIFFV12 xliff) : File list = 
+let parseV12 (XLIFFV12 xliff) : File<ImportUnit> list = 
     let document = XDocument.Parse(xliff, LoadOptions.SetLineInfo)
     let root = document.Root
     do
@@ -221,15 +224,13 @@ let parseV12 (XLIFFV12 xliff) : File list =
                         Source = source.Text
                         Target = target.Text
                         State = state
-                        Warnings = []
-                        Contexts = []
-                        Notes = notes |> List.filter (not << canNoteBeIgnored)
+                        Notes = Some (notes |> List.filter (not << canNoteBeIgnored))
                     }
             |> Seq.toList
 
         {
-            SourceLanguage = sourceLanguage
             ProjectName = name
+            SourceLanguage = sourceLanguage
             TargetLanguage = targetLanguage
             TranslationUnits = units
         }
@@ -237,4 +238,33 @@ let parseV12 (XLIFFV12 xliff) : File list =
     files
     |> Seq.map parseFile
     |> Seq.toList
+
+let projectPatterns (project: ProjectName) : GlobPattern list =
+    Extensions
+    |> List.map ^ fun ext ->
+        GlobPattern(string project + "*" + ext)
+        
+/// Get all the XLIFF files in the directory baseName.
+let filesInDirectory (project: ProjectName) (directory: Path) : Export filename list =
+    projectPatterns project
+    |> Seq.collect ^ fun pattern ->
+        Directory.EnumerateFiles (string directory, string ^ pattern)
+    |> Seq.map (Path.parse >> Path.name >> Filename)
+    |> Seq.toList
     
+let exporter (format: XLIFFFormat) = {
+    Extensions = Extensions
+    DefaultExtension = DefaultExtension
+    DefaultFilename = 
+        fun project lang ->
+            defaultFilenameForLanguage project lang |> Filename.map id
+    SaveToPath = fun path file ->
+        let (XLIFFV12 generated) = generateV12 format [file]
+        File.saveText Encoding.UTF8 generated path
+    LoadFromPath = fun path ->
+        File.loadText Encoding.UTF8 path
+        |> XLIFFV12
+        |> parseV12
+    FilesInDirectory = filesInDirectory
+}
+

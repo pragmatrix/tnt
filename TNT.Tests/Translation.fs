@@ -3,7 +3,7 @@
 open System.Text
 open TNT.Model
 open TNT.Library
-open FsUnit.Xunit
+open FsUnit.Xunit.Typed
 open Xunit
 open FunToolbox.FileSystem
 

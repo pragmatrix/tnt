@@ -5,6 +5,7 @@ open System.Runtime.CompilerServices
 open FunToolbox.FileSystem
 open TNT.Model
 open TNT.Library
+open TNT.Library.ExportModel
 open TNT.Library.Output
 open TNT.Library.MachineTranslation
 open TNT.Library.APIHelper
@@ -167,22 +168,23 @@ let private selectTranslations (languages: LanguageTag selector) (translations: 
         Selector.isSelected translation.Language languages
         || Selector.isSelected translation.Language.Primary languages
 
-let export 
+let private exportWith
     (languages: LanguageTag selector)
-    (exportDirectory: ARPath) 
-    (profile: XLIFF.ExportProfile) =
+    (exportDirectory: Export arpath)
+    (exporter: Exporter) =
     withSourcesAndGroup ^ fun sources group -> output {
 
     let project = projectName()
+
     let exports = 
         group
         |> TranslationGroup.translations
         |> selectTranslations languages
         |> Seq.map ^ fun translation ->
-            let filename = XLIFF.defaultFilenameForLanguage project translation.Language 
-            let path = exportDirectory |> ARPath.extend ^ RelativePath (string filename)
+            let filename = exporter.DefaultFilename project translation.Language 
+            let path = exportDirectory |> ARPath.extend ^ ARPath.parse ^ string filename
             let file = ImportExport.export project sources.Language translation
-            path, XLIFF.generateV12 profile [file]
+            path, file
         |> Seq.toList
     
     let rooted = ARPath.at ^ Directory.current()
@@ -202,20 +204,32 @@ let export
 
     for (file, content) in exports do
         yield I ^ sprintf "Exporting translation to '%s'" (string file)
-        File.saveText Encoding.UTF8 (string content) (rooted file)
+        content |> exporter.SaveToPath (rooted file)
 
     return Ok()
 }
 
-let import (files: Path list) = withGroup ^ fun group -> output {
+let export 
+    (languages: LanguageTag selector)
+    (exportDirectory: Export arpath) 
+    (format: ExportFormat) =
+
+    let exportWith exporter = exportWith languages exportDirectory exporter
+
+    match format with
+    | XLIFF format -> 
+        exportWith ^ XLIFF.exporter format
+    | Excel -> 
+        exportWith Excel.Exporter
+
+let import (files: (Exporter * Path) list) = withGroup ^ fun group -> output {
 
     let project = projectName()
     let files = 
         files
-        |> Seq.map ^ File.loadText Encoding.UTF8
-        |> Seq.map XLIFF.XLIFFV12
-        |> Seq.collect XLIFF.parseV12
-        |> Seq.toList
+        |> List.collect ^ fun (exporter, path) ->
+            exporter.LoadFromPath path
+        
 
     let translations, warnings = 
         let translations = TranslationGroup.translations group

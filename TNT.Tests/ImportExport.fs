@@ -1,10 +1,11 @@
 ﻿module TNT.Tests.ImportExport
 
+open FunToolbox.FileSystem
 open TNT.Library
 open TNT.Library.ExportModel
 open TNT.Library.ImportExport
 open TNT.Model
-open FsUnit.Xunit
+open FsUnit.Xunit.Typed
 open Xunit
 
 let inline dump v = 
@@ -13,7 +14,7 @@ let inline dump v =
 
 let project = ProjectName("project")
 
-let file lang units = {
+let file lang units : File<_> = {
     ProjectName = project
     SourceLanguage = LanguageTag "en-US"
     TargetLanguage = LanguageTag lang
@@ -25,13 +26,20 @@ let translation language records = {
     Records = records
 }
 
-let tu original translated state = {
+let xtu original translated state = {
     Source = original
     Target = translated
     State = state
     Warnings = []
     Contexts = []
     Notes = []
+}
+
+let itu original translated state = {
+    Source = original
+    Target = translated
+    State = state
+    Notes = None
 }
 
 let record original translated = {
@@ -86,7 +94,7 @@ let ``original string can not be found``() =
 
     let translation = translation "us" []
 
-    let tu = tu "source" "target" New
+    let tu = itu "source" "target" New
     let file = file "us" [tu]
 
     import [translation] [file]
@@ -99,7 +107,7 @@ let ``updated unused translation (even if set to the same transated string) caus
     let record = record "source" (TranslatedString.Unused "target")
     let translation = translation "de" [record]
 
-    let tu = tu "source" "target" NeedsReview
+    let tu = itu "source" "target" NeedsReview
     let file = file "de" [tu]
 
     import [translation] [file]
@@ -112,7 +120,7 @@ let ``new with translation gets ignored``() =
     let record = record "source" TranslatedString.New
     let translation = translation "de" [record]
 
-    let tu = tu "source" "target" New
+    let tu = itu "source" "target" New
     let file = file "de" [tu]
 
     import [translation] [file]
@@ -124,7 +132,7 @@ let ``new that resets an entry gets ignored``() =
     let record = record "source" (TranslatedString.NeedsReview "target")
     let translation = translation "de" [record]
 
-    let tu = tu "source" "" New
+    let tu = itu "source" "" New
     let file = file "de" [tu]
 
     import [translation] [file]
@@ -136,7 +144,7 @@ let ``translation is not returned if nothing changes``() =
     let translation = 
         translation "de" [record "source" (TranslatedString.NeedsReview "target")]
     let file = 
-        file "de" [tu "source" "target" NeedsReview]
+        file "de" [itu "source" "target" NeedsReview]
 
     import [translation] [file]
     |> should equal (emptyTranslations, emptyWarnings)
@@ -148,13 +156,13 @@ let ``good case``() =
 
     let translation = translation "de" [record "source" ^ TranslatedString.NeedsReview "target"]
 
-    let file = file "de" [tu "source" "targetUpdated" NeedsReview]
+    let file = file "de" [itu "source" "targetUpdated" NeedsReview]
 
     import [translation] [file]
     |> should equal ([translationExpected], emptyWarnings)
 
 [<Fact>]
-let ``context get ignored and notes get overwritten by import``() = 
+let ``notes get overwritten by import``() = 
 
     let translationExpected = translation "de" [ { 
         Original = "source"
@@ -174,9 +182,7 @@ let ``context get ignored and notes get overwritten by import``() =
         Source = "source"
         Target = "target"
         State = NeedsReview 
-        Warnings = []
-        Contexts = [ "LC2" ; "LC3" ]
-        Notes = [ "Note 1"; "Note 2" ]
+        Notes = Some [ "Note 1"; "Note 2" ]
     } ]
     
     import [currentTranslation] [importFile]
@@ -217,3 +223,35 @@ let ``trimming to a length less than the ellipsis' length`` (max: int) (expected
 
     "Hello" |> Text.trimToMaxCharacters max ".."
     |> should equal expected
+
+module Excel =
+
+    [<Fact>]
+    let ``generating file ExcelExport.xlsx and parsing it back works``() =
+        let tu = {
+            Source = "Source Line 1\nSource Line 2"
+            Target = "Target Line 1\nTarget Line 2"
+            State = NeedsReview
+            Warnings = ["Warning 1"; "Warning 2"]
+            Contexts = ["Context 1"; "Context 2"]
+            Notes = ["Note1 First Line\nNote1 Second Line"; "Note 2"]
+        }
+
+        let file = file "de" [tu]
+
+        let exporter = Excel.Exporter
+        let path = 
+            Directory.current()
+            |> Path.extend (RPath.parse "c:/msys/tmp/ExcelExport.xlsx")
+
+        exporter.SaveToPath path file
+        let file = exporter.LoadFromPath path
+        printfn "%A" file
+
+        file |> should equal [ {
+            ProjectName = ProjectName "project";
+            SourceLanguage = LanguageTag "en-US";
+            TargetLanguage = LanguageTag "de";
+            TranslationUnits = [];
+        } ]
+

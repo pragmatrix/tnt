@@ -2,8 +2,10 @@
 open TNT.Model
 open TNT.Library
 open TNT.Library.Output
+open TNT.Library.ExportModel
 open FunToolbox.FileSystem
 open CommandLine
+open TNT.Library
 
 [<Verb("init", HelpText = "Initialize the current directory. Creates the '.tnt' directory and the 'sources.json' file.")>]
 type InitOptions = {
@@ -74,7 +76,7 @@ type ExportOptions = {
     [<Option("to", HelpText = "The directory to export the XLIFF files to. Default is the current directory.")>]
     To: string
 
-    [<Option("for", HelpText = "Enable specific XLIFF tool support. --for mat enables support for the Multilingual App Toolkit.")>]
+    [<Option("format", HelpText = "Export format (default 'excel'). Use 'xliff' for an xliff version 1.2 editor, 'xliff-mat' for the Multilingual App Toolkit.")>]
     For: string
 }
 
@@ -82,7 +84,10 @@ type ExportOptions = {
 type ImportOptions = {
 
     [<Value(0, HelpText = "The files or languages to import, use --all to import all files.")>]
-    FilesOrLanguages: string seq
+    FilenamesOrLanguages: string seq
+
+    [<Option('l', "language", HelpText = "Language (code ['-' region] or name) to be imported.")>]
+    Languages: string seq
 
     [<Option("from", HelpText = "The directory to import the XLIFF files from. Default is the current directory.")>]
     From: string
@@ -195,7 +200,7 @@ let dispatch (command: obj) =
             |> Select
 
         if selector = Select [] then
-            failwith "No languages selected, specify them as arguments or use --all to select all languages."
+            failwith "No languages selected, enter them as arguments or use --all to select all languages."
 
         let exportPath = 
             opts.To 
@@ -206,8 +211,8 @@ let dispatch (command: obj) =
         let exportProfile = 
             opts.For
             |> Option.ofObj
-            |> Option.map XLIFF.ExportProfile.parse
-            |> Option.defaultValue XLIFF.Generic
+            |> Option.map ExportFormat.parse
+            |> Option.defaultValue ExportFormat.Excel
 
         API.export selector exportPath exportProfile
 
@@ -218,30 +223,85 @@ let dispatch (command: obj) =
                 opts.From 
                 |> Option.ofObj 
                 |> Option.defaultValue "."
+                |> RPath.parse
             Directory.current() 
             |> Path.extend relativeDirectory
 
         let project = API.projectName()
 
+        let AllExporters = [ 
+            XLIFF.exporter XLIFF12
+            XLIFF.exporter XLIFF12MultilingualAppToolkit
+            Excel.Exporter
+        ]
+
         let files =
             if opts.All then
-                XLIFFFilenames.inDirectory importDirectory project
-                |> List.map ^ fun fn -> importDirectory |> Path.extendF fn
+                AllExporters
+                |> Seq.collect ^ fun exporter -> 
+                    exporter.FilesInDirectory project importDirectory
+                    |> Seq.map ^ fun fn -> exporter, fn
+                |> Seq.distinctBy ^ snd
+                |> Seq.map ^ fun (exporter, fn) -> 
+                    exporter, importDirectory |> Path.extendF fn
+                |> Seq.toList
             else
-            let resolveFile (filePathOrLanguage: string) = 
-                match XLIFF.properPath filePathOrLanguage with
-                | Some path -> path |> ARPath.at importDirectory
-                | None -> 
-                    // when a language tag or name is used, 
-                    // only .xlf files are imported and .xliff files are being ignored
-                    // and must be explicitly passed as a path.
-                    resolveLanguage filePathOrLanguage
-                    |> XLIFF.defaultFilenameForLanguage project
-                    |> Filename.at importDirectory
 
-            opts.FilesOrLanguages
-            |> Seq.map resolveFile
-            |> Seq.toList
+            let resolveLanguage (language: string) =
+                    // when a language tag or name is used, 
+                    // only the files with the default extension are imported. Other files
+                    // must be explicitly provided by filename.
+                    let language = resolveLanguage language
+                    let potentialFilenames = 
+                        Exporters.allDefaultFilenames project language AllExporters
+                    let potentialFiles = 
+                        potentialFilenames
+                        |> List.mapSnd ^ Filename.at importDirectory
+                        |> List.filter (File.exists << snd)
+
+                    match potentialFiles with
+                    | [] -> 
+                        failwithf "Found no file for language %s, expected one of '%s'." 
+                            language.Formatted 
+                            (potentialFilenames 
+                            |> Seq.map (string << snd)
+                            |> Seq.distinct
+                            |> String.concat ",")
+                    | [one] -> 
+                        one
+                    | _ -> 
+                        failwithf "For more than one file for language %s found." language.Formatted
+
+            let resolveFileOrLanguage (filePathOrLanguage: string) = 
+                // we check first by filename extension.
+                let resolvedViaFilename = 
+                    filePathOrLanguage 
+                    |> ARPath.tryParse 
+                    |> Option.bind ^ fun path -> 
+                        Exporters.tryResolveExporterFromFilename (Filename.ofARPath path) AllExporters
+                        |> Option.map ^ fun exporter -> exporter, path
+
+                match resolvedViaFilename with
+                | Some (exporter, path) 
+                    -> exporter, path |> ARPath.at importDirectory
+                | None 
+                    -> resolveLanguage filePathOrLanguage
+
+            match Seq.toList opts.FilenamesOrLanguages, Seq.toList opts.Languages with
+            | [], [] -> failwith "No languages selected, enter them as arguments or '-l', or use --all to select all languages"
+            | filenamesOrLanguages, languages ->
+                
+                let viaArguments = 
+                    filenamesOrLanguages
+                    |> List.map resolveFileOrLanguage
+                let viaOptions = 
+                    languages
+                    |> List.map resolveLanguage
+
+                [viaArguments; viaOptions]
+                |> Seq.collect id
+                |> Seq.distinctBy snd
+                |> Seq.toList
 
         API.import files
 
