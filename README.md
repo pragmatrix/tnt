@@ -1,10 +1,10 @@
 # TNT - The .NET Translation Tool
 
-A command line tool for managing translations based on strings extracted from .NET assemblies. Supports XLIFF roundtrips and machine translations.
+A command line tool for managing translations based on strings extracted from .NET assemblies. Supports translation roundtrips via Excel or XLIFF and Google machine translations.
 
 ## Why?
 
-I did not like to use resource identifiers and then one thing lead to another.
+To provide an alternative way to resource identifiers.
 
 ## Installation & Update
 
@@ -24,33 +24,35 @@ dotnet tool update tnt-cli -g --add-source https://www.myget.org/F/pragmatrix/ap
 
 ### Projects & Initialization & Subdirectories
 
-`tnt` works in a project's directory, preferable the directory of your application's primary project. Change into this directory an initialize it with `tnt init`, which creates the subdirectory `.tnt/` and the file `.tnt/sources.json`. The `.tnt/` directory contains all the _important_ files `tnt` is managing for you, these are the list of sources and the translation files.
+`tnt` works in a project's directory, preferable the directory of your application's primary project. Change into this directory an initialize it with `tnt init`. This creates the subdirectory `.tnt/` and the file `.tnt/sources.json`. The `.tnt/` directory contains all the _important_ files `tnt` is managing for you: these are the list of sources and the translation files.
 
-> The `.tnt/` directory is meant to be checked in into your repository. Note that `tnt` may sometimes act somewhat unforgiving and does not offer an undo option, so this is not a recommendation.
+> Note that some `tnt` commands act somewhat unforgiving and do not offer an undo option, so it's strongly recommended to put the `.tnt/` directory under revision control.
 
-> `tnt init` sets the source language your original strings are in to `en-US` by default. If your original strings are in a different language, you can change that anytime with `tnt init -l [your language tag or name]`.
+> `tnt init` sets the source language of your original strings to `en-US` by default. If your original strings are in a different language, you can change that anytime with `tnt init -l [your language tag or name]`.
 
 ### Sources
 
 A source is something `tnt` retrieves original strings from. Currently, `tnt` supports .NET assemblies as sources only.
 
-All sources are listed in the `.tnt/sources.json` file and can be added by entering `tnt add -a [relative path to the assembly]` from within your project's directory. For example `tnt add -a bin/Release/netcoreapp2.1/MyAwesomeApp.exe` would add an assembly to the list of sources.
+All sources are listed in the `.tnt/sources.json` file and can be added by entering `tnt add -a [relative path to the assembly]` from within your project's directory. For example `tnt add -a bin/Debug/netcoreapp2.1/MyAwesomeApp.exe` would add an assembly to the list of sources.
 
-> `tnt` does not read or modify any of your project files, it accesses only the sources you specify.
+> `tnt` does not read or modify any of your other project files, it accesses the sources you specify.
 
 ### Language & Assembly Extraction
 
-`tnt` extracts marked strings from .NET assemblies. For C#, each string that needs to be translated must be appended with an extension method `.t()` that does two things. First, it marks the string that comes before it, and second, it translates the string if there is a suitable translation file available.
+`tnt` extracts marked strings from .NET assemblies. For C#, each string that needs to be translated must be marged with an extension method `.t()` that does two things: First, it marks the string that comes before it, and second, it translates the string.
 
 > For more extraction options take a look at [Methods of Extraction](#methods-of-extraction).
 
-To use the `.t()` function in your projects, add the [TNT.T][TNT.T] NuGet package to your project and insert a `using TNT;` on top of the files you wish to mark strings with. Lucky owners of Resharper may just type `.t()` after a string and insert the `using TNT;` by pressing ALT+Enter. 
+To use the `.t()` function in your projects, add the [TNT.T][TNT.T] NuGet package to your project and insert a `using TNT;` to the top of the files you wish to mark strings in. Lucky owners of Resharper may just type `.t()` after a string and insert the `using TNT;` by pressing ALT+Enter. 
 
 Before extracting, you need to add at least one target language to the project. Add one, say "Spanisch" with `tnt add -l Spanish`. 
 
-> With `tnt add` and with several other commands, you can use either language names or language tags. If you are not sure what languages are supported, use `tnt show languages` to list all supported .NET language tags and language names.
+> `tnt add` and other commands support either language names or language tags. If you are not sure what languages are supported, use `tnt show languages` to list all supported .NET language tags and language names.
 
-Now build your project to be sure the sources are available and then enter `tnt extract`, which extracts the strings and creates language files in `.tnt/translation-[tag].json`. `tnt` will show what it does and prints a status for each translation file.
+To be sure the sources are available, build your project and then enter `tnt extract` to extract the strings and to create the appropriate language files in `.tnt/translation-[tag].json`.
+
+When `tnt` extracts the strings it shows what it does and outputs a status for each language file generated.
 
 > The status consists of the translation's language tag, its counters, its language name, and the filename of the translation file.
 
@@ -66,7 +68,7 @@ Now build your project to be sure the sources are available and then enter `tnt 
 
 #### Excel Roundtrips
 
-`tnt export` can export languages into a specially formatted Excel file, that can be modified by a translator and imported back with `tnt import`.
+`tnt export` can export languages into a Excel file, that can be modified by a translator and imported back with `tnt import`.
 
 > Although `tnt` tries hard to do its best, `tnt import` is one of the commands unexpected things may happen. So be sure that the `.tnt/` directory is under revision control.
 
@@ -161,47 +163,64 @@ Shows the status of all translations. See also [TranslationsStates](#Translation
 
 #### `tnt export`
 
-Export translations for use with a language translation tool.
+Export translations for use with a language translation tool or Excel.
 
-This command will export translations into one file per each language. The files are named after the project name and the language tag. Currently, the project name is defined as the current directory's name.
+This command will export translations to one file per each language. The files are named after the name of the project and the language tag. By default, the project name is the current directory's name.
 
-`tnt export` will never overwrite any files. If files are already existing at the designated location's, `tnt` will print a warning and exit.
+`tnt export` will never overwrite any files. If files exist at the designated locations, `tnt` will output a warning and exit.
 
-Languages can be selected either by `-l`, or by passing them as arguments. To select all languages, use `--all`. Language names and tags are accepted.
+Languages can be selected either by `-l`, or by passing them as arguments. To select all languages, use `--all`. 
 
 `--all` Select all existing languages to export. By default, no languages are exported.
 
-`--to` Specify the directory to where the files should be exported. The default is the current directory.
+`--to` Specify the directory where the files should be exported to. The default is the current directory.
 
-`--for` Specify the tool that will used for editing the XLIFF files. Without `--for`, the XLIFF XML format is generated in a way that should be compatible with most XLIFF tools. `--for mat` will generate XLIFF that is compatible with the Multilingual App Toolkit.
+`--for` Specify the tool that will used for editing the exported files. Supported formats are `excel`, `xliff`, and `xliff-mat` where `excel` is the default.
 
-`-l`, `--language` Used to specify language tags or names that should be exported. Currently, this is also possible by passing them as arguments.
+- `excel` Exports the translations into an Excel file that contains one workbook for each of the translation states. The workbooks contain the following columns:
 
-> The [Multilingual App Toolkit needs](https://multilingualapptoolkit.uservoice.com/forums/231158-general/suggestions/10172562-fix-crash-when-opening-xliff-file-without-group) the `<trans-unit>` elements to be surrounded with a `<group>` element, otherwise it will fail opening the files. 
->
-> `tnt` supports this as an option, because other tools may fail if they encounter `<group>` elements.
+  - The original strings.
+  - An empty column that is meant to be filled with the translated string.
+  - A column that contains the translated strings at the time of the export.
+  - The state of the string.
+  - Contexts that describe where the string appeared in the source.
+  - Notes.
+
+  Only the empty column and the state column are meant to be modified by the translator. 
+
+  If there is already a translation available in the third column (for example a machine translated suggestion), the translator can copy it to the second and change it.
+
+- `xliff` Exports the translations int the XLIFF 1.2 format that should be compatible with most XLIFF tools.
+
+- `xliff-mat` exports the translations so that it's compatible with the Multilingual App Toolkit.
+
+  > The [Multilingual App Toolkit needs](https://multilingualapptoolkit.uservoice.com/forums/231158-general/suggestions/10172562-fix-crash-when-opening-xliff-file-without-group) the `<trans-unit>` elements to be surrounded with a `<group>` element, otherwise it will fail to open the exported files. 
+  >
+  > `tnt` supports this as an option, because other tools may fail if they encounter `<group>` elements.
+
+`-l`, `--language` Used to specify language tags or names that should be exported. Alternatively, the languages can be passed directly as arguments.
 
 Examples:
 
 `tnt export German` exports an XILFF file named after the current directory and the language to the current directory.
 
-`tnt export en` exports all translations that begin with `en`.
+`tnt export en` exports all translations with a language tag `en` or  `en-*`.
 
-`tnt export --all --for mat` exports all translations for the use with the Multilingual App Toolkit.
+`tnt export --all --for excel-mat` exports all translations for the use with the Multilingual App Toolkit.
 
 #### `tnt import`
 
-Imports XLIFF files. `tnt import` can import either specific files or languages, or files that can find in the import directory. 
+Imports Excel or XLIFF translation files. `tnt import` can import either specific files or languages, or files that can be found in the import directory. 
 
-To import one or more languages, use `tnt import [language tag or name]`, to import a file, use `tnt import [filename]`. To import all files that look like they were previously exported with [`tnt export`](#`tnt export`), use `tnt import --all`.
+To import one or more languages, use `tnt import [language tag or name]`. To import a file, use `tnt import [filename]`. To import all files that look like they were previously exported with [`tnt export`](#`tnt export`), use `tnt import --all`.
 
 `--from` The directory to import the files from. The default is the current directory.
 
 `--all` Import all files that can be found in the import directory.
 
-`-l`, `--language` Specify additional language tags or names to import. This option provides an alternative to passing the languages as arguments.
+`-l`, `--language` Specify additional language tags or names to import. This option is an alternative to passing the languages as arguments.
 
-> The importer matches the original strings in the files to import with the ones in the language files, and if a matching string is found, _will overwrite_ its translation with the one imported. So before using `tnt import`, make sure the contents of the `.tnt/` directory is commited to your revision control system.
+> The importer matches the original strings in the files to import with the ones in the language files, and if a matching original string is found, _will overwrite_ the translation with the one imported. So before using `tnt import`, make sure the contents of the `.tnt/` directory is commited to your revision control system.
 
 #### `tnt translate`
 
