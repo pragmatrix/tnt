@@ -18,7 +18,7 @@ To install `tnt`, download the [latest dotnet framework](https://www.microsoft.c
 dotnet tool install tnt-cli -g --add-source https://www.myget.org/F/pragmatrix/api/v2
 ```
 
-After that `tnt` can be invoked from the command line. For example `tnt version` shows its current version. To update `tnt` enter:
+After that, `tnt` can be invoked from the command line. For example, `tnt version` shows its current version. To update `tnt` enter:
 
 ```bash
 dotnet tool update tnt-cli -g --add-source https://www.myget.org/F/pragmatrix/api/v3/index.json
@@ -26,59 +26,61 @@ dotnet tool update tnt-cli -g --add-source https://www.myget.org/F/pragmatrix/ap
 
 ## Concepts & Walkthrough
 
-### Projects & Initialization & Subdirectories
+### Projects, Initialization, and Subdirectories
 
-`tnt` works in a project's directory, preferable the directory of your application's primary project. Change into this directory an initialize it with `tnt init`. This creates the subdirectory `.tnt/` and the file `.tnt/sources.json`. The `.tnt/` directory contains all the _important_ files `tnt` is managing for you: these are the list of sources and the translation files.
+`tnt` works in a project's directory, preferable the directory of your application's primary project. Change into this directory an initialize it with `tnt init`. This creates the subdirectory `.tnt/` and the file `.tnt/sources.json`. The `.tnt/` directory contains all the _important_ files that are managed for you: these are the list of sources and the translation files.
 
-> Note that some `tnt` commands act somewhat unforgiving and do not offer an undo option, so it's strongly recommended to put the `.tnt/` directory under revision control.
+> Note that some `tnt` commands act somewhat unforgiving and do not offer an undo option, so I recommend to put the `.tnt/` directory under revision control.
 
-> `tnt init` sets the source language of your original strings to `en-US` by default. If your original strings are in a different language, you can change that anytime with `tnt init -l [your language tag or name]`.
+> `tnt init` sets the source language of your project's strings to `en-US` by default. If your original strings are in a different language, you can change that anytime with `tnt init -l [your language tag or name]`.
 
 ### Sources
 
-A source is something `tnt` retrieves original strings from. Currently, `tnt` supports .NET assemblies as sources only.
+A source is something `tnt` retrieves original strings from. Currently, `tnt` supports .NET assemblies only.
 
 All sources are listed in the `.tnt/sources.json` file and can be added by entering `tnt add -a [relative path to the assembly]` from within your project's directory. For example `tnt add -a bin/Debug/netcoreapp2.1/MyAwesomeApp.exe` would add an assembly to the list of sources.
 
-> `tnt` does not read or modify any of your other project files, it accesses the sources you specify.
+> `tnt` does not read or modify any of your other project files, it accesses the sources only.
 
 ### Language & Assembly Extraction
 
-`tnt` extracts marked strings from .NET assemblies. For C#, each string that needs to be translated must be marged with an extension method `.t()` that does two things: First, it marks the string that comes before it, and second, it translates the string.
+`tnt` extracts marked strings from .NET assemblies. For C#, each string that needs to be translated must be marked with an extension method `.t()` that does two things: First, it marks the literal string that comes before it, and second, it translates the string. For example: `"Hello World".t()`.
 
 > For more extraction options take a look at [Methods of Extraction](#methods-of-extraction).
 
-To use the `.t()` function in your projects, add the [TNT.T][TNT.T] NuGet package to your project and insert a `using TNT;` to the top of the files you wish to mark strings in. Lucky owners of Resharper may just type `.t()` after a string and insert the `using TNT;` by pressing ALT+Enter. 
+To use the `.t()` function in your projects, add the [TNT.T][TNT.T] NuGet package to your project and insert a `using TNT;` to the top of the file you wish to mark strings with. Lucky owners of Resharper may just type `.t()` after a literal string and insert `using TNT;` by pressing ALT+Enter. 
 
 Before extracting, you need to add at least one target language to the project. Add one, say "Spanisch" with `tnt add -l Spanish`. 
 
-> `tnt add` and other commands support either language names or language tags. If you are not sure what languages are supported, use `tnt show languages` to list all supported .NET language tags and language names.
+> `tnt add -l` and other commands accept language names or language tags. If you are not sure what languages are supported, use `tnt show languages` to list all .NET language tags and language names.
 
-To be sure the sources are available, build your project and then enter `tnt extract` to extract the strings and to create the appropriate language files in `.tnt/translation-[tag].json`.
+To be sure the sources are available, build your project and then enter `tnt extract` to extract the strings and to create the appropriate language files. 
 
-When `tnt` extracts the strings it shows what it does and outputs a status for each language file generated.
+While `tnt` extracts the strings, it shows what it does and prints a status for each language file generated. After the extraction, the language files are saved to `.tnt/translation-[tag].json`.
 
 > The status consists of the translation's language tag, its counters, its language name, and the filename of the translation file.
 
-> Of particular interest are the counters that count the states the individual strings are in. If you extracted, say 5 strings, and haven't translated them yet, you'll see a `[5n]`. Later, counters for additional states will appear. If you are interested now, the section [TranslationStates](#TranslationStates) explains them all.
+> Of particular interest are the counters that count the states the individual strings are in. If you extracted, say 5 strings, and haven't translated them yet, you'll see a `[5n]`. Later, counters for additional states will appear. If you are interested now, [TranslationStates](#TranslationStates) explains them all.
 
 ### Translating Strings
 
-`tnt` itself does not support interactive translations [yet](https://github.com/pragmatrix/tnt/issues/46). Of course you can edit the translation files, but `tnt` can help you in several other ways:
+`tnt` itself does not support the interactive translation of your strings, [yet](https://github.com/pragmatrix/tnt/issues/46). 
+
+Of course, editing the translation files is possible, but there are other ways `tnt` can help you with:
 
 #### Machine Translations
 
-`tnt` supports Google machine translations, which I recommend as a starting point for newly extracted strings. For the English to German machine translations I tried so far, the results needed minimal changes and Google's translation algorithm positioned .NET placeholders like `{0}` at the locations expected. I don't know if the resulting quality will be the same for your translations, but with `tnt translate` you can try your luck with Google Cloud Translation API. For more information, skip to the [`tnt translate` section](#`tnt translate`)
+`tnt` supports Google machine translations, which should be a starting point for newly extracted strings. For the English to German machine translations I tried so far, the results were of good quality and Google's translation algorithm positioned .NET placeholders like `{0}` at the locations expected. I don't know if the resulting quality will be the same for your translations, but with `tnt translate` you can try your luck with the Google Cloud Translation API. For more information, skip to the section about [`tnt translate`](#`tnt translate`).
 
 #### Excel Roundtrips
 
-`tnt export` can export languages into a Excel file, that can be modified by a translator and imported back with `tnt import`.
+`tnt export` exports languages to a Excel file that can be modified by a translator and imported back with `tnt import`.
 
-> Although `tnt` tries hard to do its best, `tnt import` is one of the commands unexpected things may happen. So be sure that the `.tnt/` directory is under revision control.
+> Although `tnt` tries hard to do its best, `tnt import` is one of the commands unexpected things may happen. So please be sure that the `.tnt/` directory is under revision control.
 
 #### XLIFF Roundtrips
 
-`tnt` supports the traditional translation roundrip that is comprised of exporting the translation files to the [XLIFF][XLIFF] format, using an XLIFF tool to edit them, and importing back the changes. With `tnt export`,  XLIFF files are generated and sent to translators, who can then use their favorite tool (like the [Multilingual App Toolkit](https://developer.microsoft.com/en-us/windows/develop/multilingual-app-toolkit, for example)) to translate these strings and send them back. After that, `tnt import` is used to update the strings in the translation files.
+Similar to the Excel roundtrips, `tnt` supports the traditional translation process that is comprised of exporting the translation files to the [XLIFF][XLIFF] format, using an XLIFF tool to edit them, and importing back the changes. With `tnt export`,  XLIFF files are generated and sent to translators, who can then use their favorite tool (like the [Multilingual App Toolkit](https://developer.microsoft.com/en-us/windows/develop/multilingual-app-toolkit, for example)) to translate these strings and send them back to the developer. After that, `tnt import` is used to update the strings in the translation files.
 
 #### Translation Verification
 
