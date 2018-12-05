@@ -2,9 +2,13 @@
 
 A command line tool for managing translations based on strings extracted from .NET assemblies. Supports translation roundtrips via Excel or XLIFF and Google machine translations.
 
-## Why?
+`tnt` lets you mark literal strings in source code, extracts them from the compiled IL code, and manages all further translation processes. At runtime, the NuGet [TNT.T][TNT.T] translates the marked strings.
 
-To provide an alternative way to resource identifiers.
+In that regard, `tnt` is very similar to translation solutions like [gettext][gettext].
+
+I've created `tnt` to provide an alternative for resource files.
+
+[gettext]: https://en.wikipedia.org/wiki/Gettext
 
 ## Installation & Update
 
@@ -362,3 +366,6 @@ Contributions are welcome, please comply to the `.editorconfig` file.
 
 (c) 2018 Armin Sander
 
+
+
+[TNT.T]: 
