@@ -84,13 +84,13 @@ Similar to the Excel roundtrips, `tnt` supports the traditional translation proc
 
 #### Translation Verification
 
-In addition to translation support, `tnt` supports a number of simple verifications it applies to the translated strings. `tnt` verifies
+`tnt` supports a number of simple verification rules it applies to the translated strings. `tnt` verifies
 
 - if the same .NET placeholders (for example `{0}`) reappear in the translated text.
 - if the number of lines match.
 - if the indents match.
 
-`tnt` verifies the translations that are in the `needs-review` state only (state `r` for short). If one of these verification failes, `tnt status` adds them to the warning (`w`) counter. To show them in detail, use `tnt show warnings`.
+These rules are verified with each `tnt status` invocation for translations that are in the `needs-review` state only (`r` for short). If one of the rules fail to verify, `tnt status` increases the warning counter (abbrevated with `w`) and `tnt show warnings` may be used to show the messages in detail.
 
 
 ### Deployment & Translation Loading
