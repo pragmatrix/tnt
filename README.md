@@ -95,17 +95,17 @@ These rules are verified with each `tnt status` invocation for translations that
 
 ### Deployment & Translation Loading
 
-`tnt` maintains a second directory named `.tnt-content/` where it puts the translation files meant to be loaded by your application.
+`tnt` maintains a second directory named `.tnt-content/` where it puts translation files intended to be loaded by your application via the NuGet [TNT.T][TNT.T].
 
-> These files *do not need* to be under revision control, because they can be regenerated with `tnt sync`. Basically, they are *distilled* translation files for each language optimized for your application to pick up.
+> These files *do not need* to be under revision control, because they can be regenerated with `tnt sync` any time. They contain *distilled* translations for each language optimized for your application to pick up.
 >
-> The format of these files might change in the future and so should not be relied on.
+> The format of these files might change in the future and should not be relied on.
 
 To make the application aware of the translation files, add them to the project and change their build action to `Content`.
 
-> After adding the files to the project, you can change the build action in the properties dialog or by changing the XML element of the files from `<Compile ...` to `<Content ...`
+> After adding the files to the project, you can change the build action in the properties dialog of Visual Studio or by changing the XML element of the files from `<Compile ...` to `<Content ...`.
 
-Now, when you start your application with another language configured, it should pick up the right translation file and translate the strings marked with `.t()`.
+Now, when you start your application with another default user interface language configured, [TNT.T][TNT.T] loads the matching translation file and translates the strings marked with `.t()`.
 
 ## Reference
 
