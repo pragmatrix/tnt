@@ -38,7 +38,7 @@ dotnet tool update tnt-cli -g --add-source https://www.myget.org/F/pragmatrix/ap
 
 A source is something `tnt` retrieves original strings from. Currently, `tnt` supports .NET assemblies only.
 
-All sources are listed in the `.tnt/sources.json` file and can be added by entering `tnt add -a [relative path to the assembly]` from within your project's directory. For example `tnt add -a bin/Debug/netcoreapp2.1/MyAwesomeApp.exe` would add an assembly to the list of sources.
+All sources are listed in the `.tnt/sources.json` file and can be added by entering `tnt add -a [relative path to the assembly]` from within your project's directory. For example `tnt add -a bin/Release/netcoreapp2.1/MyAwesomeApp.exe` would add an assembly to the list of sources.
 
 > `tnt` does not read or modify any of your other project files, it accesses the sources only.
 
