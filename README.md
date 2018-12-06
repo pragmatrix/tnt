@@ -298,7 +298,7 @@ Examples:
 
 `string.Format("Hello {0}".t(), userName)`
 
-#### String Interpolation
+#### Interpolated Strings
 
 C# 6 [introduced string interpolation](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/tokens/interpolated) by prefixing a string with `$`. To mark an interpolated string as translatable, the `t()` function is used, but - for technical reason - not as an extension method. 
 
