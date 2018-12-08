@@ -246,41 +246,41 @@ Machine-translates strings that are in the state `new`.
 
 #### `tnt sync`
 
-Regenerates the `.tnt-content/` directory and its files. Usually `tnt` automatically takes care of updating the final translation files, but in case of errors or if the `.tnt-content/` does not exist at all, it may be useful to be sure that the final translations match the translations in the `.tnt/` directory.
+Rebuilds the `.tnt-content/` directory and its files. Usually, `tnt` takes care of updating the final translation files automatically, but in case of errors or if the `.tnt-content/` directory does not exist, it may be useful to ensure that the final translation files match the translations in the `.tnt/` directory.
 
-> If you decide not to check in the `.tnt-content/` directory, `tnt sync` should be part of your build process.
+> If you decide not to check in the `.tnt-content/` directory, `tnt sync` _must_ be part of your build process.
 
 #### `tnt show`
 
-Shows various infomations about the .NET supported languages or interesting details of the translations.
+Lists the .NET supported languages or shows interesting details of the translations.
 
-##### `tnt show languages`
+- `tnt show languages`
 
-Lists the currently supported language names and tags of the .NET framework `tnt` runs in.
+  lists the currently supported language names and tags of the .NET framework `tnt` runs on.
 
-##### `tnt show new`
+- `tnt show new`
 
-Shows the strings and their contexts that are not translated yet.
+  shows original strings that are not translated yet.
 
-##### `tnt show unused`
+- `tnt show unused`
 
-Shows the strings and their contexts that are not used.
+  shows the strings that are not used anymore.
 
-##### `tnt show shared`
+- `tnt show shared`
 
-Shows the strings and their contexts that were found at more than one context.
+  shows the strings that were extracted from more than one source location.
 
-##### `tnt show warnings` 
+- `tnt show warnings` 
 
-Shows the strings and their contexts that are in the state [`needs-review`](#TranslationStates) and have one or more verification warnings.
+  shows the strings that are in the state [`needs-review`](#TranslationStates) and have one or more verification warnings.
 
-The details `new` and `warnings` can be restricted to show information of specific translations only. Use `-l` or `--language` to filter their result. If no language is specified, all languages are considered.
+The details `new` and `warnings` can be restricted to specific translations only. Use `-l` or `--language` to filter their results.
 
-> The results of `unused` and `shared` depend on the extracted strings only and are therefore independent of the languages specified.
+> The results of `tnt show unused` and `tnt show shared` depend on the original strings only and are therefore independent of the individual translation languages.
 
 #### `tnt help`
 
-Shows useful hints about how to use the command line arguments. To show help for specific command verbs, use `tnt [command] --help`.
+Shows useful information about how to use the command line arguments. To show help for specific tasks, use `tnt [task] --help`.
 
 #### `tnt version`
 
