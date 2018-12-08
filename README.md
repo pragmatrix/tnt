@@ -221,17 +221,17 @@ Examples:
 
 #### `tnt import`
 
-Imports Excel or XLIFF translation files. `tnt import` can import either specific files or languages, or files that can be found in the import directory. 
+Imports Excel or XLIFF translation files. 
 
-To import one or more languages, use `tnt import [language tag or name]`. To import a file, use `tnt import [filename]`. To import all files that look like they were previously exported with [`tnt export`](#`tnt export`), use `tnt import --all`.
+`tnt import` imports files specified by filename or language tag, or all files that are found in the import directory.
 
-`--from` The directory to import the files from. The default is the current directory.
+To import languages, use `tnt import [language tag or name]`. To import files, use `tnt import [filename]`. To import all files that look like they were previously exported with [`tnt export`](#`tnt export`), use `tnt import --all`.
 
-`--all` Import all files that can be found in the import directory.
+- `--from` is directory to import the files from. Default is the current directory.
+- `--all` imports all files that are in the import directory.
+- `-l`, `--language` specifies additional language tags or names to import. This is an alternative to passing the languages as arguments.
 
-`-l`, `--language` Specify additional language tags or names to import. This option is an alternative to passing the languages as arguments.
-
-> The importer matches the original strings in the files to import with the ones in the language files, and if a matching original string is found, _will overwrite_ the translation with the one imported. So before using `tnt import`, make sure the contents of the `.tnt/` directory is commited to your revision control system.
+> The importer matches the original strings in the import files with the ones in the language files in `.tnt/`. If an original string is found, the importer _will overwrite_ the translation record with the one imported. So before using `tnt import`, make sure the contents of the `.tnt/` directory is commited to your revision control system.
 
 #### `tnt translate`
 
