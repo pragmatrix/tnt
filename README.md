@@ -235,13 +235,12 @@ To import languages, use `tnt import [language tag or name]`. To import files, u
 
 #### `tnt translate`
 
-Machine-translates new strings. 
+Machine-translates strings that are in the state `new`.
 
-`--all` Translates all new string of all languages.
+- `--all` translates all new string of all languages.
+- `-l`, `--language` specifies the languages to which new strings are translated.
 
-`-l`, `--language` Specifies the languages of which their new strings should be translated.
-
-> Before `tnt` can be used to translate strings, it must be configured to use a machine translation service. For now, the Google Cloud Translation API is supported only. 
+> Before `tnt` can machine-translate strings, it must be configured to use a translation service. For now, only the Google Cloud Translation API is supported. 
 >
 > To configure `tnt` to work with the Google Cloud Translation API, follow the steps 1. to 3. in [Quickstart](https://cloud.google.com/translate/docs/quickstart) and then use `tnt translate` to translate all new strings. 
 
