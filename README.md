@@ -288,13 +288,13 @@ Shows the current version of `tnt`.
 
 ### Methods of Extraction
 
-`tnt` extracts strings that are marked with a function that also translates them. This is the `t()` function that is located in `TNT.T` static class. 
+`tnt` extracts strings that are marked with a function that also translates them. This is the `t()` method that is located in `TNT.T` static class. 
 
-There are a number of different ways to mark strings for translation:
+There are a number of ways to mark strings that need to be translated:
 
 #### Simple Strings
 
-Constant and literal strings can be marked appending `.t()` to them. When the `t()` function is called, the string gets translated and returned. To use `t()`, add `using TNT;` to the top of your C# source file.
+Constant and literal strings can be marked by appending `.t()` to them. When the `t()` function is called, the string gets translated and is returned to caller. To use `t()`, add `using TNT;` to the top of your C# source file.
 
 Examples:
 
@@ -304,12 +304,12 @@ Examples:
 
 #### Interpolated Strings
 
-C# 6 [introduced string interpolation](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/tokens/interpolated) by prefixing a string with `$`. To mark an interpolated string as translatable, the `t()` function is used, but - for technical reason - not as an extension method. 
+Beginning with C# 6, [interpolated strings](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/tokens/interpolated) are supported and are prefixed with the `$` character. To mark an interpolated string as translatable, the `t()` function is used, but - for technical reason - not invoked as an extension method.
 
 Bringing the static `TNT.T` class into scope mitigates that:
 
 ```csharp
-// bring the static t() method into scope.
+// bring the static t() function into scope.
 using static TNT.T;
 ... 
 ... t($"Hello {World}") ...
@@ -319,24 +319,31 @@ using static TNT.T;
 
 #### Specific Translations
 
-If the target language should be decided ad-hoc by the application, the `t()` function can be invoked with an additional argument that specifies language tag. For example `"Hello".t("es")` will translate the string "Hello" to Spanish if the translation is available.
+If strings need to be translated to a language defined by the application, the `t()` function can be invoked with an additional argument that specifies the translation's language tag. For example `"Hello".t("es")` will translate the string "Hello" to Spanish if the translation is available.
 
-> Any extraction is done by searching through the generated IL code. If an invocation to the `.t()` function is found and the extraction attempt fails, [`tnt extract`](#`tnt extract`) will warn about that.
+> Original strings are extracted by through the generated IL code. If an invocation to the `.t()` function is found and the extraction attempt fails, [`tnt extract`](#`tnt extract`) will warn about that.
 
 ### TranslationStates
 
-A translation state define the state of a single string's translation. In the translation files, the state's are used in their long form, when listed as a counter, they are abbrevated with a single character.
+A translation state defines the state of a translated string. In the translation files, the states are stored in their long form, when listed as a counter, they are abbreviated as a single character:
 
-- `new`, `n`  
+- `new`, `n` 
+
   A string yet untranslated.
-- `needs-review`, `r`  
-  Either machine translated, or imported from XLIFF indicating that a string is not final.
-- `final`, `f`  
-  Strings imported from XLIFF that were marked "translated" or "final".
-- `unused`, `u`  
-  A previously translated string that is missing from the list of sources after a recent `tnt extract`.
 
-In addition to the state, the `w` counter shows the number of analysis warnings. To list the strings that contain warnings, use [`tnt show warnings`](#`tnt show warnings`).
+- `needs-review`, `r` 
+
+  Either a machine or imported translated string that indicates that the translation is not final and should be reviewed.
+
+- `final`, `f` 
+
+  Imported translated strings that were marked "translated" or "final".
+
+- `unused`, `u` 
+
+  A translated string that disappeared after a recent `tnt extract`.
+
+In addition to the states above, the `w` counter shows the number of analysis warnings. To list the strings that contain warnings, use [`tnt show warnings`](#`tnt show warnings`).
 
 ### Directory `.tnt` 
 
@@ -371,7 +378,5 @@ The language specific translation files. Currently, only the original and the tr
 Contributions are welcome, please comply to the `.editorconfig` file.
 
 (c) 2018 Armin Sander
-
-
 
 [TNT.T]: 
