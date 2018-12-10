@@ -60,7 +60,7 @@ While `tnt` extracts the strings, it shows what it does and prints a status for 
 
 > The status consists of the translation's language tag, its counters, its language name, and the filename of the translation file.
 
-> Of particular interest are the counters that count the states the individual strings are in. If you extracted, say 5 strings, and haven't translated them yet, you'll see a `[5n]`. Later, counters for additional states will appear. If you are interested now, [TranslationStates](#TranslationStates) explains them all.
+> Of particular interest are the counters that count the states the individual strings are in. If you extracted, say 5 strings, and haven't translated them yet, you'll see a `[5n]`. Later, counters for additional states will appear. If you are interested now, [Translation States](#Translation States) explains them all.
 
 ### Translating Strings
 
@@ -169,7 +169,7 @@ Deletes all the translation records that are in the state `unused`.
 
 #### `tnt status`
 
-Shows the states of all translations. See also [TranslationsStates](#TranslationStates).
+Shows the states of all translations. See also [Translation States](#Translation States).
 
 - `-v`, `--verbose` shows the formatted contents of the `sources.json` file.
 
@@ -272,7 +272,7 @@ Lists the .NET supported languages or shows interesting details of the translati
 
 - `tnt show warnings` 
 
-  shows the strings that are in the state [`needs-review`](#TranslationStates) and have one or more verification warnings.
+  shows the strings that are in the state [`needs-review`](#Translation States) and have one or more verification warnings.
 
 The details `new` and `warnings` can be restricted to specific translations only. Use `-l` or `--language` to filter their results.
 
@@ -323,7 +323,7 @@ If strings need to be translated to a language defined by the application, the `
 
 > Original strings are extracted by through the generated IL code. If an invocation to the `.t()` function is found and the extraction attempt fails, [`tnt extract`](#`tnt extract`) will warn about that.
 
-### TranslationStates
+### Translation States
 
 A translation state defines the state of a translated string. In the translation files, the states are stored in their long form, when listed as a counter, they are abbreviated as a single character:
 
@@ -345,31 +345,30 @@ A translation state defines the state of a translated string. In the translation
 
 In addition to the states above, the `w` counter shows the number of analysis warnings. To list the strings that contain warnings, use [`tnt show warnings`](#`tnt show warnings`).
 
-### Directory `.tnt` 
+### `tnt` Managed Directories and Files
 
-This is the directory where `tnt` manages the translation sources and the translation files. The directory can be created with [`tnt init`](#`tnt init`).
+- `.tnt/` directory
 
-#### File `.tnt/sources.json` 
+  The directory where the configuration and the translation files are stored, created with [`tnt init`](#`tnt init`).
+  - `.tnt/sources.json`
 
-This file configures the language the original strings are in and the sources from where they are extracted.
+    This file configures the language the original strings are authored in and the sources from where they are extracted.
 
-Use [`tnt init -l`](#`tnt init`) to change the language, [`tnt add`](#`tnt add`) to add sources, and [`tnt remove`](#`tnt remove`) to remove them.
+    Use [`tnt init -l`](#`tnt init`) to change the language, [`tnt add`](#`tnt add`) to add sources, and [`tnt remove`](#`tnt remove`) to remove them.
 
-#### File `.tnt/translation-[tag].json` 
+  - `.tnt/translation-[tag].json` 
 
-The translation files. They contain the original strings with their translations and a state, a list of contexts, and notes for each translated string.
+    One translation file for each language that contain the original strings, their translated counterparts, states, extraction contexts, and notes.
 
-### Directory `.tnt-content` 
+- `.tnt-content/` directory
 
-These contain translation files optimized for the application to load. 
+  This directory contains translation files optimized for the application to load.
 
-#### File `.tnt-content/[tag].tnt` 
+  - `.tnt-content/[tag].tnt`
 
-The language specific translation files. Currently, only the original and the translated strings.
+    The optimized language specific translation files. Currently, they contain the original and the translated strings only.
 
-`tnt` tries to keep these files up to date.
-
-[`tnt sync`](#`tnt sync`) may be used to regenerate them in case they are missing, an error happened, or language files in the `.tnt` directory were changed.
+    > `tnt` tries to keep these files up to date, but in case they are missing, or language files in `.tnt/` were changed manually, [`tnt sync`](#`tnt sync`) can be used to regenerate them.
 
 ## License & Contribution & Copyright
 
