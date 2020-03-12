@@ -2,6 +2,7 @@
 
 open System.IO
 open FunToolbox.FileSystem
+open System.Diagnostics
 
 [<AutoOpen>]
 module Prelude =
@@ -237,3 +238,38 @@ module Selector =
     let select (existing: 'a list) (selector: 'a selector) = 
         existing 
         |> List.partition ^ fun item -> isSelected item selector
+
+module ExternalCommand = 
+    
+    let run command = 
+        let si = 
+            new ProcessStartInfo (
+                command,
+                // RedirectStandardInput = true,
+                // RedirectStandardOutput = true,
+                // RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            )
+
+        use proc = new Process(StartInfo = si)
+        if (not ^ proc.Start()) then
+            failwithf "failed to run command '%s'" command
+
+        (*
+        let outputReceived _ (args : DataReceivedEventArgs) =
+            Console.WriteLine(args.Data)
+
+        let errorReceived _ (args: DataReceivedEventArgs) = 
+            Console.Error.WriteLine(args.Data)
+        
+        proc.OutputDataReceived.AddHandler (DataReceivedEventHandler(outputReceived))
+        proc.ErrorDataReceived.AddHandler (DataReceivedEventHandler(errorReceived))
+
+        proc.BeginOutputReadLine()
+        proc.BeginErrorReadLine()
+        *)
+
+        proc.WaitForExit()
+        proc.ExitCode
+

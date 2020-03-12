@@ -3,6 +3,7 @@
 module TNT.Library.Translation
 
 open TNT.Model
+open TNT.Library
 open Chiron
 
 [<AutoOpen>]
@@ -167,18 +168,14 @@ module Translation =
             | TranslatedString.Unused _ -> "unused"
 
         let serializeRecord (record: TranslationRecord) : Json = Array [
-            yield String ^ stateString record.Translated
-            yield String record.Original
-            yield String ^ string record.Translated
-            yield Array (record.Contexts |> List.map (string >> String))
+            yield Json.string ^ stateString record.Translated
+            yield Json.string record.Original
+            yield Json.string ^ string record.Translated
+            yield Json.array (record.Contexts |> Seq.map (string >> String))
             if record.Notes <> [] then
-                yield Array (record.Notes |> List.map String)
+                yield Json.array (record.Notes |> Seq.map String)
         ]
 
-    let destructure (f: Json<'a>) (js: Json) = 
-        match f js with
-        | Value v, _ -> v
-        | _ -> failwith "parse error"
 
     let deserialize (js: string) : Translation =
 
@@ -186,7 +183,7 @@ module Translation =
 
         let (language : string, records : Json) = 
             file 
-            |> destructure ^ json {
+            |> Json.destructure ^ json {
                 let! language = Json.read "language"
                 let! records = Json.read "records"
                 return (language, records)
@@ -205,13 +202,12 @@ module Translation =
     
     let serialize (translation: Translation) : string = 
 
-        let json = Object ^ Map.ofList [
+        let json = Json.object [
             "language", String ^ string translation.Language
             "records",
                 translation.Records
                 |> Seq.map serializeRecord
-                |> Seq.toList
-                |> Array
+                |> Json.array
         ]
 
         json 
@@ -357,9 +353,9 @@ module TranslationContent =
 
     let serialize (content: TranslationContent) =
         
-        let json = Array [
+        let json = Json.array [
             for pair in content.Pairs ->
-                Array [ String ^ fst pair; String ^ snd pair ]
+                Json.array [ String ^ fst pair; String ^ snd pair ]
         ]
 
         json |> Json.formatWith JsonFormattingOptions.Pretty

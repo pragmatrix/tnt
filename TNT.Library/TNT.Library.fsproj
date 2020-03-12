@@ -5,12 +5,14 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Toolbox.fs" />
+    <Compile Include="Json.fs" />
     <Compile Include="Output.fs" />
     <Compile Include="Model.fs" />
     <Compile Include="Formatting.fs" />
     <Compile Include="StringExtractor.fs" />
     <Compile Include="Paths.fs" />
     <Compile Include="SystemCultures.fs" />
+    <Compile Include="Commands.fs" />
     <Compile Include="Sources.fs" />
     <Compile Include="Verification.fs" />
     <Compile Include="Translation.fs" />
