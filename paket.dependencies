@@ -1,4 +1,4 @@
-version 5.189.0
+version 5.242.2
 
 source https://www.nuget.org/api/v2/
 source https://www.myget.org/F/pragmatrix/api/v3/index.json
@@ -7,7 +7,7 @@ storage: none
 framework: auto-detect
 
 nuget CommandLineParser.FSharp
-nuget FSharp.Core
+nuget FSharp.Core 4.5.4
 nuget FsUnit.xUnit.Typed
 nuget Xunit
 nuget Mono.Cecil
@@ -16,4 +16,4 @@ nuget FunToolbox
 nuget System.Json
 nuget Chiron
 nuget Google.Cloud.Translation.V2
-nuget ClosedXML prerelease
+nuget ClosedXML 0.94.0-rc1 prerelease
