@@ -1,10 +1,11 @@
 ﻿open System
 open TNT.Model
+open TNT.Library
 open TNT.Library.Output
 open TNT.Library.ExportModel
 open FunToolbox.FileSystem
 open CommandLine
-// for some reason, this must come last
+// for some reason, this must be opened here a second time, otherwise compilation will fail
 open TNT.Library
 
 [<Verb("init", HelpText = "Initialize the current directory. Creates the '.tnt' directory and the 'sources.json' file.")>]
