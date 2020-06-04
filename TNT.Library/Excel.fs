@@ -72,7 +72,9 @@ let generate (file: File<ExportUnit>) : Excel =
         do
             let protection = ws.Protect()
             protection.AllowedElements <-
-                XLSheetProtectionElements.FormatColumns ||| XLSheetProtectionElements.FormatRows
+                XLSheetProtectionElements.FormatColumns ||| 
+                XLSheetProtectionElements.FormatRows ||| 
+                XLSheetProtectionElements.SelectUnlockedCells
 
         ws.Cell(1, SourceColumn)
             .Value <- sprintf "%s" (file.SourceLanguage.Formatted)
