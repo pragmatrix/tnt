@@ -28,7 +28,8 @@ pack:
 	mkdir -p tmp
 	rm -f tmp/*.nupkg
 	dotnet clean -c Release
-	cd tnt        && rm -rf obj bin && dotnet pack -c Release -o ../tmp
+	dotnet restore 
+	cd tnt && rm -rf obj bin && dotnet pack -c Release -o ../tmp
 	cd TNT.T && rm -rf obj bin && dotnet pack -c Release -o ../tmp
 
 .PHONY: install-tnt
