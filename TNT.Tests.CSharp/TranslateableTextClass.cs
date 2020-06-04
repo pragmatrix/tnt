@@ -15,12 +15,24 @@ namespace TNT.Tests.CSharp
         public static readonly string TranslateMe = "originalCG".t();
     }
 
-    public class ExtractionError
+    public class NonEmptyStringWithConcatenationCantBeExtracted
     {
         public static readonly string TranslateMe = mkStr();
 
         static string mkStr()
         {
+            return ("xx" + new Random().Next()).t();
+        }
+    }
+
+    public class EmptyStringWithConcatenation
+    {
+        public static readonly string TranslateMe = mkStr();
+
+        static string mkStr()
+        {
+            // note: this extraction did not work before an update to a more recent (3.0 or 3.1) dotnet core version.
+            // I am not sure if we even want to extract empty strings anyway. But this works now.
             return ("" + new Random().Next()).t();
         }
     }

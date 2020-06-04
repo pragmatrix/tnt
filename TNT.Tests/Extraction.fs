@@ -33,6 +33,7 @@ let ``extract from CSharp``() =
     strings 
     |> OriginalStrings.strings 
     |> should equal [
+        "", [ LogicalContext "TNT.Tests.CSharp.EmptyStringWithConcatenation" ]
         "Formattable {0}", [ LogicalContext "TNT.Tests.CSharp.FormattableString" ]
         "explicit", [ LogicalContext "TNT.Tests.CSharp.Explicit" ]
         "explicit2", [ LogicalContext "TNT.Tests.CSharp.Explicit" ]
