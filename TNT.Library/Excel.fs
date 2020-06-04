@@ -71,8 +71,8 @@ let generate (file: File<ExportUnit>) : Excel =
         let ws = wb.Worksheets.Add(name)
         do
             let protection = ws.Protect()
-            protection.FormatColumns <- true 
-            protection.FormatRows <- true
+            protection.AllowedElements <-
+                XLSheetProtectionElements.FormatColumns ||| XLSheetProtectionElements.FormatRows
 
         ws.Cell(1, SourceColumn)
             .Value <- sprintf "%s" (file.SourceLanguage.Formatted)
