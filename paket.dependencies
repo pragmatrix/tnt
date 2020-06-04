@@ -1,10 +1,10 @@
-version 5.189.0
+version 5.245.2
 
 source https://www.nuget.org/api/v2/
 source https://www.myget.org/F/pragmatrix/api/v3/index.json
 storage: none
 
-framework: auto-detect
+framework: netcoreapp2.1,netstandard2.0
 
 nuget CommandLineParser.FSharp
 nuget FSharp.Core
@@ -16,4 +16,4 @@ nuget FunToolbox
 nuget System.Json
 nuget Chiron
 nuget Google.Cloud.Translation.V2
-nuget ClosedXML prerelease
+nuget ClosedXML

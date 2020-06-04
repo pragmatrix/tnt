@@ -69,7 +69,9 @@ let generate (file: File<ExportUnit>) : Excel =
     let setupWorksheet (name: string) (tus: ExportUnit list) = 
 
         let ws = wb.Worksheets.Add(name)
-        ignore ^ ws.Protect().SetFormatColumns().SetFormatRows()
+        ws.Protect().AllowedElements 
+            <- XLSheetProtectionElements.FormatColumns 
+            ||| XLSheetProtectionElements.FormatRows
 
         ws.Cell(1, SourceColumn)
             .Value <- sprintf "%s" (file.SourceLanguage.Formatted)
