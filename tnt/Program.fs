@@ -5,7 +5,6 @@ open TNT.Library.Output
 open TNT.Library.ExportModel
 open FunToolbox.FileSystem
 open CommandLine
-open TNT.Library
 
 [<Verb("init", HelpText = "Initialize the current directory. Creates the '.tnt' directory and the 'sources.json' file.")>]
 type InitOptions = {
@@ -62,7 +61,7 @@ type StatusOptions = {
     Unprocessed: string seq
 }
 
-[<Verb("export", HelpText = "Export all strings to XLIFF files.")>]
+[<Verb("export", HelpText = "Export all strings to Excel or XLIFF files.")>]
 type ExportOptions = {
     [<Value(0, HelpText = "The language(s) to export, use --all to export all languages.")>]
     Languages: string seq
@@ -73,14 +72,14 @@ type ExportOptions = {
     [<Option("all", HelpText = "Export all languages.")>]
     All: bool
 
-    [<Option("to", HelpText = "The directory to export the XLIFF files to. Default is the current directory.")>]
+    [<Option("to", HelpText = "The directory to export the files to. Default is the current directory.")>]
     To: string
 
     [<Option("format", HelpText = "Export format (default 'excel'). Use 'xliff' for an xliff version 1.2 editor, 'xliff-mat' for the Multilingual App Toolkit.")>]
     For: string
 }
 
-[<Verb("import", HelpText = "Import XLIFF translation files and apply the changes to the translations in the current directory.")>]
+[<Verb("import", HelpText = "Import Excel or XLIFF translation files and apply the changes to the translations in the current directory.")>]
 type ImportOptions = {
 
     [<Value(0, HelpText = "The files or languages to import, use --all to import all files.")>]
@@ -89,10 +88,10 @@ type ImportOptions = {
     [<Option('l', "language", HelpText = "Language (code ['-' region] or name) to be imported.")>]
     Languages: string seq
 
-    [<Option("from", HelpText = "The directory to import the XLIFF files from. Default is the current directory.")>]
+    [<Option("from", HelpText = "The directory to import the Excel or XLIFF files from. Default is the current directory.")>]
     From: string
 
-    [<Option("all", HelpText = "Import all .xlf or .xliff files that match the current directory's name.")>]
+    [<Option("all", HelpText = "Import all .xlsx, .xlf, or .xliff files that match the current directory's name.")>]
     All: bool
 }
 
