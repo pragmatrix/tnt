@@ -6,9 +6,9 @@
     <PackageId>tnt-cli</PackageId>
     <Title>The .NET Translation Tool</Title>
     <Description>Command line tool for managing translations based on strings extracted from .NET assemblies. Supports XLIFF roundtrips and machine translations.</Description>
-    <Copyright>(c) 2018 Armin Sander</Copyright>
+    <Copyright>(c) 2020 Armin Sander</Copyright>
     <PackAsTool>true</PackAsTool>
-    <Version>0.65.0</Version>
+    <Version>0.67.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.fs" />
