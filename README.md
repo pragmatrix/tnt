@@ -1,12 +1,12 @@
 # TNT - The .NET Translation Tool
 
-A command line tool for managing translations based on strings extracted from .NET assemblies. Supports translation roundtrips via Excel or XLIFF and Google machine translations.
+A command line tool for managing translations based on strings extracted from .NET assemblies. `tnt` supports translation roundtrips via Excel or XLIFF and Google machine translations.
 
-`tnt` lets you mark literal strings in source code, extracts them from the compiled IL code, and manages all further translation processes. At runtime, the NuGet [TNT.T][TNT.T] translates the marked strings.
+`tnt` lets you mark literal strings in C# or F# source code, extracts them from the compiled IL code, and organizes the translation processes. At runtime, the NuGet [TNT.T][TNT.T] translates the marked strings.
 
-In that regard, `tnt` is very similar to translation solutions like [gettext][gettext].
+`tnt` is very similar to translation solutions like [gettext][gettext].
 
-I've created `tnt` to provide an alternative for resource files.
+`tnt` was created to provide an alternative for resource files.
 
 [gettext]: https://en.wikipedia.org/wiki/Gettext
 
