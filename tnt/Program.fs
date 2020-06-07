@@ -353,9 +353,10 @@ let protectedMain args =
             | Ok() -> ok
             | Error() -> failed
 
-    | :? CommandLine.NotParsed<obj> ->
-        failed
-
+    | :? CommandLine.NotParsed<obj> as np ->
+        if np.Errors.IsHelp() || np.Errors.IsVersion() 
+        then ok
+        else failed
     | x -> 
         failwithf "internal error: %A" x
 
