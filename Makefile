@@ -36,9 +36,8 @@ pack:
 install-tnt:
 	dotnet tool install -g --add-source https://www.myget.org/F/pragmatrix/api/v3/index.json tnt-cli 
 
-
 .PHONY: update-tnt-local
-update-tnt-local:
+update-tnt-local: pack
 	dotnet tool update -g --configfile local-nuget.config tnt-cli
 
 .PHONY: update-tnt
