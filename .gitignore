@@ -1,6 +1,5 @@
+/.paket/
 /paket-files/
-/.paket/*.targets
-/.paket/paket.bootstrapper.exe
 /.vs/
 bin/
 obj/

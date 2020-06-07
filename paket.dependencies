@@ -4,7 +4,7 @@ source https://www.nuget.org/api/v2/
 source https://www.myget.org/F/pragmatrix/api/v3/index.json
 storage: none
 
-framework: netcoreapp2.1,netstandard2.0
+framework: auto-detect
 
 nuget CommandLineParser.FSharp
 nuget FSharp.Core
@@ -16,3 +16,6 @@ nuget System.Json
 nuget Chiron
 nuget Google.Cloud.Translation.V2
 nuget ClosedXML ~> 0.95
+# to support dotnet test
+nuget Microsoft.NET.Test.Sdk
+nuget xunit.runner.visualstudio

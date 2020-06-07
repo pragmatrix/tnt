@@ -1,5 +1,6 @@
 ﻿module TNT.Tests.ImportExport
 
+open System
 open FunToolbox.FileSystem
 open TNT.Library
 open TNT.Library.ExportModel
@@ -241,8 +242,9 @@ module Excel =
 
         let exporter = Excel.Exporter
         let path = 
-            Directory.current()
-            |> Path.extend (RPath.parse "c:/msys/tmp/ExcelExport.xlsx")
+            IO.Path.GetTempPath()
+            |> Path.parse
+            |> Path.extend (RPath.parse "ExcelExport.xlsx")
 
         exporter.SaveToPath path file
         let file = exporter.LoadFromPath path
