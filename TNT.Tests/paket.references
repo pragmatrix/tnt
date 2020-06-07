@@ -1,3 +1,5 @@
 FSharp.Core
 FsUnit.xUnit.Typed
 Xunit
+Microsoft.NET.Test.Sdk
+xunit.runner.visualstudio

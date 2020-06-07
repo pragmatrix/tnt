@@ -16,3 +16,6 @@ nuget System.Json
 nuget Chiron
 nuget Google.Cloud.Translation.V2
 nuget ClosedXML ~> 0.95
+# to support dotnet test
+nuget Microsoft.NET.Test.Sdk
+nuget xunit.runner.visualstudio
