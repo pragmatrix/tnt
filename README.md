@@ -376,6 +376,6 @@ In addition to the states above, the `w` counter shows the number of analysis wa
 
 Contributions are welcome, please comply to the `.editorconfig` file.
 
-(c) 2018 Armin Sander
+(c) 2020 Armin Sander
 
 [TNT.T]: 
