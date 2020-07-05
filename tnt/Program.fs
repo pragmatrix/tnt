@@ -35,7 +35,7 @@ type AddOptions = {
 
 [<Verb("remove", HelpText = "Remove an assembly from the list of sources.")>]
 type RemoveOptions = {
-    [<Option('a', "assembly", HelpText = "Relative path, sub-path, or name of the assembly file to be removed.")>]
+    [<Option('a', "assembly", HelpText = "Relative path, sub-path, or name of the assembly file to be removed.\n\nTo remove a language, delete the translation file from the .tnt/ subdirectory.")>]
     Assembly: string
 
     [<Value(0)>]

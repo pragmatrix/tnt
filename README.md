@@ -145,7 +145,7 @@ Removes an assembly from the list of sources.
 
 - `-a`, `--assembly` removes an assembly from the list of sources. The option's argument may be the assembly's name or a sub-path of the assembly. As long one of the sources matches unambiguously, it's going to be removed. Use `tnt status -v` to list all the current sources.
 
-> Intentionally, `tnt` has no option for removing translation languages and requires you to delete the language file under `.tnt/`. To update the `.tnt-content/` directory, use `tnt sync` after that.
+> Intentionally, `tnt` has no option for removing translation languages and expects that you delete the language file under `.tnt/` manually. To update the `.tnt-content/` directory, use `tnt sync` after that.
 
 #### `tnt extract`
 
