@@ -10,7 +10,7 @@ version=${shell grep -Po '<Version>\K[0-9.]+' tnt/tnt.fsproj}
 version:
 	echo ${version}
 
-push=.paket/paket push --url https://www.myget.org/F/pragmatrix/api/v2/package --api-key ${MYGETAPIKEY} 
+push=paket push --url https://www.myget.org/F/pragmatrix/api/v2/package --api-key ${MYGETAPIKEY} 
 
 .PHONY: install
 install: pack update-tnt-local
