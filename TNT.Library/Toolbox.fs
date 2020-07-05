@@ -2,6 +2,7 @@
 
 open System.IO
 open FunToolbox.FileSystem
+open System.Diagnostics
 
 [<AutoOpen>]
 module Prelude =
@@ -237,3 +238,32 @@ module Selector =
     let select (existing: 'a list) (selector: 'a selector) = 
         existing 
         |> List.partition ^ fun item -> isSelected item selector
+
+module ExternalCommand = 
+    
+    let run command = 
+        let si = 
+            new ProcessStartInfo (
+                FileName = "cmd.exe",
+                Arguments = "/c " + command
+            )
+
+        use proc = new Process(StartInfo = si)
+        if (not ^ proc.Start()) then
+            failwithf "failed to run command '%s'" command
+
+        proc.WaitForExit()
+        proc.ExitCode
+
+
+    let openFile (file: Path) = 
+        let si = 
+            new ProcessStartInfo (
+                string file,
+                UseShellExecute = true,
+                CreateNoWindow = true
+            )
+
+        use proc = new Process(StartInfo = si)
+        if (not ^ proc.Start()) then
+            failwithf "failed to open file '%s'" (string file)

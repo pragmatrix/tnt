@@ -35,17 +35,16 @@ module Sources =
 
     let serialize (sources: Sources) : string = 
 
-        let obj = Map.ofList >> Object
         let inline str (v: 'v) = v |> string |> String
-        let src name properties = Array [String name; obj properties]
+        let src name properties = Json.array [String name; Json.object properties]
 
         let sourceJson (source: Source) = 
             match source with
             | AssemblySource path -> src "assembly" ["path", str path]
 
-        obj [
+        Json.object [
             "language", str sources.Language
-            "sources", Array (sources.Sources |> Seq.map sourceJson |> Seq.toList)
+            "sources", Json.array (sources.Sources |> Seq.map sourceJson)
         ]
         |> Json.formatWith JsonFormattingOptions.Pretty
 

@@ -4,9 +4,7 @@ A command line tool for managing translations based on strings extracted from .N
 
 `tnt` lets you mark literal strings in C# or F# source code, extracts them from the compiled IL code, and organizes the translation processes. At runtime, the NuGet [TNT.T][TNT.T] translates the marked strings.
 
-`tnt` is very similar to translation solutions like [gettext][gettext].
-
-`tnt` was created to provide an alternative for resource files.
+`tnt` is very similar to translation solutions like [gettext][gettext] and was created to provide an alternative to .NET resource files.
 
 [gettext]: https://en.wikipedia.org/wiki/Gettext
 
@@ -278,6 +276,34 @@ The details `new` and `warnings` can be restricted to specific translations only
 
 > The results of `tnt show unused` and `tnt show shared` depend on the original strings only and are therefore independent of the individual translation languages.
 
+#### `tnt add-command`
+
+`tnt` can execute shell commands in certain situations. Currently, only one command trigger named `before-extract` is supported, for example:
+
+```bash
+tnt add-command before-extract "dotnet build"
+```
+
+Adds a shell command `dotnet build` that is executed before the text extraction.
+
+#### `tnt remove-commands`
+
+Removes commands that are assigned to a specific trigger. For example:
+
+```bash
+tnt remove-command before-extract
+```
+
+Removes all commands that were assigned to the trigger `before-extract`.
+
+#### `tnt list-commands`
+
+Lists all commands that were added.
+
+#### `tnt edit-commands`
+
+Opens the system's default editor for `.json` files to edit the file that stores the list of commands.
+
 #### `tnt help`
 
 Shows useful information about how to use the command line arguments. To show help for specific tasks, use `tnt [task] --help`.
@@ -359,6 +385,10 @@ In addition to the states above, the `w` counter shows the number of analysis wa
   - `.tnt/translation-[tag].json` 
 
     One translation file for each language that contain the original strings, their translated counterparts, states, extraction contexts, and notes.
+    
+  - `.tnt/commands.json`
+
+    Stores shell commands that run at specific times.
 
 - `.tnt-content/` directory
 

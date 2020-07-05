@@ -126,6 +126,38 @@ type ShowOptions = {
     Languages: string seq
 }
 
+[<Verb("add-command", HelpText = "Add a new shell command.")>]
+type AddCommandOptions = {
+    [<Value(0, HelpText = 
+        "When the shell command should run: " +
+        "'before-extract' runs the shell command before the extraction of the strings.")>]
+    When: string
+
+    [<Value(1, HelpText = "The shell command to add.")>]
+    Command: string
+}
+
+
+[<Verb("remove-commands", HelpText = "Remove shell commands.")>]
+type RemoveCommandsOptions = {
+    [<Value(0, HelpText = 
+        "The time all commands are removed: " +
+        "'before-extract' runs the shell command before the extraction of the strings.")>]
+    When: string
+}
+
+[<Verb("list-commands", HelpText = "List shell commands.")>]
+type ListCommandsOptions = {
+    [<Value(0)>]
+    Unprocessed: string seq
+}
+
+[<Verb("edit-commands", HelpText = "Edit shell commands.")>]
+type EditCommandsOptions = {
+    [<Value(0)>]
+    Unprocessed: string seq
+}
+
 let private argumentTypes = [|
     typeof<InitOptions>
     typeof<AddOptions>
@@ -138,6 +170,11 @@ let private argumentTypes = [|
     typeof<TranslateOptions>
     typeof<SyncOptions>
     typeof<ShowOptions>
+
+    typeof<AddCommandOptions>
+    typeof<RemoveCommandsOptions>
+    typeof<ListCommandsOptions>
+    typeof<EditCommandsOptions>
 |]
 
 let private resolveLanguage (nameOrTag: string) : LanguageTag = 
@@ -337,6 +374,18 @@ let dispatch (command: obj) =
             |> Select
 
         API.show selector (opts.Details |> Seq.toList)
+
+    | :? AddCommandOptions as opts ->
+        API.addCommand opts.When opts.Command
+
+    | :? RemoveCommandsOptions as opts ->
+        API.removeCommands opts.When
+
+    | :? ListCommandsOptions ->
+        API.listCommands()
+
+    | :? EditCommandsOptions ->
+        API.editCommands()
 
     | x -> failwithf "internal error: %A" x
 
