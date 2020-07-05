@@ -4,6 +4,7 @@ open FunToolbox.FileSystem
 open TNT.Model
 open TNT.Library
 open TNT.Library.Output
+open TNT.Library.Commands
 
 module TranslationGroup = 
 
@@ -207,4 +208,26 @@ let printIndentedStrings (initialIndentLevel: int) (strings: IndentedString seq)
         |> IndentedStrings.strings (Indent(initialIndentLevel, DefaultIndent))
     for string in strings do
         yield I ^ string
+}
+
+let runCommands (when': When) = output {
+    let root = Directory.current()
+    let commands = 
+        Commands.load root
+        |> Commands.filter when'
+    
+    let rec runCommands (cmds: string list) = output {
+        match cmds with
+        | [] -> return Ok()
+        | cmd::rest ->
+        I ^ sprintf "> %s" cmd
+        let exitCode = ExternalCommand.run cmd
+        if exitCode <> 0 then
+            E ^ sprintf "command failed with exit code: %d" exitCode
+            return Error()
+        else 
+            return! runCommands rest
+    }
+
+    return! runCommands commands
 }

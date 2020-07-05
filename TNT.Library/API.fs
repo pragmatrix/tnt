@@ -130,6 +130,10 @@ let removeAssembly (assemblyPath: AssemblySource rpath) =
 
 let extract() = withSourcesAndGroup ^ fun sources group -> output {
 
+    match! runCommands When.BeforeExtract with
+    | Error() -> return Error()
+    | Ok() ->
+
     let newStrings, errors = 
         sources 
         |> Sources.extractOriginalStrings (Directory.current()) 
