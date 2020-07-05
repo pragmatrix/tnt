@@ -146,6 +146,12 @@ type RemoveCommandsOptions = {
     When: string
 }
 
+[<Verb("list-commands", HelpText = "List shell commands.")>]
+type ListCommandsOptions = {
+    [<Value(0)>]
+    Unprocessed: string seq
+}
+
 [<Verb("edit-commands", HelpText = "Edit shell commands.")>]
 type EditCommandsOptions = {
     [<Value(0)>]
@@ -167,6 +173,7 @@ let private argumentTypes = [|
 
     typeof<AddCommandOptions>
     typeof<RemoveCommandsOptions>
+    typeof<ListCommandsOptions>
     typeof<EditCommandsOptions>
 |]
 
@@ -373,6 +380,9 @@ let dispatch (command: obj) =
 
     | :? RemoveCommandsOptions as opts ->
         API.removeCommands opts.When
+
+    | :? ListCommandsOptions ->
+        API.listCommands()
 
     | :? EditCommandsOptions ->
         API.editCommands()

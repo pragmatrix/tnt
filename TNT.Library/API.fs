@@ -415,6 +415,25 @@ let removeCommands (when': string) = output {
     return Ok()
 }
 
+let listCommands() = output {
+    let root = Directory.current()
+    let commands = Commands.load root
+    if commands = [] then
+        return Ok()
+    else
+    let whenGroups = 
+        commands
+        |> Seq.groupBy ^ fun (Command(w, _)) -> w
+
+    for wg in whenGroups do
+        let (w, commands) = wg
+        I ^ sprintf "%s:" (string w)
+        for Command(_, cmd) in commands do
+            I ^ sprintf "> %s" cmd
+
+    return Ok()
+}
+
 let editCommands() = output {
     let root = Directory.current()
     let filename = Commands.filename root

@@ -2,20 +2,20 @@
 
 open Chiron
 
-[<Struct; RQA>]
-type When = 
-    | BeforeExtract
-
 module private Names =
     let [<Literal>] When = "when"
     let [<Literal>] BeforeExtract = "before-extract"
 
     let [<Literal>] Command = "command"
 
-module When = 
-    let toString = function
+[<Struct; RQA>]
+type When = 
+    | BeforeExtract
+    override this.ToString() =
+        match this with
         | When.BeforeExtract -> Names.BeforeExtract
 
+module When = 
     let tryFromString = function
         | Names.BeforeExtract -> Some When.BeforeExtract
         | _ -> None
@@ -33,7 +33,7 @@ let serialize (commands: Command list) =
 
     commands
     |> List.map ^ fun (Command(when', cmd)) -> Json.object [
-            Names.When, when' |> When.toString |> Json.string
+            Names.When, string when' |> Json.string
             Names.Command, Json.string cmd
         ]
     |> Seq.toList
