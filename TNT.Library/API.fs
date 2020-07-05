@@ -5,6 +5,7 @@ open System.Runtime.CompilerServices
 open FunToolbox.FileSystem
 open TNT.Model
 open TNT.Library
+open TNT.Library.Commands
 open TNT.Library.ExportModel
 open TNT.Library.Output
 open TNT.Library.MachineTranslation
@@ -370,6 +371,57 @@ let show (languages: LanguageTag selector) (details: string list) = output {
         | unsupported -> 
             yield E ^ sprintf "unsupported category: %s" unsupported
         
+    return Ok()
+}
+
+let addCommand (when': string) (command: string) = output {
+    match When.tryFromString when' with
+    | None -> 
+        E ^ sprintf "unsupported trigger '%s'" when'
+        return Error()
+    | Some w ->
+    let command = command.Trim();
+    if command = "" then 
+        E ^ sprintf "command can not be empty"
+        return Error()
+    else
+    let command = Command(w, command)
+    let path = Directory.current()
+    Commands.load path
+    |> List.append [command]
+    |> Commands.save path
+    return Ok()
+}
+
+let removeCommands (when': string) = output {
+    match When.tryFromString when' with
+    | None -> 
+        E ^ sprintf "unsupported trigger '%s'" when'
+        return Error()
+    | Some w ->
+    let root = Directory.current()
+    let oldCommands = Commands.load root
+    let newCommands = 
+        oldCommands
+        |> List.choose ^ fun (Command(w', _) as c) -> if w' <> w then Some c else None
+    let removed = oldCommands.Length - newCommands.Length
+    if removed = 0 then 
+        W ^ sprintf "No match, no command was removed" 
+        return Ok()
+    else 
+    newCommands
+    |> Commands.save root    
+    I ^ sprintf "Removed %d command(s)" removed
+    return Ok()
+}
+
+let editCommands() = output {
+    let root = Directory.current()
+    let filename = Commands.filename root
+    let root = Directory.current()
+    if not ^ Commands.exists root then
+        Commands.save root []
+    ExternalCommand.openFile filename
     return Ok()
 }
 

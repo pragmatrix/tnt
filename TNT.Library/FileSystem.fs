@@ -118,3 +118,27 @@ module TranslationGroup =
         Translations.loadAll directory
         |> TranslationGroup.fromTranslations
     
+module Commands =
+
+    open TNT.Library.Commands
+
+    let filename (root: Path) =
+        root
+        |> Path.extend TNT.Subdirectory
+        |> Path.extend ^ RPath "commands.json"
+
+    let exists (root: Path) : bool =
+        let fn = root |> filename
+        File.exists fn
+
+    let load (root: Path) : Command list =
+        if not ^ exists root then [] else
+        root
+        |> filename
+        |> File.loadText Encoding.UTF8
+        |> Commands.deserialize
+
+    let save (root: Path) (commands: Command list) =
+        root
+        |> filename
+        |> File.saveText Encoding.UTF8 (Commands.serialize commands)

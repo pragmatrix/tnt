@@ -252,6 +252,7 @@ module ExternalCommand =
                 CreateNoWindow = true
             )
 
+
         use proc = new Process(StartInfo = si)
         if (not ^ proc.Start()) then
             failwithf "failed to run command '%s'" command
@@ -273,3 +274,15 @@ module ExternalCommand =
         proc.WaitForExit()
         proc.ExitCode
 
+
+    let openFile (file: Path) = 
+        let si = 
+            new ProcessStartInfo (
+                string file,
+                UseShellExecute = true,
+                CreateNoWindow = true
+            )
+
+        use proc = new Process(StartInfo = si)
+        if (not ^ proc.Start()) then
+            failwithf "failed to open file '%s'" (string file)

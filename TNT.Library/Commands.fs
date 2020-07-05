@@ -12,13 +12,18 @@ module private Names =
 
     let [<Literal>] Command = "command"
 
-module Trigger = 
+module When = 
     let toString = function
         | When.BeforeExtract -> Names.BeforeExtract
 
-    let fromString = function
-        | Names.BeforeExtract -> When.BeforeExtract
-        | str -> failwithf "Unsupported command trigger '%s'" str
+    let tryFromString = function
+        | Names.BeforeExtract -> Some When.BeforeExtract
+        | _ -> None
+
+    let fromString str = 
+        match tryFromString str with
+        | None -> failwithf "Unsupported command trigger '%s'" str
+        | Some w -> w
 
 [<Struct>]
 type Command = 
@@ -28,7 +33,7 @@ let serialize (commands: Command list) =
 
     commands
     |> List.map ^ fun (Command(when', cmd)) -> Json.object [
-            Names.When, when' |> Trigger.toString |> Json.string
+            Names.When, when' |> When.toString |> Json.string
             Names.Command, Json.string cmd
         ]
     |> Seq.toList
@@ -45,9 +50,13 @@ let deserialize (js: string) =
             |> Json.destructure ^ json {
                 let! trigger = Json.read Names.When
                 let! command = Json.read Names.Command
-                return Command(Trigger.fromString trigger, command)
+                return Command(When.fromString trigger, command)
             }
         list
         |> List.map cmd
 
     | _ -> failwith "expect a Json array"
+
+let filter (now: When) (commands: Command list) : string list =
+    commands 
+    |> List.choose ^ fun (Command(w, cmd)) -> if w = now then Some cmd else None
