@@ -22,8 +22,8 @@
     <None Include="paket.references" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\TNT.FSharp\TNT.FSharp.fsproj" />
     <ProjectReference Include="..\TNT.Library\TNT.Library.fsproj" />
+    <ProjectReference Include="..\TNT.T.FSharp\TNT.T.FSharp.fsproj" />
     <ProjectReference Include="..\TNT.Tests.CSharp\TNT.Tests.CSharp.csproj" />
     <ProjectReference Include="..\TNT.T\TNT.T.csproj" />
   </ItemGroup>

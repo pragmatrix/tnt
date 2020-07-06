@@ -2,10 +2,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>0.2</Version>
+    <Version>0.2.0</Version>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="TNT.FSharp.fs" />
+    <Compile Include="TNT.T.FSharp.fs" />
     <None Include="paket.references" />
   </ItemGroup>
   <PropertyGroup>
