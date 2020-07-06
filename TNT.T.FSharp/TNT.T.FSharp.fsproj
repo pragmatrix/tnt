@@ -3,6 +3,11 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Version>0.2.0</Version>
+    <Title>F# marker and Translation Assembly for The .NET Translation Tool</Title>
+    <Description>Add this assembly to your F# project to mark and translate strings.</Description>
+    <Authors>Armin Sander</Authors>
+    <Copyright>(c) 2020 Armin Sander</Copyright>
+    <RepositoryUrl>https://github.com/pragmatrix/tnt</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="TNT.T.FSharp.fs" />

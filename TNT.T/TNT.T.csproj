@@ -3,6 +3,11 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Version>0.7.0</Version>
+    <Title>Marker and Translation Assembly for The .NET Translation Tool</Title>
+    <Description>Add this assembly to your project to mark and translate strings.</Description>
+    <Authors>Armin Sander</Authors>
+    <Copyright>(c) 2020 Armin Sander</Copyright>
+    <RepositoryUrl>https://github.com/pragmatrix/tnt</RepositoryUrl>
     <RootNamespace>TNT</RootNamespace>
   </PropertyGroup>
   <PropertyGroup>
