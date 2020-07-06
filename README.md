@@ -13,13 +13,13 @@ A command line tool for managing translations based on strings extracted from .N
 To install `tnt`, download the [latest dotnet framework](https://www.microsoft.com/net/download) and enter:
 
 ```bash
-dotnet tool install tnt-cli -g --add-source https://www.myget.org/F/pragmatrix/api/v2
+dotnet tool install tnt-cli -g
 ```
 
 After that, `tnt` can be invoked from the command line. For example, `tnt version` shows its current version. To update `tnt` enter:
 
 ```bash
-dotnet tool update tnt-cli -g --add-source https://www.myget.org/F/pragmatrix/api/v3/index.json
+dotnet tool update tnt-cli -g
 ```
 
 ## Concepts & Walkthrough
