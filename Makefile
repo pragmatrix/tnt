@@ -10,7 +10,7 @@ version=${shell grep -Po '<Version>\K[0-9.]+' tnt/tnt.fsproj}
 version:
 	echo ${version}
 
-push=paket push --url https://www.myget.org/F/pragmatrix/api/v2/package --api-key ${MYGETAPIKEY} 
+push=paket push --api-key ${NUGETAPIKEY} 
 
 .PHONY: install
 install: pack update-tnt-local
@@ -35,13 +35,16 @@ pack:
 	rm -f tmp/TNT.T.FSharp/*.nupkg
 	dotnet clean -c Release
 	dotnet restore 
-	cd tnt && rm -rf obj bin && dotnet pack -c Release -o ../tmp/tnt-cli
-	cd TNT.T && rm -rf obj bin && dotnet pack -c Release -o ../tmp/TNT.T
-	cd TNT.T.FSharp && rm -rf obj bin && dotnet pack -c Release -o ../tmp/TNT.T.FSharp
+	cd TNT.T.FSharp && rm -rf obj bin
+	cd TNT.T && rm -rf obj bin
+	cd tnt && rm -rf obj bin
+	cd TNT.T.FSharp && dotnet pack -c Release -o ../tmp/TNT.T.FSharp
+	cd TNT.T && dotnet pack -c Release -o ../tmp/TNT.T
+	cd tnt && dotnet pack -c Release -o ../tmp/tnt-cli
 
 .PHONY: install-tnt
 install-tnt:
-	dotnet tool install -g --add-source https://www.myget.org/F/pragmatrix/api/v3/index.json tnt-cli 
+	dotnet tool install -g tnt-cli 
 
 .PHONY: update-tnt-local
 update-tnt-local: pack
@@ -50,7 +53,7 @@ update-tnt-local: pack
 .PHONY: update-tnt
 update-tnt:
 	dotnet nuget locals http-cache --clear
-	dotnet tool update -g --add-source https://www.myget.org/F/pragmatrix/api/v3/index.json tnt-cli
+	dotnet tool update -g tnt-cli
 
 .PHONY: update-tnt-wait
 update-tnt-wait:

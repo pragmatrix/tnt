@@ -4,11 +4,13 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <PackageId>tnt-cli</PackageId>
+    <Version>1.0.0</Version>
     <Title>The .NET Translation Tool</Title>
-    <Description>Command line tool for managing translations based on strings extracted from .NET assemblies. Supports XLIFF roundtrips and machine translations.</Description>
+    <Authors>Armin Sander</Authors>
+    <Description>Command line tool for organizing translation strings extracted from .NET assemblies. Supports Excel, XLIFF roundtrips and machine translations.</Description>
     <Copyright>(c) 2020 Armin Sander</Copyright>
+    <RepositoryUrl>https://github.com/pragmatrix/tnt</RepositoryUrl>
     <PackAsTool>true</PackAsTool>
-    <Version>0.69.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.fs" />
