@@ -28,7 +28,7 @@ dotnet tool update tnt-cli -g
 
 `tnt` works in a project's directory, preferable the directory of your application's primary project. Change into this directory an initialize it with `tnt init`. This creates the subdirectory `.tnt/` and the file `.tnt/sources.json`. The `.tnt/` directory contains all the _important_ files that are managed for you: these are the list of sources and the translation files.
 
-> Note that some `tnt` commands act somewhat unforgiving and do not offer an undo option, so I recommend to put the `.tnt/` directory under revision control.
+> Note that some `tnt` commands act somewhat unforgiving and do not offer an undo option, therefore it's recommended to put the `.tnt/` directory under revision control.
 
 > `tnt init` sets the source language of your project's strings to `en-US` by default. If your original strings are in a different language, you can change that anytime with `tnt init -l [your language tag or name]`.
 
@@ -38,7 +38,7 @@ A source is something `tnt` retrieves original strings from. Currently, `tnt` su
 
 All sources are listed in the `.tnt/sources.json` file and can be added by entering `tnt add -a [relative path to the assembly]` from within your project's directory. For example `tnt add -a bin/Release/netcoreapp2.1/MyAwesomeApp.exe` would add an assembly to the list of sources.
 
-> `tnt` does not read or modify any of your other project files, it accesses the sources only.
+> `tnt` does not read or modify any of your other project files, it accesses only the compiled assemblies.
 
 ### Language & Assembly Extraction
 
@@ -46,7 +46,7 @@ All sources are listed in the `.tnt/sources.json` file and can be added by enter
 
 > For more extraction options take a look at [Methods of Extraction](#methods-of-extraction).
 
-To use the `.t()` function in your projects, add the [TNT.T][TNT.T] NuGet package to your project and insert a `using TNT;` to the top of the file you wish to mark strings with. Lucky owners of Resharper may just type `.t()` after a literal string and insert `using TNT;` by pressing ALT+Enter. 
+To use the `.t()` function in your projects, add the [TNT.T][TNT.T] NuGet package to your project and insert a `using TNT;` to the top of the source file you want to mark strings in. Lucky owners of Resharper may just type `.t()` after a literal string and insert `using TNT;` by pressing ALT+Enter. 
 
 Before extracting, you need to add at least one target language to the project. Add one, say "Spanisch" with `tnt add -l Spanish`. 
 
@@ -58,7 +58,7 @@ While `tnt` extracts the strings, it shows what it does and prints a status for 
 
 > The status consists of the translation's language tag, its counters, its language name, and the filename of the translation file.
 
-> Of particular interest are the counters that count the states the individual strings are in. If you extracted, say 5 strings, and haven't translated them yet, you'll see a `[5n]`. Later, counters for additional states will appear. If you are interested now, [Translation States](#translation-states) explains them all.
+> Of particular interest are the counters that count the states the individual strings are in. If you extracted, say 5 strings, and haven't translated them yet, you'll see a `[5n]`. Later, counters for additional states will appear. If you are interested now, the section [Translation States](#translation-states) explains them all.
 
 ### Translating Strings
 
@@ -88,7 +88,7 @@ Similar to the Excel roundtrips, `tnt` supports the traditional translation proc
 - if the number of lines match.
 - if the indents match.
 
-These rules are verified with each `tnt status` invocation for translations that are in the `needs-review` state only (`r` for short). If one of the rules fail to verify, `tnt status` increases the warning counter (abbrevated with `w`) and `tnt show warnings` may be used to show the messages in detail.
+These rules are verified with each `tnt status` invocation for translations that are in the `needs-review` state only (`r` for short). If one of the rules fail to verify, `tnt status` increases the warning counter (abbreviated with `w`) and `tnt show warnings` may be used to show the messages in detail.
 
 
 ### Deployment & Translation Loading
@@ -117,7 +117,7 @@ For a list of available tasks use `tnt help`, and for options of a specific task
 
 Creates and initializes the `.tnt/` directory. This is the first command that needs to be used to start using `tnt`. 
 
-- `-l`, `--language` (default `en-US`) Sets the source langage the strings extracted are in.
+- `-l`, `--language` (default `en-US`) Sets the source language the strings extracted are in.
 
   >  `tnt init -l [language]` can be used to change the source language later on.
 
