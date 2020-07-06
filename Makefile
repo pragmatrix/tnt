@@ -35,9 +35,12 @@ pack:
 	rm -f tmp/TNT.T.FSharp/*.nupkg
 	dotnet clean -c Release
 	dotnet restore 
-	cd tnt && rm -rf obj bin && dotnet pack -c Release -o ../tmp/tnt-cli
-	cd TNT.T && rm -rf obj bin && dotnet pack -c Release -o ../tmp/TNT.T
-	cd TNT.T.FSharp && rm -rf obj bin && dotnet pack -c Release -o ../tmp/TNT.T.FSharp
+	cd TNT.T.FSharp && rm -rf obj bin
+	cd TNT.T && rm -rf obj bin
+	cd tnt && rm -rf obj bin
+	cd TNT.T.FSharp && dotnet pack -c Release -o ../tmp/TNT.T.FSharp
+	cd TNT.T && dotnet pack -c Release -o ../tmp/TNT.T
+	cd tnt && dotnet pack -c Release -o ../tmp/tnt-cli
 
 .PHONY: install-tnt
 install-tnt:
