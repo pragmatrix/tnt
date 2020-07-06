@@ -1,4 +1,4 @@
-namespace TNT.FSharp
+namespace TNT.T.FSharp
 
 open System.Runtime.CompilerServices
 
@@ -9,5 +9,5 @@ module Extensions =
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         member this.t = this
 
-[<assembly:AutoOpen("TNT.FSharp.Extensions")>]
+[<assembly:AutoOpen("TNT.T.FSharp.Extensions")>]
 do ()

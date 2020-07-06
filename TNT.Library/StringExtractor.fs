@@ -64,7 +64,7 @@ module internal Helper =
         "System.String TNT.T::t(System.FormattableString)", 
             MatchCall (1, "System.FormattableString System.Runtime.CompilerServices.FormattableStringFactory::Create(System.String,System.Object[])",
                 ExtractArgAt 2)
-        "System.String TNT.FSharp.Extensions::String.get_t(System.String)", ExtractArgAt 1
+        "System.String TNT.T.FSharp.Extensions::String.get_t(System.String)", ExtractArgAt 1
     |]
 
     // https://github.com/jbevain/cecil/blob/eea822cad4b6f320c9e1da642fcbc0c129b00a6e/Mono.Cecil.Cil/CodeWriter.cs#L437

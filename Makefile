@@ -20,17 +20,24 @@ publish-and-update: publish update-tnt-wait
 
 .PHONY: publish
 publish: pack
-	${push} tmp/tnt-cli.*.nupkg
-	${push} tmp/TNT.T.*.nupkg
+	${push} tmp/tnt-cli/*.nupkg
+	${push} tmp/TNT.T/*.nupkg
+	${push} tmp/TNT.T.FSharp/*.nupkg
 
 .PHONY: pack
 pack:
 	mkdir -p tmp
-	rm -f tmp/*.nupkg
+	mkdir -p tmp/tnt-cli
+	mkdir -p tmp/TNT.T
+	mkdir -p tmp/TNT.T.FSharp
+	rm -f tmp/tnt-cli/*.nupkg
+	rm -f tmp/TNT.T/*.nupkg
+	rm -f tmp/TNT.T.FSharp/*.nupkg
 	dotnet clean -c Release
 	dotnet restore 
-	cd tnt && rm -rf obj bin && dotnet pack -c Release -o ../tmp
-	cd TNT.T && rm -rf obj bin && dotnet pack -c Release -o ../tmp
+	cd tnt && rm -rf obj bin && dotnet pack -c Release -o ../tmp/tnt-cli
+	cd TNT.T && rm -rf obj bin && dotnet pack -c Release -o ../tmp/TNT.T
+	cd TNT.T.FSharp && rm -rf obj bin && dotnet pack -c Release -o ../tmp/TNT.T.FSharp
 
 .PHONY: install-tnt
 install-tnt:
