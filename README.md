@@ -58,7 +58,7 @@ While `tnt` extracts the strings, it shows what it does and prints a status for 
 
 > The status consists of the translation's language tag, its counters, its language name, and the filename of the translation file.
 
-> Of particular interest are the counters that count the states the individual strings are in. If you extracted, say 5 strings, and haven't translated them yet, you'll see a `[5n]`. Later, counters for additional states will appear. If you are interested now, [Translation States](#Translation States) explains them all.
+> Of particular interest are the counters that count the states the individual strings are in. If you extracted, say 5 strings, and haven't translated them yet, you'll see a `[5n]`. Later, counters for additional states will appear. If you are interested now, [Translation States](#translation-states) explains them all.
 
 ### Translating Strings
 
@@ -68,7 +68,7 @@ Of course, editing the translation files is possible, but there are other ways `
 
 #### Machine Translations
 
-`tnt` supports Google machine translations, which should be a starting point for newly extracted strings. For the English to German machine translations I tried so far, the results were of good quality and Google's translation algorithm positioned .NET placeholders like `{0}` at the locations expected. I don't know if the resulting quality will be the same for your translations, but with `tnt translate` you can try your luck with the Google Cloud Translation API. For more information, skip to the section about [`tnt translate`](#`tnt translate`).
+`tnt` supports Google machine translations, which should be a starting point for newly extracted strings. For the English to German machine translations I tried so far, the results were of good quality and Google's translation algorithm positioned .NET placeholders like `{0}` at the locations expected. I don't know if the resulting quality will be the same for your translations, but with `tnt translate` you can try your luck with the Google Cloud Translation API. For more information, skip to the section that explains [`tnt translate`](#tnt-translate).
 
 #### Excel Roundtrips
 
@@ -78,7 +78,7 @@ Of course, editing the translation files is possible, but there are other ways `
 
 #### XLIFF Roundtrips
 
-Similar to the Excel roundtrips, `tnt` supports the traditional translation process that is comprised of exporting the translation files to the [XLIFF][XLIFF] format, using an XLIFF tool to edit them, and importing back the changes. With `tnt export`,  XLIFF files are generated and sent to translators, who can then use their favorite tool (like the [Multilingual App Toolkit](https://developer.microsoft.com/en-us/windows/develop/multilingual-app-toolkit, for example)) to translate these strings and send them back to the developer. After that, `tnt import` is used to update the strings in the translation files.
+Similar to the Excel roundtrips, `tnt` supports the traditional translation process that is comprised of exporting the translation files to the [XLIFF][XLIFF] format, using an XLIFF tool to edit them, and importing back the changes. With `tnt export`,  XLIFF files are generated and sent to translators, who can then use their favorite tool (like the [Multilingual App Toolkit](https://developer.microsoft.com/en-us/windows/develop/multilingual-app-toolkit), for example) to translate these strings and send them back to the developer. After that, `tnt import` is used to update the strings in the translation files.
 
 #### Translation Verification
 
@@ -167,7 +167,7 @@ Deletes all the translation records that are in the state `unused`.
 
 #### `tnt status`
 
-Shows the states of all translations. See also [Translation States](#Translation States).
+Shows the states of all translations. See also [Translation States](#translation-states).
 
 - `-v`, `--verbose` shows the formatted contents of the `sources.json` file.
 
@@ -223,7 +223,7 @@ Imports Excel or XLIFF translation files.
 
 `tnt import` imports files specified by filename or language tag, or all files that are found in the import directory.
 
-To import languages, use `tnt import [language tag or name]`. To import files, use `tnt import [filename]`. To import all files that look like they were previously exported with [`tnt export`](#`tnt export`), use `tnt import --all`.
+To import languages, use `tnt import [language tag or name]`. To import files, use `tnt import [filename]`. To import all files that look like they were previously exported with [`tnt export`](#tnt-export), use `tnt import --all`.
 
 - `--from` is directory to import the files from. Default is the current directory.
 - `--all` imports all files that are in the import directory.
@@ -254,23 +254,23 @@ Lists the .NET supported languages or shows interesting details of the translati
 
 - `tnt show languages`
 
-  lists the currently supported language names and tags of the .NET framework `tnt` runs on.
+  Lists the currently supported language names and tags of the .NET framework `tnt` runs on.
 
 - `tnt show new`
 
-  shows original strings that are not translated yet.
+  Shows original strings that are not translated yet.
 
 - `tnt show unused`
 
-  shows the strings that are not used anymore.
+  Shows the strings that are not used anymore.
 
 - `tnt show shared`
 
-  shows the strings that were extracted from more than one source location.
+  Shows the strings that were extracted from more than one source location.
 
 - `tnt show warnings` 
 
-  shows the strings that are in the state [`needs-review`](#Translation States) and have one or more verification warnings.
+  Shows the strings that are in the state [`needs-review`](#translation-states) and caused one or more verification warnings.
 
 The details `new` and `warnings` can be restricted to specific translations only. Use `-l` or `--language` to filter their results.
 
@@ -330,7 +330,7 @@ Examples:
 
 #### Interpolated Strings
 
-Beginning with C# 6, [interpolated strings](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/tokens/interpolated) are supported and are prefixed with the `$` character. To mark an interpolated string as translatable, the `t()` function is used, but - for technical reason - not invoked as an extension method.
+In C# 6, [interpolated strings](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/tokens/interpolated) were introduced by prefixing strings with the `$` character. To mark an interpolated string as translatable, the `t()` function is used, but - for technical reason - not invoked as an extension method.
 
 Bringing the static `TNT.T` class into scope mitigates that:
 
@@ -347,11 +347,11 @@ using static TNT.T;
 
 If strings need to be translated to a language defined by the application, the `t()` function can be invoked with an additional argument that specifies the translation's language tag. For example `"Hello".t("es")` will translate the string "Hello" to Spanish if the translation is available.
 
-> Original strings are extracted by through the generated IL code. If an invocation to the `.t()` function is found and the extraction attempt fails, [`tnt extract`](#`tnt extract`) will warn about that.
+> Original strings are extracted by through the generated IL code. If an invocation to the `.t()` function is found but the extraction attempt fails, [`tnt extract`](#tnt-extract) will warn about that.
 
 ### Translation States
 
-A translation state defines the state of a translated string. In the translation files, the states are stored in their long form, when listed as a counter, they are abbreviated as a single character:
+A translation state defines the state of a translated string. In the translation files, the states are stored in their long form, when listed as a counter, they are shortened to a single character:
 
 - `new`, `n` 
 
@@ -359,7 +359,7 @@ A translation state defines the state of a translated string. In the translation
 
 - `needs-review`, `r` 
 
-  Either a machine or imported translated string that indicates that the translation is not final and should be reviewed.
+  Either a machine or imported translated string indicating that the translation is not final and should be reviewed.
 
 - `final`, `f` 
 
@@ -369,18 +369,18 @@ A translation state defines the state of a translated string. In the translation
 
   A translated string that disappeared after a recent `tnt extract`.
 
-In addition to the states above, the `w` counter shows the number of analysis warnings. To list the strings that contain warnings, use [`tnt show warnings`](#`tnt show warnings`).
+In addition to the states above, the `w` counter shows the number of analysis warnings. To list the strings that contain warnings, use [`tnt show warnings`](#tnt-show).
 
 ### `tnt` Managed Directories and Files
 
 - `.tnt/` directory
 
-  The directory where the configuration and the translation files are stored, created with [`tnt init`](#`tnt init`).
+  The directory where the configuration and the translation files are stored, created with [`tnt init`](#tnt-init).
   - `.tnt/sources.json`
 
     This file configures the language the original strings are authored in and the sources from where they are extracted.
 
-    Use [`tnt init -l`](#`tnt init`) to change the language, [`tnt add`](#`tnt add`) to add sources, and [`tnt remove`](#`tnt remove`) to remove them.
+    Use [`tnt init -l`](#tnt-init) to change the language, [`tnt add`](#tnt-add) to add sources, and [`tnt remove`](#tnt-remove) to remove them.
 
   - `.tnt/translation-[tag].json` 
 
@@ -398,7 +398,7 @@ In addition to the states above, the `w` counter shows the number of analysis wa
 
     The optimized language specific translation files. Currently, they contain the original and the translated strings only.
 
-    > `tnt` tries to keep these files up to date, but in case they are missing, or language files in `.tnt/` were changed manually, [`tnt sync`](#`tnt sync`) can be used to regenerate them.
+    > `tnt` tries to keep these files up to date, but in case they are missing, or language files in `.tnt/` were changed manually, [`tnt sync`](#tnt-sync) can be used to regenerate them.
 
 ## License & Contribution & Copyright
 
@@ -408,4 +408,8 @@ Contributions are welcome, please comply to the `.editorconfig` file.
 
 (c) 2020 Armin Sander
 
-[TNT.T]: 
+[TNT.T]: https://www.nuget.org/packages/TNT.T
+[XLIFF]: https://en.wikipedia.org/wiki/XLIFF
+
+
+
