@@ -14,7 +14,7 @@ nuget Mono.Cecil ~> 0.11.2
 nuget FunToolbox ~> 1.4.0
 nuget System.Json ~> 4.7.1
 nuget Chiron ~> 6.3.1
-nuget Google.Cloud.Translation.V2 ~> 2.0.0
+nuget Google.Cloud.Translate.V3 ~> 2.0.0
 nuget ClosedXML ~> 0.95.3
 # to support dotnet test
 nuget Microsoft.NET.Test.Sdk ~> 16.6.1
