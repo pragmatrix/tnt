@@ -1,4 +1,4 @@
-version 5.245.2
+version 5.249.2
 
 source https://www.nuget.org/api/v2/
 source https://www.myget.org/F/pragmatrix/api/v3/index.json
@@ -6,16 +6,17 @@ storage: none
 
 framework: auto-detect
 
-nuget CommandLineParser.FSharp
-nuget FSharp.Core
-nuget FsUnit.xUnit.Typed
-nuget Xunit
-nuget Mono.Cecil
-nuget FunToolbox
-nuget System.Json
-nuget Chiron
-nuget Google.Cloud.Translation.V2
-nuget ClosedXML ~> 0.95
+nuget CommandLineParser.FSharp ~> 2.8.0
+nuget FSharp.Core ~> 4.7.2
+nuget FsUnit.xUnit.Typed prerelease
+nuget Xunit ~> 2.4.1
+nuget Mono.Cecil ~> 0.11.2
+nuget FunToolbox ~> 1.4.0
+nuget System.Json ~> 4.7.1
+nuget Chiron ~> 6.3.1
+nuget Google.Cloud.Translation.V2 ~> 2.0.0
+nuget ClosedXML ~> 0.95.3
 # to support dotnet test
-nuget Microsoft.NET.Test.Sdk
-nuget xunit.runner.visualstudio
+nuget Microsoft.NET.Test.Sdk ~> 16.6.1
+nuget xunit.runner.visualstudio ~> 2.4.2
+
