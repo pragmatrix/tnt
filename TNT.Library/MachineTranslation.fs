@@ -63,7 +63,7 @@ type TranslationResult =
 
 type Translator = {
     ProviderName: string
-    Translate: (LanguageTag * LanguageTag) -> string list -> (string * string) list
+    Translate: (LanguageTag * LanguageTag) -> string list -> (string * string) list * exn option
 }
 
 module Translate = 
@@ -71,7 +71,8 @@ module Translate =
     let newStrings 
         (translator: Translator) 
         (sourceLanguage: LanguageTag) 
-        (translation: Translation) =
+        (translation: Translation) 
+        : TranslationResult * exn option =
         let toTranslate = 
             translation.Records
             |> Seq.filter ^ fun r -> r.Translated = TranslatedString.New
@@ -80,12 +81,13 @@ module Translate =
 
         // no need to power up the translation API if there is nothing to translate
         match toTranslate with
-        | [] -> NoStringsToTranslate translation
+        | [] -> NoStringsToTranslate translation, None
         | toTranslate ->
         
-        let resultPairs = 
+        let resultPairs, error = 
             translator.Translate (sourceLanguage, translation.Language) toTranslate
-            |> Map.ofList
+
+        let resultPairs = resultPairs |> Map.ofList
 
         let newRecords, unprocessed =
             (resultPairs, translation.Records)
@@ -109,8 +111,11 @@ module Translate =
                 Unusable = unprocessed.Count
             }
 
-        if newRecords <> translation.Records then
-            Translated(report, { translation with Records = newRecords })
-        else
-            TranslationUnchanged(report, translation)
+        let r = 
+            if newRecords <> translation.Records then
+                Translated(report, { translation with Records = newRecords })
+            else
+                TranslationUnchanged(report, translation)
+
+        r, error
 

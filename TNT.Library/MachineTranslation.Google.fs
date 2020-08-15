@@ -51,20 +51,55 @@ let Translator = {
         let sourceLanguage, targetLanguage = 
             tryUse sourceLanguage, tryUse targetLanguage
 
-        let request = 
-            TranslateTextRequest(
-                Parent = parent,
-                SourceLanguageCode = string sourceLanguage,
-                TargetLanguageCode = string targetLanguage,
-                MimeType = "text/plain")
-        request.Contents.AddRange(strings)
-        let response = client.TranslateText(request)
-        let strings = Array.ofList strings
-        let translations = response.Translations
-        if translations.Count <> strings.Length then
-            failwithf "Expected %d translations to be returned, received %d instead." strings.Length translations.Count
-        translations
-        |> Seq.mapi ^ fun i result ->
-            strings.[i], result.TranslatedText
-        |> Seq.toList
+        let batches = 
+            // from: https://cloud.google.com/translate/quotas#content
+            let RecommendedMaxCodePointsPerRequest = 5000;
+
+            (([], [], 0), strings)
+            ||> Seq.fold ^ fun (batches, batch, count) str -> 
+                let batch = str :: batch
+                let count = count + str.Length
+                if count > RecommendedMaxCodePointsPerRequest 
+                then List.rev batch :: batches, [], 0 
+                else batches, batch, count
+            |> fun (batches, last, _) -> 
+                if last = [] then batches else last :: batches
+                |> List.rev
+
+        let tryTranslate (strings: string list) : Result<(string * string) list, exn> =
+            printfn "batch translating %d strings (code points: %d)" strings.Length (strings |> Seq.sumBy ^ fun str -> str.Length)
+            let request = 
+                TranslateTextRequest(
+                    Parent = parent,
+                    SourceLanguageCode = string sourceLanguage,
+                    TargetLanguageCode = string targetLanguage,
+                    MimeType = "text/plain")
+            request.Contents.AddRange(strings)
+            let response = 
+                try Ok ^ client.TranslateText(request)
+                with e -> Error e
+            match response with
+            | Error e -> Error e
+            | Ok response ->
+            let strings = Array.ofList strings
+            let translations = response.Translations
+            if translations.Count <> strings.Length 
+            then Error ^ exn ^ sprintf "Expected %d translations to be returned, received %d instead." strings.Length translations.Count
+            else
+            translations
+            |> Seq.mapi ^ fun i result ->
+                strings.[i], result.TranslatedText
+            |> Seq.toList
+            |> Ok
+
+        (([], None), batches)
+        ||> Seq.fold ^ fun (all, e) batch ->
+            match e with
+            | Some e -> all, Some e
+            | None ->
+            match tryTranslate batch with
+            | Error e -> all, Some e
+            | Ok results -> results :: all, None
+        |> fun (all, e) ->
+            all |> Seq.rev |> Seq.collect id |> Seq.toList, e
 }

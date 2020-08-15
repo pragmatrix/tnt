@@ -259,17 +259,24 @@ let translate (languages: LanguageTag selector) =
         |> selectTranslations languages
         |> Seq.toList
 
-    // note: the API may fail at any time, but if it does, continuing does not make
-    // sense, but the translations done before should also not get lost, so we
-    // translate and commit the results one by one.
+    // The API may fail at any time, but if it does, continuing does not make sense, but the
+    // translations done before should also not get lost, so we translate and commit the results one
+    // by one.
     for translation in toTranslate do
-        let result = 
+        let result, error = 
             Translate.newStrings Google.Translator sources.Language translation
         yield I ^ (string result)
+
         match result with
         | Translated(_, translation) ->
             do! commitTranslations "translated" [translation]
         | _ -> ()
+
+        match error with
+        | Some error ->
+            yield W ^ "You may need to retry to translate all strings:"
+            yield W ^ indent ^ string error.Message
+        | None -> ()
 
     return Ok()
 }
