@@ -55,7 +55,8 @@ let Translator = {
             TranslateTextRequest(
                 Parent = parent,
                 SourceLanguageCode = string sourceLanguage,
-                TargetLanguageCode = string targetLanguage)
+                TargetLanguageCode = string targetLanguage,
+                MimeType = "text/plain")
         request.Contents.AddRange(strings)
         let response = client.TranslateText(request)
         let strings = Array.ofList strings
