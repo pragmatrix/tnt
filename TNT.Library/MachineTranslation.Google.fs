@@ -6,6 +6,37 @@ open TNT.Model
 open TNT.Library
 open Google.Cloud.Translate.V3
 
+// from: https://cloud.google.com/translate/quotas#content
+let [<Literal>] RecommendedMaxCodePointsPerRequest = 5000;
+
+let internal createBatches (maxCodePoints: int) (strings: string list) : (string list list) =
+    assert(maxCodePoints > 0)
+    
+    // Lazily count the code points in a sequence of strings.
+    let countCodePoints (strings: string seq) : uint64 seq =
+        (0UL, strings) 
+        ||> Seq.scan ^ fun cnt str -> cnt + uint64 str.Length
+
+    let splitAtMaxCodePointsReached (strings: string list) : string list * string list =
+        let nextChunkLength = 
+            countCodePoints strings
+            |> Seq.tryFindIndex ^ fun points -> points >= uint64 maxCodePoints
+            |> Option.defaultWith ^ fun () -> Seq.length strings
+        strings 
+        |> List.splitAt nextChunkLength
+
+    let rec genBatches (chunks: string list list) (pending: string list) : string list list = 
+        match splitAtMaxCodePointsReached pending with
+        | [], [] 
+            -> List.rev chunks
+        | [], _ 
+            // a consumption of at least one string must be guaranteed, even if it exceeds the max code points.
+            -> failwith "internal error"
+        | chunk, pending 
+            -> genBatches (chunk :: chunks) pending
+
+    genBatches [] strings
+
 let Translator = {
     ProviderName = "Google"
     Translate = fun (sourceLanguage, targetLanguage) strings ->
@@ -51,20 +82,46 @@ let Translator = {
         let sourceLanguage, targetLanguage = 
             tryUse sourceLanguage, tryUse targetLanguage
 
-        let request = 
-            TranslateTextRequest(
-                Parent = parent,
-                SourceLanguageCode = string sourceLanguage,
-                TargetLanguageCode = string targetLanguage,
-                MimeType = "text/plain")
-        request.Contents.AddRange(strings)
-        let response = client.TranslateText(request)
-        let strings = Array.ofList strings
-        let translations = response.Translations
-        if translations.Count <> strings.Length then
-            failwithf "Expected %d translations to be returned, received %d instead." strings.Length translations.Count
-        translations
-        |> Seq.mapi ^ fun i result ->
-            strings.[i], result.TranslatedText
-        |> Seq.toList
+        let tryTranslate (strings: string list) : Result<(string * string) list, exn> =
+            let request = 
+                TranslateTextRequest(
+                    Parent = parent,
+                    SourceLanguageCode = string sourceLanguage,
+                    TargetLanguageCode = string targetLanguage,
+                    MimeType = "text/plain")
+            request.Contents.AddRange(strings)
+            let response = 
+                try Ok ^ client.TranslateText(request)
+                with e -> Error e
+            match response with
+            | Error e -> Error e
+            | Ok response ->
+            let strings = Array.ofList strings
+            let translations = response.Translations
+            if translations.Count <> strings.Length then
+                Error ^ exn ^ sprintf "Expected %d translations to be returned, received %d instead." 
+                    strings.Length translations.Count
+            else
+            translations
+            |> Seq.mapi ^ fun i result ->
+                strings.[i], result.TranslatedText
+            |> Seq.toList
+            |> Ok
+
+        let rec translateBatches (results: (string * string) list list) (batches: string list list) 
+            : (string * string) list list * exn option =
+            match batches with 
+            | [] -> results, None
+            | batch :: batches ->
+            match tryTranslate batch with
+            | Error e 
+                -> results, Some e
+            | Ok result 
+                -> translateBatches (result :: results) batches
+
+        strings
+        |> createBatches RecommendedMaxCodePointsPerRequest
+        |> translateBatches []
+        |> fun (results, e) 
+            -> Seq.rev results |> Seq.collect id |> Seq.toList, e
 }

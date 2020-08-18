@@ -83,3 +83,51 @@ module Counters =
                 Notes = [ "Note 1"; "Note 2" ]
             } ]
         }
+
+module MachineTranslations = 
+    open TNT.Library.MachineTranslation
+
+    [<Fact>]
+    let ``empty strings creates empty batches``() = 
+        []
+        |> Google.createBatches 100
+        |> should equal []
+
+        []
+        |> Google.createBatches 1
+        |> should equal []
+
+    [<Fact>]
+    let ``one string one batch``() =
+        ["Hello"]
+        |> Google.createBatches 100
+        |> should equal [["Hello"]]
+
+    [<Fact>]
+    let ``two single that exceed the max code points``() =
+        ["Hello"; "_ello"]
+        |> Google.createBatches 4
+        |> should equal [["Hello"]; ["_ello"]]
+
+        ["Hello"; "_ello"]
+        |> Google.createBatches 1
+        |> should equal [["Hello"]; ["_ello"]]
+
+    [<Fact>]
+    let ``two single that are equal to the max code points``() =
+        ["Hello"; "_ello"]
+        |> Google.createBatches 5
+        |> should equal [["Hello"]; ["_ello"]]
+
+    [<Fact>]
+    let ``two single that are shorter``() =
+        ["Hello"; "_ello"]
+        |> Google.createBatches 6
+        |> should equal [["Hello"; "_ello"]]
+
+    [<Fact>]
+    let ``four that need to split at the middle``() =
+        ["0"; "1"; "2"; "3"]
+        |> Google.createBatches 2
+        |> should equal [["0"; "1"]; ["2"; "3"]]
+

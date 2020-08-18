@@ -1,6 +1,8 @@
 /.paket/
-/paket-files/
 /.vs/
+/.fake/
+/.ionide/
+/paket-files/
 bin/
 obj/
 /*.ncrunchsolution.user
