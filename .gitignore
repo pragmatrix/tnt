@@ -5,6 +5,8 @@
 /paket-files/
 bin/
 obj/
+*.ncrunchproject
+/*.ncrunchsolution
 /*.ncrunchsolution.user
 /tmp/
 /tnt/Properties/launchSettings.json
