@@ -1,8 +1,6 @@
-paket=.paket/paket
-
 .PHONY: setup
 setup:
-	${paket} install
+	paket install
 
 version=${shell grep -Po '<Version>\K[0-9.]+' tnt/tnt.fsproj}
 
@@ -10,7 +8,7 @@ version=${shell grep -Po '<Version>\K[0-9.]+' tnt/tnt.fsproj}
 version:
 	echo ${version}
 
-push=paket push --api-key ${NUGETAPIKEY} 
+push=dotnet nuget push --api-key ${NUGETAPIKEY} --source https://api.nuget.org/v3/index.json
 
 .PHONY: install
 install: pack update-tnt-local
