@@ -24,6 +24,10 @@ publish: pack
 	${push} tmp/TNT.T/*.nupkg
 	${push} tmp/TNT.T.FSharp/*.nupkg
 
+.PHONY: publish-cli
+publish-cli: pack
+	${push} tmp/tnt-cli/*.nupkg
+
 .PHONY: pack
 pack:
 	mkdir -p tmp

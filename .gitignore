@@ -3,6 +3,7 @@
 /.fake/
 /.ionide/
 /paket-files/
+/global.json
 bin/
 obj/
 *.ncrunchproject
